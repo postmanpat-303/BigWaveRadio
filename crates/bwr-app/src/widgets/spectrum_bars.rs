@@ -15,7 +15,9 @@ pub fn paint(
     if rect.width() < 10.0 || rect.height() < 4.0 {
         return;
     }
-    let painter = ui.painter_at(rect);
+    // Intersect with the scroll viewport: painter_at replaces (not narrows)
+    // the clip, which let bars paint over the bottom panel.
+    let painter = ui.painter_at(rect.intersect(ui.clip_rect()));
     let n = levels.len();
     let gap = 3.0f32;
     let bar_w = ((rect.width() - gap * (n as f32 - 1.0)) / n as f32).max(1.5);

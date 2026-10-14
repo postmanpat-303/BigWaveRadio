@@ -338,7 +338,18 @@ impl BigWaveApp {
                 }
             }
             NetResult::Tags(tags) => self.tags = tags,
-            NetResult::Countries(countries) => self.countries = countries,
+            NetResult::Countries(countries) => {
+                // The API orders by station count and includes a few unnamed
+                // rows; present named countries only, A to Z.
+                let mut countries: Vec<_> = countries
+                    .into_iter()
+                    .filter(|c| !c.name.trim().is_empty())
+                    .collect();
+                countries.sort_by(|a, b| {
+                    a.name.to_lowercase().cmp(&b.name.to_lowercase())
+                });
+                self.countries = countries;
+            }
             NetResult::Favicon(uuid, bytes) => {
                 self.favicon_pending.remove(&uuid);
                 if let Ok(img) = image::load_from_memory(&bytes) {
@@ -442,15 +453,6 @@ impl eframe::App for BigWaveApp {
         // --- Spectrum ------------------------------------------------------------
         self.player.spectrum.update();
         self.player.spectrum.snapshot(&mut self.bands);
-        if self.is_playing {
-            ctx.request_repaint();
-        }
-        if self.loading {
-            // egui is event-driven: without user input, update() would never
-            // re-run, so results arriving from the worker thread would never
-            // be applied. Poll while a request is in flight.
-            ctx.request_repaint_after(Duration::from_millis(120));
-        }
 
         // --- Layout ---------------------------------------------------------------
         egui::TopBottomPanel::top("title-search").show(ctx, |ui| {
@@ -548,6 +550,16 @@ impl eframe::App for BigWaveApp {
                 Page::Settings => pages::settings::ui(ui, self),
             }
         });
+
+        // Repaint scheduling MUST come after the layout: pages and widgets set
+        // `loading` / `is_playing` while drawing, and egui is event-driven —
+        // without these requests no further frame would ever run.
+        if self.is_playing {
+            ctx.request_repaint();
+        }
+        if self.loading {
+            ctx.request_repaint_after(Duration::from_millis(120));
+        }
     }
 }
 

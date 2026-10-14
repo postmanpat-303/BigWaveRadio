@@ -56,7 +56,11 @@ fn card(ui: &mut Ui, station: &Station, app: &mut BigWaveApp) {
     let playing_here = is_current && app.is_playing;
     let in_library = app.library.contains(&station.uuid);
 
-    let mut painter = ui.painter_at(rect);
+    // Intersect with the scroll viewport: painter_at REPLACES the clip rect
+    // (it does not narrow it), so without this the card fill would paint even
+    // where scrolled out of view — over the bottom panel.
+    let visible = rect.intersect(ui.clip_rect());
+    let mut painter = ui.painter_at(visible);
     let dark = theme::is_dark(ui.ctx(), app.settings.theme);
     let accent = theme::accent_color(app.settings.accent);
     let fill = if response.hovered() {
