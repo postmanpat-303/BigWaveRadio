@@ -521,7 +521,7 @@ impl eframe::App for BigWaveApp {
             });
 
         egui::TopBottomPanel::bottom("now-playing")
-            .exact_height(74.0)
+            .exact_height(92.0)
             .show(ctx, |ui| {
                 now_playing_bar::bar(ui, self);
             });

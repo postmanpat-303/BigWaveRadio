@@ -96,12 +96,14 @@ fn card(ui: &mut Ui, station: &Station, app: &mut BigWaveApp) {
         Color32::WHITE,
     );
 
-    // Name + summary, clipped so they never run under the star button.
+    // Name + summary, clipped so they never run under the star button AND
+    // stay inside the scroll viewport (set_clip_rect REPLACES the clip).
     let text_left = rect.left() + 48.0;
     let text_clip = Rect::from_min_max(
         Pos2::new(rect.left(), rect.top()),
         Pos2::new(rect.right() - 36.0, rect.bottom()),
-    );
+    )
+    .intersect(visible);
     painter.set_clip_rect(text_clip);
     painter.text(
         Pos2::new(text_left, rect.top() + 20.0),
