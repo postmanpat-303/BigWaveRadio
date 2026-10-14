@@ -47,15 +47,23 @@ pub fn bar(ui: &mut Ui, app: &mut BigWaveApp) {
                 app.settings.volume = vol;
             }
 
-            // Transport.
+            // Transport. NOTE: this whole group lives in a right_to_left
+            // layout, so widgets must be added in reverse visual order.
             ui.add_space(8.0);
             let has_station = app.current.is_some();
             if ui
-                .add_enabled(app.can_go_previous(), egui::Button::new("⏮").min_size(egui::vec2(38.0, 0.0)))
-                .on_hover_text("Previous station")
+                .add_enabled(app.can_go_next(), egui::Button::new("⏭").min_size(egui::vec2(38.0, 0.0)))
+                .on_hover_text("Next station")
                 .clicked()
             {
-                app.previous_station();
+                app.next_station();
+            }
+            if ui
+                .add_enabled(has_station, egui::Button::new("⏹").min_size(egui::vec2(38.0, 0.0)))
+                .on_hover_text("Stop")
+                .clicked()
+            {
+                app.stop();
             }
             let play_label = if app.is_playing { "⏸" } else { "▶" };
             if ui
@@ -66,18 +74,11 @@ pub fn bar(ui: &mut Ui, app: &mut BigWaveApp) {
                 app.toggle_play_pause();
             }
             if ui
-                .add_enabled(has_station, egui::Button::new("⏹").min_size(egui::vec2(38.0, 0.0)))
-                .on_hover_text("Stop")
+                .add_enabled(app.can_go_previous(), egui::Button::new("⏮").min_size(egui::vec2(38.0, 0.0)))
+                .on_hover_text("Previous station")
                 .clicked()
             {
-                app.stop();
-            }
-            if ui
-                .add_enabled(app.can_go_next(), egui::Button::new("⏭").min_size(egui::vec2(38.0, 0.0)))
-                .on_hover_text("Next station")
-                .clicked()
-            {
-                app.next_station();
+                app.previous_station();
             }
         });
     });

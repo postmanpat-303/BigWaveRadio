@@ -46,12 +46,14 @@ pub enum NetJob {
     Countries,
     StationsFor(BrowseSel),
     Click(String),
+    Favicon(String, String),
 }
 
 pub enum NetResult {
     Stations(Vec<Station>),
     Tags(Vec<Tag>),
     Countries(Vec<Country>),
+    Favicon(String, Vec<u8>),
     Failed(String),
 }
 
@@ -85,6 +87,11 @@ pub struct BigWaveApp {
     // Visualiser
     pub bands: [f32; BANDS],
 
+    // Station artwork shown in the right-hand info panel, keyed by station uuid.
+    pub favicons: std::collections::HashMap<String, egui::TextureHandle>,
+    favicon_pending: std::collections::HashSet<String>,
+    pub about_logo: egui::TextureHandle,
+
     ctx: Context,
     min_bitrate: Arc<AtomicU32>,
     first_frame: bool,
@@ -93,6 +100,21 @@ pub struct BigWaveApp {
 impl BigWaveApp {
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
         let settings = Settings::load();
+        // Decode the About-page logo here (same path as the window icon, which
+        // is proven to work) rather than via include_image!, which depends on
+        // optional egui image loaders.
+        let about_logo = {
+            let png = include_bytes!("../../../assets/bigwave-logo.png");
+            let img = image::load_from_memory(png)
+                .expect("bundled logo decodes")
+                .into_rgba8();
+            let (w, h) = img.dimensions();
+            cc.egui_ctx.load_texture(
+                "about-logo",
+                egui::ColorImage::from_rgba_unmultiplied([w as usize, h as usize], &img),
+                egui::TextureOptions::LINEAR,
+            )
+        };
         let client = Arc::new(match RadioBrowserClient::new() {
             Ok(c) => c,
             Err(e) => {
@@ -105,6 +127,13 @@ impl BigWaveApp {
         let (result_tx, result_rx) = mpsc::channel::<NetResult>();
         let min_bitrate = Arc::new(AtomicU32::new(settings.min_bitrate));
         let min_bitrate_worker = min_bitrate.clone();
+        // Dedicated client for station artwork (favicons) fetched from arbitrary hosts.
+        let http = reqwest::blocking::Client::builder()
+            .connect_timeout(Duration::from_secs(5))
+            .timeout(Duration::from_secs(10))
+            .user_agent("BigWaveRadio/0.1")
+            .build()
+            .expect("favicon http client builds");
 
         std::thread::spawn(move || {
             while let Ok(job) = job_rx.recv() {
@@ -147,6 +176,20 @@ impl BigWaveApp {
                         send_result(&result_tx, res);
                     }
                     NetJob::Click(ref uuid) => client.report_click(uuid),
+                    NetJob::Favicon(ref uuid, ref url) => {
+                        match http.get(url).send() {
+                            Ok(resp) => match resp.bytes() {
+                                Ok(bytes) if !bytes.is_empty() => {
+                                    let _ = result_tx.send(NetResult::Favicon(
+                                        uuid.clone(),
+                                        bytes.to_vec(),
+                                    ));
+                                }
+                                _ => {}
+                            },
+                            Err(_) => {}
+                        }
+                    }
                 }
             }
         });
@@ -175,6 +218,9 @@ impl BigWaveApp {
             job_tx,
             result_rx,
             bands: [0.0; BANDS],
+            favicons: std::collections::HashMap::new(),
+            favicon_pending: std::collections::HashSet::new(),
+            about_logo,
             ctx: cc.egui_ctx.clone(),
             min_bitrate,
             first_frame: true,
@@ -191,6 +237,15 @@ impl BigWaveApp {
         self.player.play(&station.stream_url);
         self.is_playing = true;
         let _ = self.job_tx.send(NetJob::Click(station.uuid.clone()));
+        if !station.favicon.trim().is_empty()
+            && !self.favicons.contains_key(&station.uuid)
+            && !self.favicon_pending.contains(&station.uuid)
+        {
+            self.favicon_pending.insert(station.uuid.clone());
+            let _ = self
+                .job_tx
+                .send(NetJob::Favicon(station.uuid.clone(), station.favicon.clone()));
+        }
     }
 
     pub fn stop(&mut self) {
@@ -284,6 +339,21 @@ impl BigWaveApp {
             }
             NetResult::Tags(tags) => self.tags = tags,
             NetResult::Countries(countries) => self.countries = countries,
+            NetResult::Favicon(uuid, bytes) => {
+                self.favicon_pending.remove(&uuid);
+                if let Ok(img) = image::load_from_memory(&bytes) {
+                    let img = img.into_rgba8();
+                    let (w, h) = img.dimensions();
+                    let color = egui::ColorImage::from_rgba_unmultiplied(
+                        [w as usize, h as usize],
+                        &img,
+                    );
+                    let tex = self
+                        .ctx
+                        .load_texture(format!("favicon-{uuid}"), color, egui::TextureOptions::LINEAR);
+                    self.favicons.insert(uuid, tex);
+                }
+            }
             NetResult::Failed(message) => {
                 if self.stations.is_empty() {
                     self.status = format!("Error: {message}");
@@ -447,6 +517,20 @@ impl eframe::App for BigWaveApp {
             .show(ctx, |ui| {
                 now_playing_bar::bar(ui, self);
             });
+
+        if self.current.is_some() {
+            egui::SidePanel::right("station-info")
+                .resizable(false)
+                .default_width(250.0)
+                .width_range(200.0..=320.0)
+                .show(ctx, |ui| {
+                    egui::ScrollArea::vertical()
+                        .auto_shrink([false, false])
+                        .show(ui, |ui| {
+                            crate::widgets::station_info::panel(ui, self);
+                        });
+                });
+        }
 
         egui::CentralPanel::default().show(ctx, |ui| {
             match self.page {

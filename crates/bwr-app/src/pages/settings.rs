@@ -13,7 +13,7 @@ pub fn ui(ui: &mut Ui, app: &mut BigWaveApp) {
     egui::ScrollArea::vertical().auto_shrink([false, false]).show(ui, |ui| {
         // --- Appearance ------------------------------------------------------
         ui.group(|ui| {
-            ui.label(egui::RichText::new("Theme").strong());
+            ui.label(egui::RichText::new("Theme").heading().size(16.0));
             ui.horizontal(|ui| {
                 for (label, value) in [
                     ("Match system", Theme::System),
@@ -28,7 +28,7 @@ pub fn ui(ui: &mut Ui, app: &mut BigWaveApp) {
             });
 
             ui.add_space(10.0);
-            ui.label(egui::RichText::new("Highlight colour").strong());
+            ui.label(egui::RichText::new("Highlight colour").heading().size(16.0));
             ui.horizontal(|ui| {
                 // "Match system" swatch.
                 let system_selected = app.settings.accent == Accent::System;
@@ -76,7 +76,7 @@ pub fn ui(ui: &mut Ui, app: &mut BigWaveApp) {
 
         // --- Stream quality ---------------------------------------------------
         ui.group(|ui| {
-            ui.label(egui::RichText::new("Stream quality").strong());
+            ui.label(egui::RichText::new("Stream quality").heading().size(16.0));
             ui.horizontal(|ui| {
                 ui.label("Minimum bitrate:");
                 egui::ComboBox::from_id_salt("min-bitrate")
@@ -108,41 +108,44 @@ pub fn ui(ui: &mut Ui, app: &mut BigWaveApp) {
 
         // --- About -------------------------------------------------------------
         ui.group(|ui| {
+            ui.add_space(6.0);
             ui.horizontal(|ui| {
-                ui.add(
-                    egui::Image::new(egui::include_image!("../../../../assets/bigwave-logo.png"))
-                        .max_width(90.0),
-                );
+                let logo = app.about_logo.clone();
+                let logo_w = logo.size()[0] as f32;
+                let logo_h = logo.size()[1] as f32;
+                let w = 120.0_f32.min(ui.available_width());
+                let h = w * logo_h / logo_w;
+                ui.add(egui::Image::new((logo.id(), egui::vec2(w, h))).corner_radius(8));
+                ui.add_space(12.0);
                 ui.vertical(|ui| {
-                    ui.label(egui::RichText::new("About BigWave Radio").strong());
+                    ui.label(egui::RichText::new("About BigWave Radio").heading().size(20.0));
+                    ui.add_space(6.0);
                     ui.label(
-                        egui::RichText::new(
-                            "BigWave Radio streams live stations from the community-powered \
-                             radio-browser.info directory. Your library and these settings are \
-                             stored locally on this PC.",
-                        )
-                        .small()
-                        .weak(),
+                        "BigWave Radio streams live stations from the community-powered \
+                         radio-browser.info directory. Your library and these settings are \
+                         stored locally on this PC.",
                     );
-                    ui.add_space(4.0);
-                    ui.label(egui::RichText::new("Created by Derek Heasley").strong());
+                    ui.add_space(10.0);
                     ui.label(
-                        egui::RichText::new(
-                            "Inspired by ShortWave on Linux, I wanted a nice clean version for Windows.",
-                        )
-                        .small()
-                        .weak(),
+                        egui::RichText::new("Created by Derek Heasley")
+                            .strong()
+                            .size(15.0),
                     );
+                    ui.add_space(2.0);
+                    ui.label("Inspired by ShortWave on Linux, I wanted a nice clean version for Windows.");
+                    ui.add_space(10.0);
                     ui.horizontal(|ui| {
-                        ui.label(egui::RichText::new("If you find this app useful, you can donate to").small().weak());
+                        ui.label("If you find this app useful, you can donate to");
                         ui.add(egui::Hyperlink::from_label_and_url(
                             "paypal.me/derekh100",
                             "https://paypal.me/derekh100",
                         ));
                     });
-                    ui.label(egui::RichText::new("Thank you. :)").small().weak());
+                    ui.add_space(4.0);
+                    ui.label(egui::RichText::new("Thank you. :)").weak());
                 });
             });
+            ui.add_space(6.0);
         });
     });
 

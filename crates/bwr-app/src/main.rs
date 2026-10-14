@@ -12,7 +12,7 @@ fn main() -> eframe::Result<()> {
             .with_title("BigWave Radio")
             .with_app_id("bigwave.radio")
             .with_inner_size([1100.0, 720.0])
-            .with_min_inner_size([520.0, 480.0])
+            .with_min_inner_size([760.0, 480.0])
             .with_icon(window_icon()),
         ..Default::default()
     };
