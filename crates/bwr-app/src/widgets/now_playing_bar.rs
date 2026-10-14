@@ -24,7 +24,8 @@ pub fn bar(ui: &mut Ui, app: &mut BigWaveApp) {
                 .map(|s| s.name.clone())
                 .unwrap_or_else(|| "Pick a station to start listening".to_string());
             ui.label(egui::RichText::new(name).strong().size(15.0));
-            ui.label(egui::RichText::new(app.status.clone()).size(12.0).weak());
+            let status: String = app.status.chars().take(90).collect();
+            ui.label(egui::RichText::new(status).size(12.0).weak());
         });
 
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {

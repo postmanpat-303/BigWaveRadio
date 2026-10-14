@@ -413,7 +413,13 @@ impl eframe::App for BigWaveApp {
         }
 
         // --- Player events -----------------------------------------------------
-        for event in self.player.poll() {
+        // Events carry the playback generation they belong to; ignore any from
+        // a previous station so stale errors/connects never clobber the status.
+        let current_gen = self.player.generation();
+        for (gen, event) in self.player.poll() {
+            if gen != current_gen {
+                continue;
+            }
             match event {
                 PlayerEvent::Connecting => self.status = "Connecting…".into(),
                 PlayerEvent::Playing => {

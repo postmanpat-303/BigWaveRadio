@@ -1,17 +1,23 @@
 //! Streaming internet-radio playback.
 //!
-//! Architecture: one worker thread per `Play` command downloads the stream,
-//! decodes it with symphonia, resamples to the output device's rate and feeds
-//! a shared sample queue. The cpal output callback drains that queue (this
-//! keeps the audio callback trivially small and never blocking).
+//! Architecture: one worker thread per `Play` command downloads the stream
+//! into a shared buffer (filled by a separate downloader thread so network
+//! stalls never block the decoder), decodes it with symphonia, resamples to
+//! the output device's rate and feeds a shared sample queue. The cpal output
+//! callback drains that queue (this keeps the audio callback trivially small
+//! and never blocking).
 //!
 //! The same decoded PCM is pushed into the shared [`SpectrumFeed`] so the UI
 //! can draw the 32-band visualiser.
+//!
+//! Switching stations bumps a shared generation counter; blocked reads return
+//! EOF as soon as they notice the generation change, so the decoder always
+//! unwinds promptly and never plays events from a stale stream.
 
 use std::collections::VecDeque;
 use std::io::{Read, Seek, SeekFrom};
 use std::sync::atomic::{AtomicU32, Ordering};
-use std::sync::{mpsc, Arc, Mutex};
+use std::sync::{mpsc, Arc, Condvar, Mutex};
 use std::time::Duration;
 
 use bwr_spectrum::SpectrumFeed;
@@ -31,9 +37,14 @@ pub enum Command {
     SetVolume(f32),
 }
 
+type Event = (u32, PlayerEvent);
+
+/// Open output device + its sample queue, reused across station switches.
+type OutParts = (cpal::Stream, cpal::SupportedStreamConfig, Arc<Mutex<VecDeque<f32>>>);
+
 pub struct Player {
     cmd_tx: mpsc::Sender<Command>,
-    event_rx: Arc<Mutex<mpsc::Receiver<PlayerEvent>>>,
+    event_rx: Arc<Mutex<mpsc::Receiver<Event>>>,
     volume: Arc<AtomicU32>,
     /// Shared spectrum analyser fed by the decode thread.
     pub spectrum: Arc<SpectrumFeed>,
@@ -41,11 +52,13 @@ pub struct Player {
 }
 
 const QUEUE_CAP: usize = 48000 * 2 * 3; // ~3 s of stereo output
+const DL_BUF_CAP: usize = 2 * 1024 * 1024; // downloader buffer cap
+const MAX_IO_RETRIES: u32 = 5; // tolerate ~10 s of stream stalls, then give up
 
 impl Player {
     pub fn new() -> Self {
         let (cmd_tx, cmd_rx) = mpsc::channel::<Command>();
-        let (event_tx, event_rx) = mpsc::channel::<PlayerEvent>();
+        let (event_tx, event_rx) = mpsc::channel::<Event>();
         let volume = Arc::new(AtomicU32::new(0.8f32.to_bits()));
         let spectrum = Arc::new(SpectrumFeed::new());
         let generation = Arc::new(AtomicU32::new(0));
@@ -88,8 +101,14 @@ impl Player {
         f32::from_bits(self.volume.load(Ordering::Relaxed))
     }
 
+    /// Current playback generation; events from `poll` carry the generation
+    /// they belong to — ignore any that don't match this value.
+    pub fn generation(&self) -> u32 {
+        self.generation.load(Ordering::SeqCst)
+    }
+
     /// Drain pending events (call once per UI frame).
-    pub fn poll(&self) -> Vec<PlayerEvent> {
+    pub fn poll(&self) -> Vec<Event> {
         let rx = self.event_rx.lock().unwrap();
         let mut out = Vec::new();
         while let Ok(ev) = rx.try_recv() {
@@ -101,20 +120,41 @@ impl Player {
 
 fn worker_loop(
     cmd_rx: mpsc::Receiver<Command>,
-    event_tx: mpsc::Sender<PlayerEvent>,
+    event_tx: mpsc::Sender<Event>,
     volume: Arc<AtomicU32>,
     spectrum: Arc<SpectrumFeed>,
     generation: Arc<AtomicU32>,
 ) {
+    // The output device stream is opened lazily on the first Play and reused
+    // for every later switch (opening a new WASAPI stream per click makes the
+    // audio engine churn and can wedge the device).
+    let mut out: Option<OutParts> = None;
+
     while let Ok(cmd) = cmd_rx.recv() {
         match cmd {
-            Command::Play(url) => {
+            Command::Play(mut url) => {
+                // Coalesce rapid station switches: only the newest Play and
+                // any trailing Stop matter.
+                while let Ok(next) = cmd_rx.try_recv() {
+                    match next {
+                        Command::Play(u) => url = u,
+                        Command::Stop => {
+                            url.clear();
+                            break;
+                        }
+                        Command::SetVolume(_) => {}
+                    }
+                }
+                if url.is_empty() {
+                    let _ = event_tx.send((generation.load(Ordering::SeqCst), PlayerEvent::Stopped));
+                    continue;
+                }
                 let gen = generation.load(Ordering::SeqCst);
-                play_once(&url, &event_tx, &volume, &spectrum, &cmd_rx, gen, &generation);
+                play_once(&url, &event_tx, &volume, &spectrum, gen, &generation, &mut out);
                 spectrum.reset();
             }
             Command::Stop => {
-                let _ = event_tx.send(PlayerEvent::Stopped);
+                let _ = event_tx.send((generation.load(Ordering::SeqCst), PlayerEvent::Stopped));
             }
             Command::SetVolume(_) => {}
         }
@@ -123,45 +163,34 @@ fn worker_loop(
 
 fn play_once(
     url: &str,
-    event_tx: &mpsc::Sender<PlayerEvent>,
+    event_tx: &mpsc::Sender<Event>,
     volume: &Arc<AtomicU32>,
     spectrum: &Arc<SpectrumFeed>,
-    cmd_rx: &mpsc::Receiver<Command>,
     gen: u32,
     generation: &Arc<AtomicU32>,
+    out: &mut Option<OutParts>,
 ) {
-    let _ = event_tx.send(PlayerEvent::Connecting);
-
-    // --- Output device ------------------------------------------------------
-    let (out_stream, out_config, _out_tx, queue) = match open_output(volume.clone()) {
-        Ok(v) => v,
-        Err(e) => {
-            let _ = event_tx.send(PlayerEvent::Failed(format!("audio output: {e}")));
-            return;
-        }
+    let send = |ev: PlayerEvent| {
+        let _ = event_tx.send((gen, ev));
     };
+    send(PlayerEvent::Connecting);
 
-    // --- Input stream -------------------------------------------------------
-    let response = match reqwest::blocking::Client::builder()
-        .dns_resolver(Arc::new(bwr_core::Ipv4OnlyResolver))
-        .timeout(Duration::from_secs(20))
-        .build()
-        .and_then(|c| c.get(url).send())
-    {
-        Ok(r) => r,
-        Err(e) => {
-            let _ = event_tx.send(PlayerEvent::Failed(format!("connect: {e}")));
-            drop(out_stream);
-            return;
+    // --- Output device (open once, reuse after) ------------------------------
+    if out.is_none() {
+        match open_output(volume.clone()) {
+            Ok(v) => *out = Some(v),
+            Err(e) => {
+                send(PlayerEvent::Failed(format!("audio output: {e}")));
+                return;
+            }
         }
-    };
-    if !response.status().is_success() {
-        let _ = event_tx.send(PlayerEvent::Failed(format!("HTTP {}", response.status())));
-        drop(out_stream);
-        return;
     }
+    let (_stream, out_config, queue) = out.as_ref().unwrap();
+    // Drop any audio left over from the previous station.
+    queue.lock().unwrap().clear();
 
-    let source = HttpStream::new(response);
+    // --- Input stream ---------------------------------------------------------
+    let source = ChannelSource::start(url, generation.clone(), gen);
     let mss = symphonia::core::io::MediaSourceStream::new(Box::new(source), Default::default());
     let probed = match symphonia::default::get_probe().format(
         &Default::default(),
@@ -171,8 +200,7 @@ fn play_once(
     ) {
         Ok(p) => p,
         Err(e) => {
-            let _ = event_tx.send(PlayerEvent::Failed(format!("probe: {e}")));
-            drop(out_stream);
+            send(PlayerEvent::Failed(format!("probe: {e}")));
             return;
         }
     };
@@ -181,16 +209,14 @@ fn play_once(
     let track = match format.default_track() {
         Some(t) => t,
         None => {
-            let _ = event_tx.send(PlayerEvent::Failed("no audio track".into()));
-            drop(out_stream);
+            send(PlayerEvent::Failed("no audio track".into()));
             return;
         }
     };
     let mut decoder = match symphonia::default::get_codecs().make(&track.codec_params, &Default::default()) {
         Ok(d) => d,
         Err(e) => {
-            let _ = event_tx.send(PlayerEvent::Failed(format!("decoder: {e}")));
-            drop(out_stream);
+            send(PlayerEvent::Failed(format!("decoder: {e}")));
             return;
         }
     };
@@ -199,52 +225,46 @@ fn play_once(
     let out_channels = out_config.channels() as usize;
 
     let mut sent_playing = false;
+    let mut io_retries = 0u32;
 
-    'decode: loop {
-        // Obey stop/switch commands while decoding.
-        while let Ok(cmd) = cmd_rx.try_recv() {
-            match cmd {
-                Command::Stop => {
-                    let _ = event_tx.send(PlayerEvent::Stopped);
-                    drop(out_stream);
-                    return;
-                }
-                Command::Play(_) => {
-                    drop(out_stream);
-                    return; // caller loop starts the new URL
-                }
-                Command::SetVolume(_) => {}
-            }
-        }
+    loop {
         if generation.load(Ordering::SeqCst) != gen {
-            drop(out_stream);
-            return;
+            return; // switched or stopped: unwind promptly
         }
 
         let packet = match format.next_packet() {
             Ok(p) => p,
             Err(symphonia::core::errors::Error::IoError(_))
             | Err(symphonia::core::errors::Error::ResetRequired) => {
-                // Live streams drop connections; retry forever while still current.
+                // Live streams drop connections; retry briefly while current.
+                if generation.load(Ordering::SeqCst) != gen {
+                    return;
+                }
+                io_retries += 1;
+                if io_retries > MAX_IO_RETRIES {
+                    send(PlayerEvent::Failed("stream ended (connection lost)".into()));
+                    return;
+                }
                 std::thread::sleep(Duration::from_secs(2));
-                continue 'decode;
+                continue;
             }
-            Err(symphonia::core::errors::Error::DecodeError(_)) => continue 'decode,
+            Err(symphonia::core::errors::Error::DecodeError(_)) => continue,
             Err(e) => {
-                let _ = event_tx.send(PlayerEvent::Failed(format!("stream: {e}")));
-                break 'decode;
+                send(PlayerEvent::Failed(format!("stream: {e}")));
+                return;
             }
         };
+        io_retries = 0;
 
         let decoded = match decoder.decode(&packet) {
             Ok(d) => d,
-            Err(_) => continue 'decode,
+            Err(_) => continue,
         };
 
         // Resample + channel-map into the output queue.
         if let Some((spec, interleaved)) = to_interleaved_f32(&decoded) {
             if !sent_playing {
-                let _ = event_tx.send(PlayerEvent::Playing);
+                send(PlayerEvent::Playing);
                 sent_playing = true;
             }
             spectrum.push_interleaved(&interleaved, spec.channels.count());
@@ -262,23 +282,17 @@ fn play_once(
                 }
                 std::thread::sleep(Duration::from_millis(50));
                 if generation.load(Ordering::SeqCst) != gen {
-                    drop(out_stream);
                     return;
                 }
             }
         }
     }
-
-    drop(out_stream);
 }
 
 /// Open the default cpal output device and start a stream draining `queue`.
 fn open_output(
     volume: Arc<AtomicU32>,
-) -> std::result::Result<
-    (cpal::Stream, cpal::SupportedStreamConfig, mpsc::Sender<()>, Arc<Mutex<VecDeque<f32>>>),
-    String,
-> {
+) -> std::result::Result<OutParts, String> {
     let host = cpal::default_host();
     let device = host
         .default_output_device()
@@ -289,8 +303,6 @@ fn open_output(
 
     let queue: Arc<Mutex<VecDeque<f32>>> = Arc::new(Mutex::new(VecDeque::with_capacity(QUEUE_CAP)));
     let cb_queue = queue.clone();
-
-    let err_tx_dummy = (); // (structure kept simple; errors surface as stream silence)
 
     let stream = match config.sample_format() {
         cpal::SampleFormat::F32 => device
@@ -303,9 +315,7 @@ fn open_output(
                         *slot = q.pop_front().unwrap_or(0.0) * vol;
                     }
                 },
-                move |_e| {
-                    let _ = err_tx_dummy;
-                },
+                move |_e| {},
                 None,
             )
             .map_err(|e| e.to_string())?,
@@ -320,17 +330,14 @@ fn open_output(
                         *slot = (s * i16::MAX as f32) as i16;
                     }
                 },
-                move |_e| {
-                    let _ = err_tx_dummy;
-                },
+                move |_e| {},
                 None,
             )
             .map_err(|e| e.to_string())?,
         other => return Err(format!("unsupported sample format {other:?}")),
     };
     stream.play().map_err(|e| e.to_string())?;
-    let tx = mpsc::channel().0;
-    Ok((stream, config, tx, queue))
+    Ok((stream, config, queue))
 }
 
 fn to_interleaved_f32(
@@ -402,27 +409,114 @@ fn resample_linear(samples: &[f32], src_rate: u32, dst_rate: u32, channels: usiz
     out
 }
 
-/// Read-only HTTP stream with forward-only Seek, good enough for live radio.
-struct HttpStream {
-    response: reqwest::blocking::Response,
+// ----------------------------------------------------------------------------
+// Buffered HTTP source: a downloader thread fills a shared buffer; the decoder
+// reads from it with a short timeout so it always notices station switches.
+// ----------------------------------------------------------------------------
+
+struct SharedBuf {
+    buf: VecDeque<u8>,
+    done: bool,
+}
+
+pub struct ChannelSource {
+    shared: Arc<(Mutex<SharedBuf>, Condvar)>,
+    generation: Arc<AtomicU32>,
+    gen: u32,
     pos: u64,
 }
 
-impl HttpStream {
-    fn new(response: reqwest::blocking::Response) -> Self {
-        Self { response, pos: 0 }
+impl ChannelSource {
+    fn start(url: &str, generation: Arc<AtomicU32>, gen: u32) -> Self {
+        let shared: Arc<(Mutex<SharedBuf>, Condvar)> =
+            Arc::new((Mutex::new(SharedBuf { buf: VecDeque::new(), done: false }), Condvar::new()));
+        let s2 = shared.clone();
+        let url = url.to_string();
+        let gen_watch = generation.clone();
+        std::thread::spawn(move || {
+            let mark_done = |s: &Arc<(Mutex<SharedBuf>, Condvar)>| {
+                let (lock, cv) = &**s;
+                lock.lock().unwrap().done = true;
+                cv.notify_all();
+            };
+            let client = match reqwest::blocking::Client::builder()
+                .dns_resolver(Arc::new(bwr_core::Ipv4OnlyResolver))
+                .timeout(Duration::from_secs(20))
+                .build()
+            {
+                Ok(c) => c,
+                Err(_) => {
+                    mark_done(&s2);
+                    return;
+                }
+            };
+            match client.get(&url).send() {
+                Ok(mut resp) if resp.status().is_success() => {
+                    let mut chunk = [0u8; 16384];
+                    loop {
+                        // Bail out promptly when the user switches station.
+                        if gen_watch.load(Ordering::SeqCst) != gen {
+                            mark_done(&s2);
+                            return;
+                        }
+                        match resp.read(&mut chunk) {
+                            Ok(0) => break,
+                            Ok(n) => {
+                                let (lock, cv) = &*s2;
+                                let mut st = lock.lock().unwrap();
+                                while st.buf.len() >= DL_BUF_CAP && !st.done {
+                                    let (g, _) = cv
+                                        .wait_timeout(st, Duration::from_millis(200))
+                                        .unwrap();
+                                    st = g;
+                                    if gen_watch.load(Ordering::SeqCst) != gen {
+                                        // Still holding the lock: set done in place.
+                                        st.done = true;
+                                        cv.notify_all();
+                                        return;
+                                    }
+                                }
+                                st.buf.extend(&chunk[..n]);
+                                cv.notify_all();
+                            }
+                            Err(_) => break,
+                        }
+                    }
+                }
+                _ => {}
+            }
+            mark_done(&s2);
+        });
+        Self { shared, generation, gen, pos: 0 }
     }
 }
 
-impl Read for HttpStream {
-    fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
-        let n = self.response.read(buf)?;
-        self.pos += n as u64;
-        Ok(n)
+impl Read for ChannelSource {
+    fn read(&mut self, out: &mut [u8]) -> std::io::Result<usize> {
+        let (lock, cv) = &*self.shared;
+        let mut st = lock.lock().unwrap();
+        loop {
+            if self.generation.load(Ordering::SeqCst) != self.gen {
+                return Ok(0); // EOF: decoder unwinds and notices the switch
+            }
+            if !st.buf.is_empty() {
+                let n = out.len().min(st.buf.len());
+                for slot in out[..n].iter_mut() {
+                    *slot = st.buf.pop_front().unwrap();
+                }
+                self.pos += n as u64;
+                return Ok(n);
+            }
+            if st.done {
+                return Ok(0);
+            }
+            let (g, _) = cv.wait_timeout(st, Duration::from_millis(100)).unwrap();
+            st = g;
+        }
     }
 }
 
-impl Seek for HttpStream {
+impl Seek for ChannelSource {
     fn seek(&mut self, pos: SeekFrom) -> std::io::Result<u64> {
         match pos {
             SeekFrom::Current(0) => Ok(self.pos),
@@ -447,7 +541,7 @@ impl Seek for HttpStream {
     }
 }
 
-impl symphonia::core::io::MediaSource for HttpStream {
+impl symphonia::core::io::MediaSource for ChannelSource {
     fn is_seekable(&self) -> bool {
         false
     }

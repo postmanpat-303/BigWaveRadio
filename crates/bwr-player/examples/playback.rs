@@ -19,7 +19,11 @@ fn main() {
     let mut snapshots = 0u32;
 
     while Instant::now() < deadline {
-        for event in player.poll() {
+        let gen = player.generation();
+        for (event_gen, event) in player.poll() {
+            if event_gen != gen {
+                continue;
+            }
             println!("event: {event:?}");
             if matches!(event, bwr_player::PlayerEvent::Playing) {
                 got_playing = true;
