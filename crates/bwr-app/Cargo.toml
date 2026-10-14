@@ -1,0 +1,17 @@
+[package]
+name = "bwr-app"
+version = "0.1.0"
+edition = "2021"
+description = "BigWave Radio — native Windows internet radio player (egui shell)"
+
+[dependencies]
+bwr-core = { path = "../bwr-core" }
+bwr-player = { path = "../bwr-player" }
+bwr-spectrum = { path = "../bwr-spectrum" }
+eframe = "0.31"
+egui = "0.31"
+image = { version = "0.25", default-features = false, features = ["png"] }
+serde = { version = "1", features = ["derive"] }
+
+[build-dependencies]
+winresource = "0.1"

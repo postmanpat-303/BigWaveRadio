@@ -1,0 +1,8 @@
+[package]
+name = "bwr-spectrum"
+version = "0.1.0"
+edition = "2021"
+description = "32-band spectrum analysis from decoded PCM (shared ring buffer + FFT)"
+
+[dependencies]
+rustfft = "6"

@@ -1,0 +1,12 @@
+[package]
+name = "bwr-player"
+version = "0.1.0"
+edition = "2021"
+description = "Streaming radio playback: HTTP stream -> symphonia decode -> cpal output"
+
+[dependencies]
+bwr-core = { path = "../bwr-core" }
+bwr-spectrum = { path = "../bwr-spectrum" }
+cpal = "0.15"
+symphonia = { version = "0.5", features = ["mp3", "aac"] }
+reqwest = { version = "0.12", default-features = false, features = ["blocking", "native-tls"] }
