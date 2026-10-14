@@ -2,7 +2,7 @@
 
 use bwr_core::models::Station;
 use eframe::egui::{
-    self, Align2, Color32, CornerRadius, FontId, Pos2, Rect, Sense, Stroke, Ui, Vec2,
+    self, Align2, Color32, CornerRadius, FontId, Pos2, Rect, Sense, Ui, Vec2,
 };
 
 use crate::app::BigWaveApp;
@@ -67,10 +67,12 @@ fn card(ui: &mut Ui, station: &Station, app: &mut BigWaveApp) {
         Color32::from_gray(235)
     };
     painter.rect_filled(rect, CornerRadius::same(8), fill);
-    painter.rect_stroke(
+    // Outline on the UNCLIPPED painter: an Outside stroke drawn through
+    // painter_at() loses its outer half to the clip and looks "cut in".
+    ui.painter().rect_stroke(
         rect,
         CornerRadius::same(8),
-        Stroke::new(1.0_f32, Color32::from_gray(90).gamma_multiply(0.5)),
+        ui.visuals().widgets.noninteractive.bg_stroke,
         egui::StrokeKind::Outside,
     );
 
@@ -90,9 +92,13 @@ fn card(ui: &mut Ui, station: &Station, app: &mut BigWaveApp) {
         Color32::WHITE,
     );
 
-    // Name + summary (clipped to the card).
+    // Name + summary, clipped so they never run under the star button.
     let text_left = rect.left() + 48.0;
-    painter.set_clip_rect(rect);
+    let text_clip = Rect::from_min_max(
+        Pos2::new(rect.left(), rect.top()),
+        Pos2::new(rect.right() - 36.0, rect.bottom()),
+    );
+    painter.set_clip_rect(text_clip);
     painter.text(
         Pos2::new(text_left, rect.top() + 20.0),
         Align2::LEFT_CENTER,

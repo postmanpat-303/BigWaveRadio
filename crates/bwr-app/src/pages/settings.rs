@@ -52,18 +52,23 @@ pub fn ui(ui: &mut Ui, app: &mut BigWaveApp) {
                     };
                     let selected = app.settings.accent == accent;
                     let (rect, response) = ui.allocate_exact_size(
-                        egui::vec2(28.0, 28.0),
+                        egui::vec2(30.0, 30.0),
                         egui::Sense::click(),
                     );
-                    let painter = ui.painter_at(rect);
-                    painter.circle_filled(
+                    let painter = ui.painter_at(rect.expand(3.0));
+                    // Circle strokes are centred on the edge, so give the painter
+                    // head-room (expand above) and keep the stroke on the 12px
+                    // radius — stroking a larger radius used to eat 1px of fill.
+                    painter.circle(
                         rect.center(),
                         12.0,
                         Color32::from_rgb(rgb[0], rgb[1], rgb[2]),
+                        if selected {
+                            egui::Stroke::new(2.0_f32, ui.visuals().text_color())
+                        } else {
+                            egui::Stroke::new(1.0_f32, ui.visuals().weak_text_color())
+                        },
                     );
-                    if selected {
-                        painter.circle_stroke(rect.center(), 13.0, egui::Stroke::new(2.0_f32, ui.visuals().text_color()));
-                    }
                     if response.clicked() {
                         app.settings.accent = accent;
                         app.persist_settings();
