@@ -4,6 +4,8 @@
 
 mod app;
 #[cfg(windows)]
+mod backdrop;
+#[cfg(windows)]
 mod diag;
 #[cfg(windows)]
 mod hotkeys;
@@ -20,7 +22,15 @@ use app::BigWaveApp;
 fn main() -> eframe::Result<()> {
     #[cfg(debug_assertions)]
     eprintln!("[startup] settings: {:?}", bwr_core::Settings::load());
-    let options = eframe::NativeOptions {
+    eframe::run_native(
+        "BigWave Radio",
+        make_options(),
+        Box::new(|cc| Ok(Box::new(BigWaveApp::new(cc)))),
+    )
+}
+
+fn make_options() -> eframe::NativeOptions {
+    eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
             .with_title("BigWave Radio")
             .with_app_id("bigwave.radio")
@@ -28,12 +38,7 @@ fn main() -> eframe::Result<()> {
             .with_min_inner_size([760.0, 480.0])
             .with_icon(window_icon()),
         ..Default::default()
-    };
-    eframe::run_native(
-        "BigWave Radio",
-        options,
-        Box::new(|cc| Ok(Box::new(BigWaveApp::new(cc)))),
-    )
+    }
 }
 
 fn window_icon() -> egui::IconData {

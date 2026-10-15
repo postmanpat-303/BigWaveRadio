@@ -15,6 +15,13 @@ pub fn bar(ui: &mut Ui, app: &mut BigWaveApp) {
     let bar = ui.max_rect();
     let painter = ui.painter().clone();
 
+    // Chrome fill first so everything else paints on top of it.
+    painter.rect_filled(
+        bar,
+        0.0,
+        theme::chrome_fill(ui.ctx(), app.settings.theme),
+    );
+
     // Separator across the top of the bar.
     painter.hline(
         bar.x_range(),

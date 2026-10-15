@@ -631,6 +631,10 @@ fn fallback_client() -> RadioBrowserClient {
 }
 
 impl eframe::App for BigWaveApp {
+    fn clear_color(&self, _visuals: &egui::Visuals) -> [f32; 4] {
+        egui::Color32::from_rgba_unmultiplied(12, 12, 12, 180).to_normalized_gamma_f32()
+    }
+
     fn update(&mut self, ctx: &Context, frame: &mut eframe::Frame) {
         if self.first_frame {
             self.first_frame = false;
@@ -863,6 +867,11 @@ impl eframe::App for BigWaveApp {
 
         // --- Layout ---------------------------------------------------------------
         egui::TopBottomPanel::top("title-search").show(ctx, |ui| {
+            ui.painter().rect_filled(
+                ui.max_rect(),
+                0.0,
+                theme::chrome_fill(ui.ctx(), self.settings.theme),
+            );
             ui.add_space(4.0);
             ui.horizontal(|ui| {
                 ui.label(egui::RichText::new("🔍").size(16.0));
@@ -956,6 +965,11 @@ impl eframe::App for BigWaveApp {
             .resizable(false)
             .exact_width(170.0)
             .show(ctx, |ui| {
+                ui.painter().rect_filled(
+                    ui.max_rect(),
+                    0.0,
+                    theme::chrome_fill(ui.ctx(), self.settings.theme),
+                );
                 ui.add_space(8.0);
                 nav_button(ui, self, Page::Discover, "🏠  Discover");
                 nav_button(ui, self, Page::Search, "🔎  Search");
@@ -1035,6 +1049,11 @@ impl eframe::App for BigWaveApp {
                 .default_width(250.0)
                 .width_range(200.0..=320.0)
                 .show(ctx, |ui| {
+                    ui.painter().rect_filled(
+                        ui.max_rect(),
+                        0.0,
+                        theme::chrome_fill(ui.ctx(), self.settings.theme),
+                    );
                     egui::ScrollArea::vertical()
                         .auto_shrink([false, false])
                         .show(ui, |ui| {
@@ -1044,6 +1063,10 @@ impl eframe::App for BigWaveApp {
         }
 
         egui::CentralPanel::default().show(ctx, |ui| {
+            // Mica-style material behind the page content (Windows 11).
+            if theme::win11_material() {
+                theme::paint_material(ui.ctx(), self.settings.theme, self.settings.accent, ui.max_rect());
+            }
             match self.page {
                 Page::Discover => pages::discover::ui(ui, self),
                 Page::Search => pages::search::ui(ui, self),
