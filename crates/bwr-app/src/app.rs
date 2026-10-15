@@ -777,17 +777,15 @@ impl eframe::App for BigWaveApp {
                     unsafe { hide_main_window(hwnd) };
                 }
                 self.hidden_to_tray = true;
-                // First time hiding: point at the tray icon so the app can
-                // never "vanish" without the user knowing where it went.
-                if !self.settings.tray_hint_shown {
-                    self.settings.tray_hint_shown = true;
-                    self.persist_settings();
-                    if let Some(tray) = &self.tray {
-                        tray.notify(
-                            "BigWave Radio",
-                            "Still playing. Click the wave icon near the clock (or press Ctrl+Alt+B) to bring it back.",
-                        );
-                    }
+                // Toast every time: Windows 11 parks new tray icons in the
+                // hidden "^" list beside the clock, so the icon is not
+                // immediately visible — say exactly where it is and how to
+                // get back. Clicking the toast restores the window.
+                if let Some(tray) = &self.tray {
+                    tray.notify(
+                        "BigWave Radio — still playing",
+                        "Open the ^ list beside the clock to find the wave icon (drag it out once to keep it there), or press Ctrl+Alt+B to bring the window back.",
+                    );
                 }
             }
 

@@ -22,7 +22,7 @@ use windows::Win32::Graphics::Gdi::{
 use windows::Win32::System::LibraryLoader::GetModuleHandleW;
 use windows::Win32::UI::Shell::{
     Shell_NotifyIconW, NOTIFYICONDATAW, NIF_ICON, NIF_INFO, NIF_MESSAGE, NIF_TIP, NIIF_INFO,
-    NIIF_NOSOUND, NIM_ADD, NIM_DELETE, NIM_MODIFY,
+    NIM_ADD, NIM_DELETE, NIM_MODIFY,
 };
 use windows::Win32::UI::WindowsAndMessaging::{
     AppendMenuW, CreateIconIndirect, CreatePopupMenu, CreateWindowExW, DefWindowProcW, DestroyMenu,
@@ -43,6 +43,8 @@ pub enum TrayCmd {
 }
 
 const TRAY_MSG: u32 = WM_APP;
+/// Click on our balloon/toast notification (shellapi.h: WM_USER + 5).
+const NIN_BALLOONUSERCLICK: u32 = 0x0405;
 const MENU_SHOW: usize = 1001;
 const MENU_PLAY_PAUSE: usize = 1002;
 const MENU_NEXT: usize = 1003;
@@ -110,7 +112,7 @@ impl Tray {
             uFlags: NIF_INFO,
             szInfo: to_wchar::<256>(text),
             szInfoTitle: to_wchar::<64>(title),
-            dwInfoFlags: NIIF_INFO | NIIF_NOSOUND,
+            dwInfoFlags: NIIF_INFO,
             ..Default::default()
         };
         unsafe {
@@ -151,7 +153,8 @@ unsafe extern "system" fn tray_wndproc(
             &*(p as *const mpsc::Sender<TrayCmd>)
         };
         match lparam.0 as u32 {
-            WM_LBUTTONUP => {
+            // Left click on the icon, or a click on our toast notification.
+            WM_LBUTTONUP | NIN_BALLOONUSERCLICK => {
                 let _ = tx.send(TrayCmd::Show);
             }
             WM_RBUTTONUP => {

@@ -154,9 +154,10 @@ pub fn ui(ui: &mut Ui, app: &mut BigWaveApp) {
             }
             ui.label(
                 egui::RichText::new(
-                    "When on, closing hides BigWave Radio to the wave icon near the clock — \
-                     playback continues. Minimizing keeps the taskbar button with quick controls. \
-                     Right-click the tray icon, press Ctrl+Alt+B, or choose Quit there to exit fully.",
+                    "When on, closing hides BigWave Radio to the tray — playback continues, and \
+                     a notification tells you where it went. Windows 11 puts the wave icon in the \
+                     hidden ^ list beside the clock until you drag it out once; Ctrl+Alt+B also \
+                     brings the window back. Minimizing always keeps the taskbar button.",
                 )
                 .small()
                 .weak(),
