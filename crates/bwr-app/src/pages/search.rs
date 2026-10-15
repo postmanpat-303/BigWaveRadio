@@ -32,6 +32,7 @@ pub fn ui(ui: &mut Ui, app: &mut BigWaveApp) {
         {
             app.query.clear();
             app.search_active = false;
+            app.search_pending = false;
             app.stations.clear();
             changed = false;
         }
@@ -46,7 +47,7 @@ pub fn ui(ui: &mut Ui, app: &mut BigWaveApp) {
     if app.search_active {
         station_grid(ui, app);
     } else {
-        // Idle state: recent searches first, then popular tag chips as quick picks.
+        // Idle state: recent searches, then the floating tag word cloud.
         if !app.settings.search_history.is_empty() {
             ui.label(egui::RichText::new("Recent searches").size(13.0).weak());
             ui.add_space(4.0);
@@ -57,22 +58,19 @@ pub fn ui(ui: &mut Ui, app: &mut BigWaveApp) {
                         app.last_searched = q.clone();
                         app.last_keystroke = None;
                         app.loading = true;
+                        app.search_pending = true;
                         let _ = app.job_tx.send(NetJob::Search(q));
                     }
                 }
             });
-            ui.add_space(12.0);
+            ui.add_space(10.0);
         }
-        ui.label("Pick a vibe below, or start typing to search every station by name.");
-        ui.add_space(8.0);
-        ui.horizontal_wrapped(|ui| {
-            for tag in app.tags.clone().iter().take(48) {
-                if chip(ui, app, &format!("#{}", tag.name)) {
-                    app.query = tag.name.clone();
-                    app.last_keystroke = Some(std::time::Instant::now());
-                }
-            }
-        });
+        ui.label(
+            egui::RichText::new("Pick a vibe from the cloud — click a word to tune in.")
+                .weak(),
+        );
+        ui.add_space(6.0);
+        crate::widgets::word_cloud::cloud(ui, app);
     }
 
     let _ = NetJob::Search; // silence unused warning if features are trimmed

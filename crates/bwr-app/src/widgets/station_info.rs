@@ -28,6 +28,44 @@ pub fn panel(ui: &mut Ui, app: &mut BigWaveApp) {
     if !station.language.is_empty() {
         ui.label(egui::RichText::new(format!("🗣 {}", station.language)).size(13.0));
     }
+
+    // Your rating — click a star to set it, click the current level again to clear.
+    ui.add_space(4.0);
+    let rating = app.ratings.get(&station.uuid);
+    ui.horizontal(|ui| {
+        ui.label(egui::RichText::new("YOUR RATING").small().weak());
+        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+            let mut new_rating: Option<u8> = None;
+            // right_to_left places the FIRST widget at the right edge, so draw
+            // 5 → 1 to keep the conventional ★★★★☆ left-to-right order.
+            for star in (1..=5u8).rev() {
+                let filled = rating >= star;
+                let color = if filled {
+                    crate::theme::accent_color(app.settings.accent)
+                } else {
+                    ui.visuals().weak_text_color()
+                };
+                if ui
+                    .add(
+                        egui::Button::new(
+                            egui::RichText::new(if filled { "★" } else { "☆" })
+                                .size(15.0)
+                                .color(color),
+                        )
+                        .frame(false),
+                    )
+                    .on_hover_text(format!("Rate {star} star{}", if star > 1 { "s" } else { "" }))
+                    .clicked()
+                {
+                    new_rating = Some(if rating == star { 0 } else { star });
+                }
+            }
+            if let Some(r) = new_rating {
+                app.ratings.set(&station.uuid, r);
+            }
+        });
+    });
+
     ui.add_space(6.0);
     ui.separator();
     ui.add_space(6.0);

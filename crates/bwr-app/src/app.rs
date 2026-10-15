@@ -82,6 +82,7 @@ impl StreamFilter {
 pub struct BigWaveApp {
     pub settings: Settings,
     pub library: Library,
+    pub ratings: bwr_core::Ratings,
     pub player: Player,
 
     pub page: Page,
@@ -101,10 +102,16 @@ pub struct BigWaveApp {
     // Search
     pub query: String,
     pub search_active: bool,
+    /// A `NetJob::Search` is in flight; its result (not a Discover/browse
+    /// list that happened to arrive while the Search page is open) is what
+    /// flips `search_active` on.
+    pub search_pending: bool,
     pub last_keystroke: Option<Instant>,
     pub last_searched: String,
     /// "More like this" context: the station name the current search list relates to.
     pub similar_label: Option<String>,
+    /// Tag word cloud shown on the idle search page (layout cache).
+    pub word_cloud: crate::widgets::word_cloud::WordCloud,
 
     // Networking
     pub job_tx: mpsc::Sender<NetJob>,
@@ -282,6 +289,7 @@ impl BigWaveApp {
         let app = Self {
             settings,
             library: Library::load(),
+            ratings: bwr_core::Ratings::load(),
             player,
             page: Page::Discover,
             discover_tab: DiscoverTab::Trending,
@@ -296,9 +304,11 @@ impl BigWaveApp {
             browse_selection: None,
             query: String::new(),
             search_active: false,
+            search_pending: false,
             last_keystroke: None,
             last_searched: String::new(),
             similar_label: None,
+            word_cloud: Default::default(),
             job_tx,
             result_rx,
             bands: [0.0; BANDS],
@@ -449,6 +459,19 @@ impl BigWaveApp {
         self.hidden_to_tray = false;
     }
 
+    /// Stations to show, honouring the client-side minimum rating filter.
+    pub fn visible_stations(&self) -> Vec<Station> {
+        let min = self.settings.min_rating;
+        if min == 0 {
+            return self.stations.clone();
+        }
+        self.stations
+            .iter()
+            .filter(|s| self.ratings.get(&s.uuid) >= min)
+            .cloned()
+            .collect()
+    }
+
     /// Re-request the visible list after the bitrate filter changes.
     pub fn reload_current_list(&mut self) {
         self.loading = true;
@@ -485,10 +508,11 @@ impl BigWaveApp {
         match result {
             NetResult::Stations(stations) => {
                 self.stations = stations;
-                if self.page == Page::Search {
+                if self.page == Page::Search && self.search_pending {
                     self.search_active = true;
                     self.similar_label = None;
                 }
+                self.search_pending = false;
             }
             NetResult::MoreLike(tag, stations) => {
                 self.stations = stations;
@@ -656,6 +680,7 @@ impl eframe::App for BigWaveApp {
                     self.last_searched = q.clone();
                     self.record_search(&q);
                     self.loading = true;
+                    self.search_pending = true;
                     let _ = self.job_tx.send(NetJob::Search(q));
                 }
             }
@@ -946,6 +971,7 @@ impl eframe::App for BigWaveApp {
                                 self.last_searched = q.clone();
                                 self.last_keystroke = None;
                                 self.loading = true;
+                                self.search_pending = true;
                                 let _ = self.job_tx.send(NetJob::Search(q));
                                 ui.memory_mut(|m| m.close_popup());
                             }
@@ -1034,6 +1060,29 @@ impl eframe::App for BigWaveApp {
                                 }
                             }
                         });
+                    ui.add_space(8.0);
+                    ui.label(egui::RichText::new("MINIMUM RATING").small().weak());
+                    egui::ComboBox::from_id_salt("nav-rating")
+                        .selected_text(match self.settings.min_rating {
+                            0 => "Any rating".to_string(),
+                            r => "★".repeat(r as usize) + " & up",
+                        })
+                        .show_ui(ui, |ui| {
+                            for r in 0u8..=5 {
+                                let label = if r == 0 {
+                                    "Any rating".to_string()
+                                } else {
+                                    format!("{} & up", "★".repeat(r as usize))
+                                };
+                                if ui
+                                    .selectable_label(self.settings.min_rating == r, label)
+                                    .clicked()
+                                {
+                                    self.settings.min_rating = r;
+                                    self.persist_settings();
+                                }
+                            }
+                        });
                 });
             });
 
@@ -1085,6 +1134,10 @@ impl eframe::App for BigWaveApp {
         }
         if self.loading {
             ctx.request_repaint_after(Duration::from_millis(120));
+        }
+        // The idle search page animates the word cloud continuously.
+        if matches!(self.page, Page::Search) && !self.search_active {
+            ctx.request_repaint();
         }
     }
 }
