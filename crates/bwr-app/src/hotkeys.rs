@@ -49,6 +49,9 @@ pub fn spawn() -> mpsc::Receiver<MediaKey> {
         // Ctrl+Alt+B always registers (independent of media keys): it is the
         // guaranteed way back when the window hides to the tray.
         let ok_show = RegisterHotKey(None, ID_SHOW, MOD_CONTROL | MOD_ALT | MOD_NOREPEAT, VK_B.0 as u32).is_ok();
+        crate::diag::log(&format!(
+            "[hotkeys] registered: play_pause={ok_pp} next={ok_next} prev={ok_prev} show={ok_show}"
+        ));
         if !ok_pp && !ok_next && !ok_prev && !ok_show {
             return; // no keys available: channel stays silent
         }
@@ -64,6 +67,7 @@ pub fn spawn() -> mpsc::Receiver<MediaKey> {
                         ID_SHOW => MediaKey::Show,
                         _ => MediaKey::Previous,
                     };
+                    crate::diag::log(&format!("[hotkeys] received: {key:?}"));
                     if tx.send(key).is_err() {
                         break; // app gone
                     }

@@ -132,6 +132,9 @@ pub struct BigWaveApp {
     /// Window currently hidden to the tray.
     #[cfg(windows)]
     hidden_to_tray: bool,
+    /// On-screen position to return to when the window comes back.
+    #[cfg(windows)]
+    restore_pos: Option<(i32, i32)>,
     /// Main window handle, resolved from egui each frame (never guessed by
     /// title — other windows on the machine can share our title).
     #[cfg(windows)]
@@ -313,6 +316,8 @@ impl BigWaveApp {
             #[cfg(windows)]
             hidden_to_tray: false,
             #[cfg(windows)]
+            restore_pos: None,
+            #[cfg(windows)]
             hwnd: None,
             #[cfg(windows)]
             quitting: false,
@@ -438,15 +443,9 @@ impl BigWaveApp {
     #[cfg(windows)]
     pub fn show_from_tray(&mut self) {
         if let Some(hwnd) = self.hwnd {
-            unsafe {
-                use windows::Win32::UI::WindowsAndMessaging::{
-                    SetForegroundWindow, ShowWindow, SW_RESTORE, SW_SHOW,
-                };
-                let _ = ShowWindow(hwnd, SW_SHOW);
-                let _ = ShowWindow(hwnd, SW_RESTORE);
-                let _ = SetForegroundWindow(hwnd);
-            }
+            unsafe { show_main_window(hwnd, self.restore_pos) };
         }
+        self.restore_pos = None;
         self.hidden_to_tray = false;
     }
 
@@ -552,10 +551,72 @@ fn send_result(tx: &mpsc::Sender<NetResult>, res: bwr_core::client::Result<Vec<S
     }
 }
 
+/// Hide WITHOUT ShowWindow(SW_HIDE): a fully hidden window stops receiving
+/// paint events and the egui/winit event loop goes idle, which freezes tray
+/// menu commands, the Ctrl+Alt+B restore hotkey and SMTC. Moving the window
+/// far offscreen keeps every subsystem alive; the taskbar button is removed
+/// separately. Returns the on-screen position for show_main_window.
 #[cfg(windows)]
-unsafe fn hide_main_window(hwnd: windows::Win32::Foundation::HWND) {
-    use windows::Win32::UI::WindowsAndMessaging::ShowWindow;
-    let _ = ShowWindow(hwnd, windows::Win32::UI::WindowsAndMessaging::SW_HIDE);
+unsafe fn hide_main_window(hwnd: windows::Win32::Foundation::HWND) -> Option<(i32, i32)> {
+    use windows::Win32::Foundation::RECT;
+    use windows::Win32::UI::WindowsAndMessaging::{
+        GetWindowRect, SetWindowPos, SWP_NOACTIVATE, SWP_NOZORDER, SWP_NOSIZE,
+    };
+    let mut rect = RECT::default();
+    let pos = if GetWindowRect(hwnd, &mut rect).is_ok() {
+        Some((rect.left, rect.top))
+    } else {
+        None
+    };
+    let _ = SetWindowPos(
+        hwnd,
+        None,
+        -32000,
+        -32000,
+        0,
+        0,
+        SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE,
+    );
+    taskbar_tab(hwnd, false);
+    pos
+}
+
+/// Reverse of hide_main_window: taskbar button back, position restored.
+#[cfg(windows)]
+unsafe fn show_main_window(hwnd: windows::Win32::Foundation::HWND, pos: Option<(i32, i32)>) {
+    use windows::Win32::UI::WindowsAndMessaging::{
+        SetForegroundWindow, SetWindowPos, ShowWindow, SWP_NOACTIVATE, SWP_NOZORDER, SWP_NOSIZE,
+        SW_RESTORE, SW_SHOW,
+    };
+    taskbar_tab(hwnd, true);
+    if let Some((x, y)) = pos {
+        let _ = SetWindowPos(hwnd, None, x, y, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
+    }
+    let _ = ShowWindow(hwnd, SW_SHOW);
+    let _ = ShowWindow(hwnd, SW_RESTORE);
+    let _ = SetForegroundWindow(hwnd);
+}
+
+/// Add/remove the taskbar button via ITaskbarList (COM).
+#[cfg(windows)]
+unsafe fn taskbar_tab(hwnd: windows::Win32::Foundation::HWND, add: bool) {
+    use windows::Win32::System::Com::{
+        CoCreateInstance, CoInitializeEx, CLSCTX_ALL, COINIT_APARTMENTTHREADED,
+    };
+    use windows::Win32::UI::Shell::{ITaskbarList, TaskbarList};
+
+    // No-op if this thread already has an apartment; we intentionally never
+    // uninit (the UI thread lives for the whole process).
+    let _ = CoInitializeEx(None, COINIT_APARTMENTTHREADED);
+    if let Ok(tl) = CoCreateInstance::<_, ITaskbarList>(&TaskbarList, None, CLSCTX_ALL) {
+        if tl.HrInit().is_ok() {
+            let r = if add { tl.AddTab(hwnd) } else { tl.DeleteTab(hwnd) };
+            if let Err(e) = r {
+                eprintln!("[tray] taskbar {} failed: {e}", if add { "AddTab" } else { "DeleteTab" });
+                crate::diag::log(&format!("[tray] taskbar tab failed ({add}): {e}"));
+            }
+        }
+    }
 }
 
 fn fallback_client() -> RadioBrowserClient {
@@ -774,7 +835,7 @@ impl eframe::App for BigWaveApp {
             if close_requested && self.settings.minimize_to_tray && tray_ok && !self.quitting {
                 ctx.send_viewport_cmd(egui::ViewportCommand::CancelClose);
                 if let Some(hwnd) = self.hwnd {
-                    unsafe { hide_main_window(hwnd) };
+                    self.restore_pos = unsafe { hide_main_window(hwnd) };
                 }
                 self.hidden_to_tray = true;
                 // Toast every time: Windows 11 parks new tray icons in the
