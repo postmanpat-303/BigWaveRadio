@@ -121,16 +121,25 @@ fn card(ui: &mut Ui, station: &Station, app: &mut BigWaveApp) {
     );
     painter.set_clip_rect(ui.clip_rect());
 
-    // Star toggle (top-right corner of the card).
+    // Star toggle (top-right corner of the card). Frameless: only the star
+    // glyph lights up in the accent colour — no filled box around it.
     let star_rect = Rect::from_center_size(
         Pos2::new(rect.right() - 20.0, rect.top() + 22.0),
         Vec2::splat(26.0),
     );
+    let star_color = if in_library {
+        accent
+    } else {
+        ui.visuals().weak_text_color()
+    };
     let star = ui.put(
         star_rect,
-        egui::Button::new(egui::RichText::new(if in_library { "★" } else { "☆" }).size(16.0))
-            .frame(false)
-            .selected(in_library),
+        egui::Button::new(
+            egui::RichText::new(if in_library { "★" } else { "☆" })
+                .size(16.0)
+                .color(star_color),
+        )
+        .frame(false),
     );
     if star.clicked() {
         app.library.toggle(station);

@@ -13,7 +13,7 @@ use crate::theme;
 
 pub fn bar(ui: &mut Ui, app: &mut BigWaveApp) {
     let bar = ui.max_rect();
-    let painter = ui.painter();
+    let painter = ui.painter().clone();
 
     // Separator across the top of the bar.
     painter.hline(
@@ -27,14 +27,35 @@ pub fn bar(ui: &mut Ui, app: &mut BigWaveApp) {
     let strong = if dark { Color32::from_gray(240) } else { Color32::from_gray(20) };
     let weak = ui.visuals().weak_text_color();
 
+    // Transport cluster geometry (needed up front to clip the info text and
+    // to paint the cluster backdrop before the buttons).
+    let btn_h = 40.0;
+    let y = bar.top() + 10.0;
+    let cluster_w = 44.0 + 8.0 + 44.0 + 8.0 + 60.0 + 8.0 + 44.0 + 8.0 + 44.0; // 268
+    let start = bar.center().x - cluster_w / 2.0;
+
+    // Opaque backdrop behind the whole cluster so the (clipped) station text
+    // can never mix with the buttons; reads as a soft "faded" plate.
+    let backdrop = Rect::from_min_size(
+        Pos2::new(start - 12.0, bar.top() + 2.0),
+        Vec2::new(cluster_w + 24.0, bar.height() - 4.0),
+    );
+
     // --- Left: station + status (painted; no interaction needed) -------------
+    // Clipped to the area left of the cluster so long names never run under
+    // the buttons.
+    let clip_right = (start - 14.0).max(bar.left() + 150.0);
+    let left_painter = painter.with_clip_rect(Rect::from_min_max(
+        Pos2::new(bar.left(), bar.top()),
+        Pos2::new(clip_right, bar.bottom()),
+    ));
     let name = app
         .current
         .as_ref()
         .map(|s| s.name.clone())
         .unwrap_or_else(|| "Pick a station to start listening".to_string());
     let status: String = app.status.chars().take(80).collect();
-    painter.text(
+    left_painter.text(
         Pos2::new(bar.left() + 14.0, bar.top() + 12.0),
         Align2::LEFT_TOP,
         name,
@@ -50,7 +71,7 @@ pub fn bar(ui: &mut Ui, app: &mut BigWaveApp) {
         (None, 36.0)
     };
     if let Some(song) = line2 {
-        painter.text(
+        left_painter.text(
             Pos2::new(bar.left() + 14.0, bar.top() + 36.0),
             Align2::LEFT_TOP,
             song,
@@ -58,7 +79,7 @@ pub fn bar(ui: &mut Ui, app: &mut BigWaveApp) {
             accent,
         );
     }
-    painter.text(
+    left_painter.text(
         Pos2::new(bar.left() + 14.0, bar.top() + line3),
         Align2::LEFT_TOP,
         status,
@@ -73,13 +94,28 @@ pub fn bar(ui: &mut Ui, app: &mut BigWaveApp) {
             .current
             .as_ref()
             .is_some_and(|c| app.library.contains(&c.uuid));
+        // Frameless: only the star itself lights up in the accent colour —
+        // no filled box around it.
+        let star_color = if saved {
+            accent
+        } else {
+            ui.visuals().weak_text_color()
+        };
         if ui
             .add(
-                egui::Button::new(egui::RichText::new(if saved { "★" } else { "☆" }).size(17.0))
-                    .selected(saved)
-                    .min_size(Vec2::new(42.0, 40.0)),
+                egui::Button::new(
+                    egui::RichText::new(if saved { "★" } else { "☆" })
+                        .size(17.0)
+                        .color(star_color),
+                )
+                .frame(false)
+                .min_size(Vec2::new(42.0, 40.0)),
             )
-            .on_hover_text("Save to My Library")
+            .on_hover_text(if saved {
+                "Remove from My Library"
+            } else {
+                "Save to My Library"
+            })
             .clicked()
         {
             if let Some(station) = app.current.clone() {
@@ -100,16 +136,17 @@ pub fn bar(ui: &mut Ui, app: &mut BigWaveApp) {
         }
     });
 
+    // Cluster backdrop (after the right-side widgets, before the buttons).
+    painter.rect(
+        backdrop,
+        CornerRadius::same(12),
+        ui.visuals().window_fill(),
+        Stroke::NONE,
+        egui::StrokeKind::Inside,
+    );
+
     // --- Centre: transport cluster -------------------------------------------
     // Visual order: DICE | PREV | PLAY/PAUSE | STOP | NEXT, symmetric around centre.
-    let btn_h = 40.0;
-    let y = bar.top() + 10.0;
-    let row = Rect::from_min_size(Pos2::new(0.0, y), Vec2::new(0.0, btn_h));
-    let _ = row;
-
-    let cluster_w = 44.0 + 8.0 + 44.0 + 8.0 + 60.0 + 8.0 + 44.0 + 8.0 + 44.0; // 268
-    let start = bar.center().x - cluster_w / 2.0;
-
     let mut x = start;
     let dice_rect = Rect::from_min_size(Pos2::new(x, y), Vec2::new(44.0, btn_h));
     x += 44.0 + 8.0;
