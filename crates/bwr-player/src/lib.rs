@@ -29,6 +29,8 @@ pub enum PlayerEvent {
     Playing,
     Stopped,
     Failed(String),
+    /// ICY StreamTitle metadata ("Artist - Song"), when the stream provides it.
+    Meta(String),
 }
 
 pub enum Command {
@@ -62,13 +64,15 @@ impl Player {
         let volume = Arc::new(AtomicU32::new(0.8f32.to_bits()));
         let spectrum = Arc::new(SpectrumFeed::new());
         let generation = Arc::new(AtomicU32::new(0));
+        let meta_slot = Arc::new(Mutex::new(None));
 
         {
             let volume = volume.clone();
             let spectrum = spectrum.clone();
             let generation = generation.clone();
+            let meta_slot = meta_slot.clone();
             std::thread::spawn(move || {
-                worker_loop(cmd_rx, event_tx, volume, spectrum, generation);
+                worker_loop(cmd_rx, event_tx, volume, spectrum, generation, meta_slot);
             });
         }
 
@@ -124,6 +128,7 @@ fn worker_loop(
     volume: Arc<AtomicU32>,
     spectrum: Arc<SpectrumFeed>,
     generation: Arc<AtomicU32>,
+    meta_slot: Arc<Mutex<Option<String>>>,
 ) {
     // The output device stream is opened lazily on the first Play and reused
     // for every later switch (opening a new WASAPI stream per click makes the
@@ -150,7 +155,7 @@ fn worker_loop(
                     continue;
                 }
                 let gen = generation.load(Ordering::SeqCst);
-                play_once(&url, &event_tx, &volume, &spectrum, gen, &generation, &mut out);
+                play_once(&url, &event_tx, &volume, &spectrum, gen, &generation, &mut out, meta_slot.clone());
                 spectrum.reset();
             }
             Command::Stop => {
@@ -169,6 +174,7 @@ fn play_once(
     gen: u32,
     generation: &Arc<AtomicU32>,
     out: &mut Option<OutParts>,
+    meta_slot: Arc<Mutex<Option<String>>>,
 ) {
     let send = |ev: PlayerEvent| {
         let _ = event_tx.send((gen, ev));
@@ -190,7 +196,7 @@ fn play_once(
     queue.lock().unwrap().clear();
 
     // --- Input stream ---------------------------------------------------------
-    let source = ChannelSource::start(url, generation.clone(), gen);
+    let source = ChannelSource::start(url, generation.clone(), gen, meta_slot.clone());
     let mss = symphonia::core::io::MediaSourceStream::new(Box::new(source), Default::default());
     let probed = match symphonia::default::get_probe().format(
         &Default::default(),
@@ -230,6 +236,11 @@ fn play_once(
     loop {
         if generation.load(Ordering::SeqCst) != gen {
             return; // switched or stopped: unwind promptly
+        }
+
+        // Forward any ICY title reported by the downloader.
+        if let Some(title) = meta_slot.lock().unwrap().take() {
+            send(PlayerEvent::Meta(title));
         }
 
         let packet = match format.next_packet() {
@@ -426,8 +437,95 @@ pub struct ChannelSource {
     pos: u64,
 }
 
+/// Byte-state machine that splits an ICY stream into audio bytes and
+/// metadata blocks. Streams with no `icy-metaint` header pass through
+/// untouched (everything is audio).
+struct IcyParser {
+    metaint: usize,
+    until_meta: usize,
+    state: MetaState,
+    meta_buf: Vec<u8>,
+}
+
+enum MetaState {
+    Audio,
+    MetaBody(usize),
+}
+
+impl IcyParser {
+    fn new(metaint: Option<usize>) -> Self {
+        let metaint = metaint.unwrap_or(0);
+        Self {
+            metaint,
+            until_meta: metaint,
+            state: MetaState::Audio,
+            meta_buf: Vec::new(),
+        }
+    }
+
+    /// Feed one downloaded chunk: audio bytes accumulate in `audio`, complete
+    /// StreamTitle values are appended to `titles`.
+    fn feed(&mut self, chunk: &[u8], audio: &mut Vec<u8>, titles: &mut Vec<String>) {
+        if self.metaint == 0 {
+            audio.extend_from_slice(chunk);
+            return;
+        }
+        for &b in chunk {
+            match self.state {
+                MetaState::Audio => {
+                    if self.until_meta > 0 {
+                        self.until_meta -= 1;
+                        audio.push(b);
+                    } else {
+                        // This byte is the metadata-block length (in 16-byte units).
+                        let n = b as usize * 16;
+                        if n == 0 {
+                            self.until_meta = self.metaint;
+                        } else {
+                            self.meta_buf.clear();
+                            self.state = MetaState::MetaBody(n);
+                        }
+                    }
+                }
+                MetaState::MetaBody(remaining) => {
+                    self.meta_buf.push(b);
+                    if remaining == 1 {
+                        if let Some(title) = parse_stream_title(&self.meta_buf) {
+                            titles.push(title);
+                        }
+                        self.until_meta = self.metaint;
+                        self.state = MetaState::Audio;
+                    } else {
+                        self.state = MetaState::MetaBody(remaining - 1);
+                    }
+                }
+            }
+        }
+    }
+}
+
+/// Extract `StreamTitle='...'` from one ICY metadata block.
+fn parse_stream_title(block: &[u8]) -> Option<String> {
+    let text = String::from_utf8_lossy(block);
+    let key = "StreamTitle='";
+    let start = text.find(key)? + key.len();
+    let rest = &text[start..];
+    let end = rest.find('\'')?;
+    let title = rest[..end].trim().to_string();
+    if title.is_empty() {
+        None
+    } else {
+        Some(title)
+    }
+}
+
 impl ChannelSource {
-    fn start(url: &str, generation: Arc<AtomicU32>, gen: u32) -> Self {
+    fn start(
+        url: &str,
+        generation: Arc<AtomicU32>,
+        gen: u32,
+        meta_slot: Arc<Mutex<Option<String>>>,
+    ) -> Self {
         let shared: Arc<(Mutex<SharedBuf>, Condvar)> =
             Arc::new((Mutex::new(SharedBuf { buf: VecDeque::new(), done: false }), Condvar::new()));
         let s2 = shared.clone();
@@ -452,6 +550,13 @@ impl ChannelSource {
             };
             match client.get(&url).send() {
                 Ok(mut resp) if resp.status().is_success() => {
+                    let metaint = resp
+                        .headers()
+                        .get("icy-metaint")
+                        .and_then(|v| v.to_str().ok())
+                        .and_then(|v| v.trim().parse::<usize>().ok())
+                        .filter(|&n| n > 0);
+                    let mut parser = IcyParser::new(metaint);
                     let mut chunk = [0u8; 16384];
                     loop {
                         // Bail out promptly when the user switches station.
@@ -462,9 +567,18 @@ impl ChannelSource {
                         match resp.read(&mut chunk) {
                             Ok(0) => break,
                             Ok(n) => {
+                                let mut audio = Vec::with_capacity(n);
+                                let mut titles = Vec::new();
+                                parser.feed(&chunk[..n], &mut audio, &mut titles);
+                                if !titles.is_empty() {
+                                    let mut slot = meta_slot.lock().unwrap();
+                                    for t in titles {
+                                        *slot = Some(t);
+                                    }
+                                }
                                 let (lock, cv) = &*s2;
                                 let mut st = lock.lock().unwrap();
-                                while st.buf.len() >= DL_BUF_CAP && !st.done {
+                                while st.buf.len() + audio.len() >= DL_BUF_CAP && !st.done {
                                     let (g, _) = cv
                                         .wait_timeout(st, Duration::from_millis(200))
                                         .unwrap();
@@ -476,7 +590,7 @@ impl ChannelSource {
                                         return;
                                     }
                                 }
-                                st.buf.extend(&chunk[..n]);
+                                st.buf.extend(&audio);
                                 cv.notify_all();
                             }
                             Err(_) => break,
@@ -548,5 +662,73 @@ impl symphonia::core::io::MediaSource for ChannelSource {
 
     fn byte_len(&self) -> Option<u64> {
         None
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn feed_all(parser: &mut IcyParser, data: &[u8], titles: &mut Vec<String>) -> Vec<u8> {
+        let mut audio = Vec::new();
+        parser.feed(data, &mut audio, titles);
+        audio
+    }
+
+    #[test]
+    fn parser_disabled_passes_everything_through() {
+        let mut p = IcyParser::new(None);
+        let mut titles = Vec::new();
+        let audio = feed_all(&mut p, &[1, 2, 3, 200, 7], &mut titles);
+        assert_eq!(audio, vec![1, 2, 3, 200, 7]);
+        assert!(titles.is_empty());
+    }
+
+    #[test]
+    fn parser_splits_audio_and_metadata_blocks() {
+        let mut p = IcyParser::new(Some(4));
+        let mut titles = Vec::new();
+        // 4 audio bytes, length byte 2 (=32 meta bytes: 21-byte payload
+        // padded with zeros), zero-length block, then 4 more audio bytes.
+        let mut stream = vec![10, 11, 12, 13, 2];
+        let mut block = b"StreamTitle='Song A';".to_vec();
+        block.resize(32, 0);
+        stream.extend_from_slice(&block);
+        // 4 audio bytes, zero-length block, 4 more audio bytes.
+        stream.extend_from_slice(&[30, 31, 32, 33, 0, 40, 41, 42, 43]);
+        let audio = feed_all(&mut p, &stream, &mut titles);
+        assert_eq!(audio, vec![10, 11, 12, 13, 30, 31, 32, 33, 40, 41, 42, 43]);
+        assert_eq!(titles, vec!["Song A".to_string()]);
+    }
+
+    #[test]
+    fn parser_handles_zero_length_blocks_and_chunk_boundaries() {
+        let mut p = IcyParser::new(Some(3));
+        let mut titles = Vec::new();
+        // First block has zero-length metadata; feed in awkward chunks.
+        let stream: Vec<u8> = vec![
+            1, 2, 3, 0, // zero-length meta block
+            4, 5, 6, 3, // 48-byte meta block follows
+        ];
+        let audio = feed_all(&mut p, &stream, &mut titles);
+        assert_eq!(audio, vec![1, 2, 3, 4, 5, 6]);
+        let mut meta48 = b"StreamTitle='A - B';StreamUrl='';".to_vec();
+        meta48.resize(48, 0);
+        let audio2 = feed_all(&mut p, &meta48[..10], &mut titles);
+        assert!(audio2.is_empty());
+        assert!(titles.is_empty()); // incomplete
+        let audio3 = feed_all(&mut p, &meta48[10..], &mut titles);
+        assert!(audio3.is_empty());
+        assert_eq!(titles, vec!["A - B".to_string()]);
+    }
+
+    #[test]
+    fn stream_title_parser() {
+        assert_eq!(
+            parse_stream_title(b"StreamTitle='Artist - Track';StreamUrl='';"),
+            Some("Artist - Track".to_string())
+        );
+        assert_eq!(parse_stream_title(b"StreamTitle='';"), None);
+        assert_eq!(parse_stream_title(b"garbage"), None);
     }
 }

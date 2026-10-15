@@ -111,6 +111,28 @@ pub fn ui(ui: &mut Ui, app: &mut BigWaveApp) {
 
         ui.add_space(10.0);
 
+        // --- Behaviour ---------------------------------------------------------
+        ui.group(|ui| {
+            ui.label(egui::RichText::new("Behaviour").heading().size(16.0));
+            if ui
+                .checkbox(&mut app.settings.minimize_to_tray, "Keep playing in the tray when I close or minimize the window")
+                .changed()
+            {
+                app.persist_settings();
+            }
+            ui.label(
+                egui::RichText::new(
+                    "When on, closing or minimizing hides BigWave Radio to the notification-area \
+                     icon (near the clock) — playback continues. Right-click the wave icon for \
+                     quick controls, or Quit there to exit fully.",
+                )
+                .small()
+                .weak(),
+            );
+        });
+
+        ui.add_space(10.0);
+
         // --- About -------------------------------------------------------------
         ui.group(|ui| {
             ui.add_space(6.0);

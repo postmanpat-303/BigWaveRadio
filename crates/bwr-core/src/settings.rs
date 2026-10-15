@@ -60,6 +60,8 @@ pub struct Settings {
     /// Minimum stream bitrate in kbps, 0 = any.
     pub min_bitrate: u32,
     pub volume: f32,
+    /// Hide the window to the tray on minimize/close instead of exiting.
+    pub minimize_to_tray: bool,
 }
 
 impl Default for Settings {
@@ -69,6 +71,7 @@ impl Default for Settings {
             accent: Accent::System,
             min_bitrate: 0,
             volume: 0.8,
+            minimize_to_tray: false,
         }
     }
 }

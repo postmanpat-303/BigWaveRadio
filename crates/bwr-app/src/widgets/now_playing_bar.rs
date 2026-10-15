@@ -41,8 +41,25 @@ pub fn bar(ui: &mut Ui, app: &mut BigWaveApp) {
         FontId::proportional(15.0),
         strong,
     );
+    // ICY song title (accent) takes the line under the name when available;
+    // the status line slides down to make room.
+    let (line2, line3) = if let Some(title) = &app.song_title {
+        let song: String = format!("♪  {}", title).chars().take(80).collect();
+        (Some(song), 56.0)
+    } else {
+        (None, 36.0)
+    };
+    if let Some(song) = line2 {
+        painter.text(
+            Pos2::new(bar.left() + 14.0, bar.top() + 36.0),
+            Align2::LEFT_TOP,
+            song,
+            FontId::proportional(12.0),
+            accent,
+        );
+    }
     painter.text(
-        Pos2::new(bar.left() + 14.0, bar.top() + 36.0),
+        Pos2::new(bar.left() + 14.0, bar.top() + line3),
         Align2::LEFT_TOP,
         status,
         FontId::proportional(12.0),

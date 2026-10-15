@@ -561,6 +561,7 @@ dependencies = [
  "image",
  "reqwest",
  "serde",
+ "windows 0.58.0",
  "winresource",
 ]
 

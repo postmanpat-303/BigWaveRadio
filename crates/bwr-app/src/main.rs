@@ -3,8 +3,12 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod app;
+#[cfg(windows)]
+mod hotkeys;
 mod pages;
 mod theme;
+#[cfg(windows)]
+mod tray;
 mod widgets;
 
 use app::BigWaveApp;

@@ -67,6 +67,8 @@ pub struct BigWaveApp {
     pub stations: Vec<Station>,
     pub current: Option<Station>,
     pub status: String,
+    /// ICY "Artist - Song" from the live stream, when the station provides it.
+    pub song_title: Option<String>,
     pub is_playing: bool,
     pub loading: bool,
 
@@ -91,6 +93,18 @@ pub struct BigWaveApp {
     pub favicons: std::collections::HashMap<String, egui::TextureHandle>,
     favicon_pending: std::collections::HashSet<String>,
     pub about_logo: egui::TextureHandle,
+
+    // Windows integration
+    #[cfg(windows)]
+    hotkey_rx: mpsc::Receiver<crate::hotkeys::MediaKey>,
+    #[cfg(windows)]
+    tray: Option<crate::tray::Tray>,
+    /// Window currently hidden to the tray.
+    #[cfg(windows)]
+    hidden_to_tray: bool,
+    /// Tray "Quit" was chosen: the next close request must be honoured.
+    #[cfg(windows)]
+    quitting: bool,
 
     ctx: Context,
     min_bitrate: Arc<AtomicU32>,
@@ -197,6 +211,17 @@ impl BigWaveApp {
         let player = Player::new();
         player.set_volume(settings.volume);
 
+        #[cfg(windows)]
+        let hotkey_rx = crate::hotkeys::spawn();
+        #[cfg(windows)]
+        let tray = {
+            let t = crate::tray::Tray::new();
+            if let Some(t) = &t {
+                t.ping();
+            }
+            t
+        };
+
         let app = Self {
             settings,
             library: Library::load(),
@@ -206,6 +231,7 @@ impl BigWaveApp {
             stations: Vec::new(),
             current: None,
             status: "Ready".into(),
+            song_title: None,
             is_playing: false,
             loading: false,
             tags: Vec::new(),
@@ -221,6 +247,14 @@ impl BigWaveApp {
             favicons: std::collections::HashMap::new(),
             favicon_pending: std::collections::HashSet::new(),
             about_logo,
+            #[cfg(windows)]
+            hotkey_rx,
+            #[cfg(windows)]
+            tray,
+            #[cfg(windows)]
+            hidden_to_tray: false,
+            #[cfg(windows)]
+            quitting: false,
             ctx: cc.egui_ctx.clone(),
             min_bitrate,
             first_frame: true,
@@ -233,6 +267,7 @@ impl BigWaveApp {
 
     pub fn play_station(&mut self, station: Station) {
         self.status = "Connecting…".into();
+        self.song_title = None;
         self.current = Some(station.clone());
         self.player.play(&station.stream_url);
         self.is_playing = true;
@@ -295,6 +330,22 @@ impl BigWaveApp {
         self.min_bitrate
             .store(self.settings.min_bitrate, Ordering::Relaxed);
         theme::apply(&self.ctx, self.settings.theme, self.settings.accent);
+    }
+
+    /// Bring the window back from the tray.
+    #[cfg(windows)]
+    pub fn show_from_tray(&mut self) {
+        if let Some(hwnd) = main_window() {
+            unsafe {
+                use windows::Win32::UI::WindowsAndMessaging::{
+                    SetForegroundWindow, ShowWindow, SW_RESTORE, SW_SHOW,
+                };
+                let _ = ShowWindow(hwnd, SW_SHOW);
+                let _ = ShowWindow(hwnd, SW_RESTORE);
+                let _ = SetForegroundWindow(hwnd);
+            }
+        }
+        self.hidden_to_tray = false;
     }
 
     /// Re-request the visible list after the bitrate filter changes.
@@ -385,6 +436,20 @@ fn send_result(tx: &mpsc::Sender<NetResult>, res: bwr_core::client::Result<Vec<S
     }
 }
 
+/// HWND of the main window, found by its fixed title (avoids a raw-window-handle dependency).
+#[cfg(windows)]
+fn main_window() -> Option<windows::Win32::Foundation::HWND> {
+    use windows::core::w;
+    use windows::Win32::UI::WindowsAndMessaging::FindWindowW;
+    unsafe { FindWindowW(None, w!("BigWave Radio")).ok() }
+}
+
+#[cfg(windows)]
+unsafe fn hide_main_window(hwnd: windows::Win32::Foundation::HWND) {
+    use windows::Win32::UI::WindowsAndMessaging::ShowWindow;
+    let _ = ShowWindow(hwnd, windows::Win32::UI::WindowsAndMessaging::SW_HIDE);
+}
+
 fn fallback_client() -> RadioBrowserClient {
     for attempt in 1..=5 {
         match RadioBrowserClient::new() {
@@ -447,6 +512,77 @@ impl eframe::App for BigWaveApp {
                     self.is_playing = false;
                     self.status = format!("Playback error: {e}");
                 }
+                PlayerEvent::Meta(title) => {
+                    self.song_title = Some(title);
+                }
+            }
+        }
+
+        // --- Media keys + tray commands (Windows) ------------------------------
+        #[cfg(windows)]
+        {
+            use crate::hotkeys::MediaKey;
+            while let Ok(key) = self.hotkey_rx.try_recv() {
+                match key {
+                    MediaKey::PlayPause => self.toggle_play_pause(),
+                    MediaKey::Next => self.next_station(),
+                    MediaKey::Previous => self.previous_station(),
+                }
+            }
+            if let Some(tray) = &self.tray {
+                tray.ping();
+            }
+            let mut cmds = Vec::new();
+            if let Some(tray) = &self.tray {
+                while let Some(cmd) = tray.try_recv() {
+                    cmds.push(cmd);
+                }
+            }
+            for cmd in cmds {
+                use crate::tray::TrayCmd;
+                match cmd {
+                    TrayCmd::Show => self.show_from_tray(),
+                    TrayCmd::PlayPause => self.toggle_play_pause(),
+                    TrayCmd::Next => self.next_station(),
+                    TrayCmd::Previous => self.previous_station(),
+                    TrayCmd::Quit => {
+                        self.quitting = true;
+                        ctx.send_viewport_cmd(egui::ViewportCommand::Close);
+                    }
+                }
+            }
+
+            // Minimize -> tray.
+            if self.settings.minimize_to_tray {
+                if !self.hidden_to_tray {
+                    if let Some(hwnd) = main_window() {
+                        unsafe {
+                            if windows::Win32::UI::WindowsAndMessaging::IsIconic(hwnd).as_bool() {
+                                hide_main_window(hwnd);
+                                self.hidden_to_tray = true;
+                            }
+                        }
+                    }
+                }
+            } else if self.hidden_to_tray {
+                self.show_from_tray();
+            }
+
+            // Close -> tray (unless Quit came from the tray menu).
+            let close_requested =
+                ctx.input(|i| i.viewport().close_requested());
+            if close_requested && self.settings.minimize_to_tray && !self.quitting {
+                ctx.send_viewport_cmd(egui::ViewportCommand::CancelClose);
+                if let Some(hwnd) = main_window() {
+                    unsafe { hide_main_window(hwnd) };
+                }
+                self.hidden_to_tray = true;
+            }
+
+            // While hidden, keep a slow heartbeat repaint going so the tray
+            // thread keeps receiving pings.
+            if self.hidden_to_tray {
+                ctx.request_repaint_after(Duration::from_millis(500));
             }
         }
 
