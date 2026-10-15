@@ -25,7 +25,6 @@ WizardSmallImageFile=wizard_small.bmp
 WizardStyle=modern
 Compression=lzma2/ultra64
 SolidCompression=yes
-PrivilegesRequiredOverridesAllowed=dialog
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 UninstallDisplayIcon={app}\bigwave.ico
