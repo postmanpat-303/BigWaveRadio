@@ -1,3 +1,7 @@
+// Release builds are GUI-subsystem: no console window behind the app.
+// Debug builds keep the console for diagnostics.
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+
 mod app;
 mod pages;
 mod theme;
@@ -6,6 +10,7 @@ mod widgets;
 use app::BigWaveApp;
 
 fn main() -> eframe::Result<()> {
+    #[cfg(debug_assertions)]
     eprintln!("[startup] settings: {:?}", bwr_core::Settings::load());
     let options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
