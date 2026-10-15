@@ -102,6 +102,10 @@ pub struct BigWaveApp {
     /// Window currently hidden to the tray.
     #[cfg(windows)]
     hidden_to_tray: bool,
+    /// Main window handle, resolved from egui each frame (never guessed by
+    /// title — other windows on the machine can share our title).
+    #[cfg(windows)]
+    hwnd: Option<windows::Win32::Foundation::HWND>,
     /// Tray "Quit" was chosen: the next close request must be honoured.
     #[cfg(windows)]
     quitting: bool,
@@ -254,6 +258,8 @@ impl BigWaveApp {
             #[cfg(windows)]
             hidden_to_tray: false,
             #[cfg(windows)]
+            hwnd: None,
+            #[cfg(windows)]
             quitting: false,
             ctx: cc.egui_ctx.clone(),
             min_bitrate,
@@ -335,7 +341,7 @@ impl BigWaveApp {
     /// Bring the window back from the tray.
     #[cfg(windows)]
     pub fn show_from_tray(&mut self) {
-        if let Some(hwnd) = main_window() {
+        if let Some(hwnd) = self.hwnd {
             unsafe {
                 use windows::Win32::UI::WindowsAndMessaging::{
                     SetForegroundWindow, ShowWindow, SW_RESTORE, SW_SHOW,
@@ -436,14 +442,6 @@ fn send_result(tx: &mpsc::Sender<NetResult>, res: bwr_core::client::Result<Vec<S
     }
 }
 
-/// HWND of the main window, found by its fixed title (avoids a raw-window-handle dependency).
-#[cfg(windows)]
-fn main_window() -> Option<windows::Win32::Foundation::HWND> {
-    use windows::core::w;
-    use windows::Win32::UI::WindowsAndMessaging::FindWindowW;
-    unsafe { FindWindowW(None, w!("BigWave Radio")).ok() }
-}
-
 #[cfg(windows)]
 unsafe fn hide_main_window(hwnd: windows::Win32::Foundation::HWND) {
     use windows::Win32::UI::WindowsAndMessaging::ShowWindow;
@@ -462,7 +460,7 @@ fn fallback_client() -> RadioBrowserClient {
 }
 
 impl eframe::App for BigWaveApp {
-    fn update(&mut self, ctx: &Context, _frame: &mut eframe::Frame) {
+    fn update(&mut self, ctx: &Context, frame: &mut eframe::Frame) {
         if self.first_frame {
             self.first_frame = false;
             self.loading = true;
@@ -552,10 +550,24 @@ impl eframe::App for BigWaveApp {
                 }
             }
 
-            // Minimize -> tray.
+            // Resolve our own HWND from egui — never search by window title,
+            // other windows on this machine can share it.
+            use raw_window_handle::HasWindowHandle;
+            if let Ok(handle) = frame.window_handle() {
+                if let raw_window_handle::RawWindowHandle::Win32(w) = handle.as_raw() {
+                    self.hwnd = Some(windows::Win32::Foundation::HWND(
+                        w.hwnd.get() as *mut core::ffi::c_void,
+                    ));
+                }
+            }
+
+            // Minimize -> tray. egui is event-driven, so while the setting is
+            // on we keep a slow repaint heartbeat going — otherwise update()
+            // never runs in the idle state and a minimize would go unnoticed.
             if self.settings.minimize_to_tray {
+                ctx.request_repaint_after(Duration::from_millis(400));
                 if !self.hidden_to_tray {
-                    if let Some(hwnd) = main_window() {
+                    if let Some(hwnd) = self.hwnd {
                         unsafe {
                             if windows::Win32::UI::WindowsAndMessaging::IsIconic(hwnd).as_bool() {
                                 hide_main_window(hwnd);
@@ -573,7 +585,7 @@ impl eframe::App for BigWaveApp {
                 ctx.input(|i| i.viewport().close_requested());
             if close_requested && self.settings.minimize_to_tray && !self.quitting {
                 ctx.send_viewport_cmd(egui::ViewportCommand::CancelClose);
-                if let Some(hwnd) = main_window() {
+                if let Some(hwnd) = self.hwnd {
                     unsafe { hide_main_window(hwnd) };
                 }
                 self.hidden_to_tray = true;
