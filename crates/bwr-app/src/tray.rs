@@ -63,15 +63,18 @@ impl Tray {
             move || tray_thread(tx, started_tx, last_ping)
         });
 
-        // Wait (briefly) only for the icon to come up — never for the thread
-        // itself, which runs its message loop for the lifetime of the app.
+        // Wait for the icon to come up — on a busy machine (e.g. Defender
+        // scanning a freshly installed exe) window creation can take a few
+        // seconds. Never wait for the thread itself, which keeps running.
         let started = started_rx
-            .recv_timeout(Duration::from_secs(2))
+            .recv_timeout(Duration::from_secs(5))
             .unwrap_or(false);
 
         if started {
             Some(Self { rx, last_ping })
         } else {
+            eprintln!("[tray] icon did not come up within 5s; tray unavailable");
+            crate::diag::log("[tray] icon did not come up within 5s; tray unavailable");
             None
         }
     }
@@ -214,7 +217,9 @@ fn tray_thread(
     unsafe {
         macro_rules! fail {
             ($what:expr) => {{
-                eprintln!("[tray] failed: {}", $what);
+                let why = $what;
+                eprintln!("[tray] failed: {}", why);
+                crate::diag::log(&format!("[tray] failed: {why}"));
                 let _ = started_tx.send(false);
                 return;
             }};
@@ -283,6 +288,7 @@ fn tray_thread(
             fail!("NIM_ADD");
         }
         eprintln!("[tray] icon added");
+        crate::diag::log("[tray] icon added");
         let _ = started_tx.send(true);
 
         let mut msg = MSG::default();

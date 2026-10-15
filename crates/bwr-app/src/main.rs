@@ -4,8 +4,12 @@
 
 mod app;
 #[cfg(windows)]
+mod diag;
+#[cfg(windows)]
 mod hotkeys;
 mod pages;
+#[cfg(windows)]
+mod smtc;
 mod theme;
 #[cfg(windows)]
 mod tray;

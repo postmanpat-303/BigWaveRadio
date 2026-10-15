@@ -123,6 +123,12 @@ pub struct BigWaveApp {
     hotkey_rx: mpsc::Receiver<crate::hotkeys::MediaKey>,
     #[cfg(windows)]
     tray: Option<crate::tray::Tray>,
+    /// Taskbar thumbnail / media-flyout play controls. Initialised lazily
+    /// once the real HWND is known; `smtc_failed` stops retry loops.
+    #[cfg(windows)]
+    smtc: Option<crate::smtc::Smtc>,
+    #[cfg(windows)]
+    smtc_failed: bool,
     /// Window currently hidden to the tray.
     #[cfg(windows)]
     hidden_to_tray: bool,
@@ -306,6 +312,10 @@ impl BigWaveApp {
             hotkey_rx,
             #[cfg(windows)]
             tray,
+            #[cfg(windows)]
+            smtc: None,
+            #[cfg(windows)]
+            smtc_failed: false,
             #[cfg(windows)]
             hidden_to_tray: false,
             #[cfg(windows)]
@@ -626,11 +636,45 @@ impl eframe::App for BigWaveApp {
         #[cfg(windows)]
         {
             use crate::hotkeys::MediaKey;
-            while let Ok(key) = self.hotkey_rx.try_recv() {
-                match key {
-                    MediaKey::PlayPause => self.toggle_play_pause(),
-                    MediaKey::Next => self.next_station(),
-                    MediaKey::Previous => self.previous_station(),
+            // SMTC also receives hardware media keys; consuming both would
+            // double-toggle. Only fall back to RegisterHotKey when SMTC is
+            // unavailable.
+            if self.smtc.is_none() {
+                while let Ok(key) = self.hotkey_rx.try_recv() {
+                    match key {
+                        MediaKey::PlayPause => self.toggle_play_pause(),
+                        MediaKey::Next => self.next_station(),
+                        MediaKey::Previous => self.previous_station(),
+                    }
+                }
+            } else {
+                // Keep the channel drained so it can't grow unboundedly.
+                while self.hotkey_rx.try_recv().is_ok() {}
+            }
+
+            // Taskbar / media-flyout buttons arrive over a channel.
+            let mut smtc_events = Vec::new();
+            if let Some(smtc) = &self.smtc {
+                while let Some(ev) = smtc.try_recv() {
+                    smtc_events.push(ev);
+                }
+            }
+            use crate::smtc::SmtcEvent;
+            for ev in smtc_events {
+                crate::diag::log(&format!("[smtc] app handling: {ev:?}"));
+                match ev {
+                    SmtcEvent::Play => {
+                        if !self.is_playing {
+                            self.toggle_play_pause();
+                        }
+                    }
+                    SmtcEvent::Pause => {
+                        if self.is_playing {
+                            self.toggle_play_pause();
+                        }
+                    }
+                    SmtcEvent::Next => self.next_station(),
+                    SmtcEvent::Previous => self.previous_station(),
                 }
             }
             if let Some(tray) = &self.tray {
@@ -667,10 +711,59 @@ impl eframe::App for BigWaveApp {
                 }
             }
 
+            // Lazy SMTC init: needs the real HWND, which egui only hands out
+            // once the window exists. Try exactly once.
+            if self.smtc.is_none() && !self.smtc_failed {
+                if let Some(hwnd) = self.hwnd {
+                    match crate::smtc::Smtc::new(hwnd) {
+                        Ok(s) => {
+                            eprintln!("[smtc] taskbar media controls active");
+                            crate::diag::log("[smtc] taskbar media controls active");
+                            self.smtc = Some(s);
+                        }
+                        Err(e) => {
+                            eprintln!("[smtc] init failed: {e}");
+                            crate::diag::log(&format!("[smtc] init failed: {e}"));
+                            self.smtc_failed = true;
+                        }
+                    }
+                }
+            }
+
+            // Push playback state / metadata to the taskbar controls, but
+            // only when something actually changed (guards are in Smtc).
+            // Compute everything before taking the mutable borrow.
+            use windows::Media::MediaPlaybackStatus;
+            let smtc_status = if self.is_playing {
+                MediaPlaybackStatus::Playing
+            } else if self.status == "Paused" {
+                MediaPlaybackStatus::Paused
+            } else {
+                MediaPlaybackStatus::Stopped
+            };
+            let smtc_nav = (self.can_go_previous(), self.can_go_next());
+            let smtc_meta = self.current.as_ref().map(|st| {
+                let artist = self
+                    .song_title
+                    .clone()
+                    .unwrap_or_else(|| "BigWave Radio".into());
+                (st.name.clone(), artist)
+            });
+            if let Some(smtc) = &mut self.smtc {
+                smtc.set_status(smtc_status);
+                smtc.set_navigation(smtc_nav.0, smtc_nav.1);
+                if let Some((title, artist)) = smtc_meta {
+                    smtc.set_metadata(&title, &artist);
+                }
+            }
+
             // Minimize -> tray. egui is event-driven, so while the setting is
             // on we keep a slow repaint heartbeat going — otherwise update()
             // never runs in the idle state and a minimize would go unnoticed.
-            if self.settings.minimize_to_tray {
+            // NEVER hide the window unless the tray icon actually exists:
+            // otherwise the app vanishes with no way back but Task Manager.
+            let tray_ok = self.tray.is_some();
+            if self.settings.minimize_to_tray && tray_ok {
                 ctx.request_repaint_after(Duration::from_millis(400));
                 if !self.hidden_to_tray {
                     if let Some(hwnd) = self.hwnd {
@@ -689,7 +782,7 @@ impl eframe::App for BigWaveApp {
             // Close -> tray (unless Quit came from the tray menu).
             let close_requested =
                 ctx.input(|i| i.viewport().close_requested());
-            if close_requested && self.settings.minimize_to_tray && !self.quitting {
+            if close_requested && self.settings.minimize_to_tray && tray_ok && !self.quitting {
                 ctx.send_viewport_cmd(egui::ViewportCommand::CancelClose);
                 if let Some(hwnd) = self.hwnd {
                     unsafe { hide_main_window(hwnd) };
