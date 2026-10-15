@@ -39,22 +39,34 @@ pub fn panel(ui: &mut Ui, app: &mut BigWaveApp) {
     }
     property(ui, "Votes", &thousands(station.votes));
     property(ui, "Clicks", &thousands(station.click_count));
-    if !station.tags.trim().is_empty() {
-        let tags = station
-            .tags
-            .split(',')
-            .map(str::trim)
-            .filter(|t| !t.is_empty())
-            .take(10)
-            .collect::<Vec<_>>()
-            .join(", ");
+
+    // Tags as clickable chips: each one fills the app with similar stations.
+    let tag_list: Vec<String> = station
+        .tags
+        .split(',')
+        .map(|t| t.trim().to_string())
+        .filter(|t| !t.is_empty())
+        .take(10)
+        .collect();
+    if !tag_list.is_empty() {
         ui.label(egui::RichText::new("Tags").weak());
         ui.add_space(2.0);
-        ui.add(
-            egui::Label::new(egui::RichText::new(tags).strong())
-                .wrap()
-                .selectable(false),
-        );
+        let mut picked: Option<String> = None;
+        ui.horizontal_wrapped(|ui| {
+            for tag in &tag_list {
+                if ui
+                    .add(egui::Button::new(format!("#{tag}")).small())
+                    .on_hover_text(format!("More stations tagged #{tag}"))
+                    .clicked()
+                {
+                    picked = Some(tag.clone());
+                }
+            }
+        });
+        if let Some(tag) = picked {
+            let from = station.name.clone();
+            app.more_like_this(&tag, &from);
+        }
         ui.add_space(6.0);
     }
     ui.add_space(6.0);
@@ -66,6 +78,14 @@ pub fn panel(ui: &mut Ui, app: &mut BigWaveApp) {
     }
     if ui.button("📋 Copy stream URL").clicked() {
         ui.ctx().copy_text(station.stream_url.clone());
+    }
+    // Surprise me.
+    if ui
+        .button(egui::RichText::new("🎲  Surprise me").size(14.0))
+        .on_hover_text("Play a random station (honours your quality filter)")
+        .clicked()
+    {
+        app.surprise();
     }
 
     ui.add_space(10.0);

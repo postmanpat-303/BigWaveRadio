@@ -101,16 +101,18 @@ pub fn bar(ui: &mut Ui, app: &mut BigWaveApp) {
     });
 
     // --- Centre: transport cluster -------------------------------------------
-    // Visual order: PREV | PLAY/PAUSE | STOP | NEXT, symmetric around centre.
+    // Visual order: DICE | PREV | PLAY/PAUSE | STOP | NEXT, symmetric around centre.
     let btn_h = 40.0;
     let y = bar.top() + 10.0;
     let row = Rect::from_min_size(Pos2::new(0.0, y), Vec2::new(0.0, btn_h));
     let _ = row;
 
-    let cluster_w = 44.0 + 8.0 + 60.0 + 8.0 + 44.0 + 8.0 + 44.0; // 216
+    let cluster_w = 44.0 + 8.0 + 44.0 + 8.0 + 60.0 + 8.0 + 44.0 + 8.0 + 44.0; // 268
     let start = bar.center().x - cluster_w / 2.0;
 
     let mut x = start;
+    let dice_rect = Rect::from_min_size(Pos2::new(x, y), Vec2::new(44.0, btn_h));
+    x += 44.0 + 8.0;
     let prev_rect = Rect::from_min_size(Pos2::new(x, y), Vec2::new(44.0, btn_h));
     x += 44.0 + 8.0;
     let play_rect = Rect::from_min_size(Pos2::new(x, y), Vec2::new(60.0, btn_h));
@@ -120,6 +122,19 @@ pub fn bar(ui: &mut Ui, app: &mut BigWaveApp) {
     let next_rect = Rect::from_min_size(Pos2::new(x, y), Vec2::new(44.0, btn_h));
 
     let has_station = app.current.is_some();
+
+    if transport_btn(
+        ui,
+        dice_rect,
+        "🎲",
+        "SURPRISE",
+        accent,
+        dark,
+        true,
+        false,
+    ) {
+        app.surprise();
+    }
 
     if transport_btn(
         ui,

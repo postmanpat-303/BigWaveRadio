@@ -45,16 +45,38 @@ pub enum NetJob {
     Tags,
     Countries,
     StationsFor(BrowseSel),
+    /// Stations sharing a tag, excluding one uuid (More like this).
+    MoreLike { tag: String, exclude: String },
+    /// Pick one random station honouring the quality filter (Surprise me).
+    Surprise,
     Click(String),
     Favicon(String, String),
 }
 
 pub enum NetResult {
     Stations(Vec<Station>),
+    /// Result of a "More like this" request, with the tag it was for.
+    MoreLike(String, Vec<Station>),
+    Surprise(Station),
     Tags(Vec<Tag>),
     Countries(Vec<Country>),
     Favicon(String, Vec<u8>),
     Failed(String),
+}
+
+/// Quality filter shared with the network worker: minimum bitrate + codec.
+pub struct StreamFilter {
+    pub min_bitrate: AtomicU32,
+    pub codec: std::sync::Mutex<String>,
+}
+
+impl StreamFilter {
+    fn snapshot(&self) -> (u32, String) {
+        (
+            self.min_bitrate.load(Ordering::Relaxed),
+            self.codec.lock().map(|c| c.clone()).unwrap_or_default(),
+        )
+    }
 }
 
 pub struct BigWaveApp {
@@ -80,7 +102,9 @@ pub struct BigWaveApp {
     pub query: String,
     pub search_active: bool,
     pub last_keystroke: Option<Instant>,
-    last_searched: String,
+    pub last_searched: String,
+    /// "More like this" context: the station name the current search list relates to.
+    pub similar_label: Option<String>,
 
     // Networking
     pub job_tx: mpsc::Sender<NetJob>,
@@ -111,7 +135,7 @@ pub struct BigWaveApp {
     quitting: bool,
 
     ctx: Context,
-    min_bitrate: Arc<AtomicU32>,
+    filter: Arc<StreamFilter>,
     first_frame: bool,
 }
 
@@ -143,8 +167,11 @@ impl BigWaveApp {
         });
         let (job_tx, job_rx) = mpsc::channel::<NetJob>();
         let (result_tx, result_rx) = mpsc::channel::<NetResult>();
-        let min_bitrate = Arc::new(AtomicU32::new(settings.min_bitrate));
-        let min_bitrate_worker = min_bitrate.clone();
+        let filter = Arc::new(StreamFilter {
+            min_bitrate: AtomicU32::new(settings.min_bitrate),
+            codec: std::sync::Mutex::new(settings.codec.clone()),
+        });
+        let filter_worker = filter.clone();
         // Dedicated client for station artwork (favicons) fetched from arbitrary hosts.
         let http = reqwest::blocking::Client::builder()
             .connect_timeout(Duration::from_secs(5))
@@ -157,16 +184,17 @@ impl BigWaveApp {
             while let Ok(job) = job_rx.recv() {
                 match job {
                     NetJob::Discover(tab) => {
-                        let min = min_bitrate_worker.load(Ordering::Relaxed);
+                        let (min, codec) = filter_worker.snapshot();
                         let res = match tab {
-                            DiscoverTab::Trending => client.trending(min),
-                            DiscoverTab::Popular => client.popular(min),
-                            DiscoverTab::Recent => client.recently_added(min),
+                            DiscoverTab::Trending => client.trending(min, &codec),
+                            DiscoverTab::Popular => client.popular(min, &codec),
+                            DiscoverTab::Recent => client.recently_added(min, &codec),
                         };
                         send_result(&result_tx, res);
                     }
                     NetJob::Search(ref q) => {
-                        let res = client.search(q, min_bitrate_worker.load(Ordering::Relaxed));
+                        let (min, codec) = filter_worker.snapshot();
+                        let res = client.search(q, min, &codec);
                         send_result(&result_tx, res);
                     }
                     NetJob::Tags => match client.tags() {
@@ -186,12 +214,34 @@ impl BigWaveApp {
                         }
                     },
                     NetJob::StationsFor(ref sel) => {
-                        let min = min_bitrate_worker.load(Ordering::Relaxed);
+                        let (min, codec) = filter_worker.snapshot();
                         let res = match sel {
-                            BrowseSel::Tag(t) => client.stations_by_tag(t, min),
-                            BrowseSel::Country(c) => client.stations_by_country(c, min),
+                            BrowseSel::Tag(t) => client.stations_by_tag(t, min, &codec),
+                            BrowseSel::Country(c) => client.stations_by_country(c, min, &codec),
                         };
                         send_result(&result_tx, res);
+                    }
+                    NetJob::MoreLike { ref tag, ref exclude } => {
+                        let (min, codec) = filter_worker.snapshot();
+                        match client.similar(tag, exclude, min, &codec) {
+                            Ok(stations) => {
+                                let _ = result_tx.send(NetResult::MoreLike(tag.clone(), stations));
+                            }
+                            Err(e) => {
+                                let _ = result_tx.send(NetResult::Failed(e.to_string()));
+                            }
+                        }
+                    }
+                    NetJob::Surprise => {
+                        let (min, codec) = filter_worker.snapshot();
+                        match client.random_station(min, &codec) {
+                            Ok(station) => {
+                                let _ = result_tx.send(NetResult::Surprise(station));
+                            }
+                            Err(e) => {
+                                let _ = result_tx.send(NetResult::Failed(e.to_string()));
+                            }
+                        }
                     }
                     NetJob::Click(ref uuid) => client.report_click(uuid),
                     NetJob::Favicon(ref uuid, ref url) => {
@@ -245,6 +295,7 @@ impl BigWaveApp {
             search_active: false,
             last_keystroke: None,
             last_searched: String::new(),
+            similar_label: None,
             job_tx,
             result_rx,
             bands: [0.0; BANDS],
@@ -262,7 +313,7 @@ impl BigWaveApp {
             #[cfg(windows)]
             quitting: false,
             ctx: cc.egui_ctx.clone(),
-            min_bitrate,
+            filter,
             first_frame: true,
         };
         theme::apply(&app.ctx, app.settings.theme, app.settings.accent);
@@ -333,9 +384,50 @@ impl BigWaveApp {
 
     pub fn persist_settings(&mut self) {
         self.settings.save();
-        self.min_bitrate
+        self.filter
+            .min_bitrate
             .store(self.settings.min_bitrate, Ordering::Relaxed);
+        if let Ok(mut codec) = self.filter.codec.lock() {
+            *codec = self.settings.codec.clone();
+        }
         theme::apply(&self.ctx, self.settings.theme, self.settings.accent);
+    }
+
+    /// 🎲 Surprise me: play one random station honouring the quality filter.
+    pub fn surprise(&mut self) {
+        self.status = "Finding a station for you…".into();
+        let _ = self.job_tx.send(NetJob::Surprise);
+    }
+
+    /// ✨ More like this: fill the search page with stations sharing `tag`.
+    pub fn more_like_this(&mut self, tag: &str, from: &str) {
+        self.page = Page::Search;
+        self.search_active = true;
+        self.similar_label = Some(format!("More like {from} · #{tag}"));
+        self.loading = true;
+        let exclude = self
+            .current
+            .as_ref()
+            .map(|s| s.uuid.clone())
+            .unwrap_or_default();
+        let _ = self.job_tx.send(NetJob::MoreLike {
+            tag: tag.to_string(),
+            exclude,
+        });
+    }
+
+    /// Remember a search query (deduped case-insensitively, newest first).
+    pub fn record_search(&mut self, query: &str) {
+        let q = query.trim();
+        if q.len() < 2 {
+            return;
+        }
+        self.settings.search_history.retain(|h| !h.eq_ignore_ascii_case(q));
+        self.settings.search_history.insert(0, q.to_string());
+        self.settings
+            .search_history
+            .truncate(bwr_core::settings::MAX_SEARCH_HISTORY);
+        self.settings.save();
     }
 
     /// Bring the window back from the tray.
@@ -392,7 +484,18 @@ impl BigWaveApp {
                 self.stations = stations;
                 if self.page == Page::Search {
                     self.search_active = true;
+                    self.similar_label = None;
                 }
+            }
+            NetResult::MoreLike(tag, stations) => {
+                self.stations = stations;
+                // Keep the richer label set by more_like_this() if present.
+                if self.similar_label.is_none() {
+                    self.similar_label = Some(format!("#{tag}"));
+                }
+            }
+            NetResult::Surprise(station) => {
+                self.play_station(station);
             }
             NetResult::Tags(tags) => self.tags = tags,
             NetResult::Countries(countries) => {
@@ -425,6 +528,9 @@ impl BigWaveApp {
             NetResult::Failed(message) => {
                 if self.stations.is_empty() {
                     self.status = format!("Error: {message}");
+                } else if self.status.starts_with("Finding a station") {
+                    self.status =
+                        "No station matched the filters — try loosening them".into();
                 }
             }
         }
@@ -465,7 +571,6 @@ impl eframe::App for BigWaveApp {
             self.first_frame = false;
             self.loading = true;
             let _ = self.job_tx.send(NetJob::Discover(self.discover_tab));
-            let _ = self.job_tx.send(NetJob::Tags);
         }
 
         // --- Network results -------------------------------------------------
@@ -480,6 +585,7 @@ impl eframe::App for BigWaveApp {
                 let q = self.query.trim().to_string();
                 if q.len() >= 2 && q != self.last_searched {
                     self.last_searched = q.clone();
+                    self.record_search(&q);
                     self.loading = true;
                     let _ = self.job_tx.send(NetJob::Search(q));
                 }
@@ -607,7 +713,7 @@ impl eframe::App for BigWaveApp {
             ui.add_space(4.0);
             ui.horizontal(|ui| {
                 ui.label(egui::RichText::new("🔍").size(16.0));
-                let width = (ui.available_width() - 20.0)
+                let width = (ui.available_width() - 56.0)
                     .clamp(200.0, 560.0);
                 let response = ui.add(
                     egui::TextEdit::singleline(&mut self.query)
@@ -618,6 +724,77 @@ impl eframe::App for BigWaveApp {
                     self.page = Page::Search;
                     self.last_keystroke = Some(Instant::now());
                 }
+
+                // 🎲 Surprise me — random station, honouring the quality filter.
+                if ui
+                    .button(egui::RichText::new("🎲").size(16.0))
+                    .on_hover_text("Surprise me — play a random station")
+                    .clicked()
+                {
+                    self.surprise();
+                }
+
+                // Recent searches popup under the field.
+                let popup_id = ui.make_persistent_id("search-history");
+                let show_history = response.has_focus()
+                    && self.query.is_empty()
+                    && !self.settings.search_history.is_empty();
+                ui.memory_mut(|mem| {
+                    if show_history {
+                        mem.open_popup(popup_id);
+                    } else if mem.is_popup_open(popup_id) {
+                        mem.close_popup();
+                    }
+                });
+                let history = self.settings.search_history.clone();
+                egui::popup::popup_below_widget(
+                    ui,
+                    popup_id,
+                    &response,
+                    egui::popup::PopupCloseBehavior::CloseOnClickOutside,
+                    |ui| {
+                        ui.set_min_width(240.0);
+                        ui.label(egui::RichText::new("RECENT SEARCHES").small().weak());
+                        for q in history {
+                            let mut remove = false;
+                            let picked = ui
+                                .horizontal(|ui| {
+                                    let picked = ui
+                                        .selectable_label(false, format!("🕘  {q}"))
+                                        .clicked();
+                                    if ui
+                                        .add(egui::Button::new("✕").small().frame(false))
+                                        .on_hover_text("Remove from history")
+                                        .clicked()
+                                    {
+                                        remove = true;
+                                    }
+                                    picked
+                                })
+                                .inner;
+                            if remove {
+                                self.settings
+                                    .search_history
+                                    .retain(|h| !h.eq_ignore_ascii_case(&q));
+                                self.settings.save();
+                            }
+                            if picked {
+                                self.query = q.clone();
+                                self.page = Page::Search;
+                                self.last_searched = q.clone();
+                                self.last_keystroke = None;
+                                self.loading = true;
+                                let _ = self.job_tx.send(NetJob::Search(q));
+                                ui.memory_mut(|m| m.close_popup());
+                            }
+                        }
+                        if ui.add(egui::Button::new("Clear history").small()).clicked() {
+                            self.settings.search_history.clear();
+                            self.settings.save();
+                            ui.memory_mut(|m| m.close_popup());
+                        }
+                    },
+                );
             });
             ui.add_space(2.0);
         });
@@ -641,6 +818,31 @@ impl eframe::App for BigWaveApp {
                 nav_button(ui, self, Page::Settings, "⚙  Settings");
 
                 ui.with_layout(egui::Layout::bottom_up(egui::Align::LEFT), |ui| {
+                    ui.add_space(8.0);
+                    ui.label(egui::RichText::new("FORMAT").small().weak());
+                    egui::ComboBox::from_id_salt("nav-codec")
+                        .selected_text(if self.settings.codec.is_empty() {
+                            "Any format".to_string()
+                        } else {
+                            self.settings.codec.to_uppercase()
+                        })
+                        .show_ui(ui, |ui| {
+                            for c in ["", "mp3", "aac", "ogg", "flac", "opus"] {
+                                let label = if c.is_empty() {
+                                    "Any format".to_string()
+                                } else {
+                                    c.to_uppercase()
+                                };
+                                if ui
+                                    .selectable_label(self.settings.codec == c, label)
+                                    .clicked()
+                                {
+                                    self.settings.codec = c.to_string();
+                                    self.persist_settings();
+                                    self.reload_current_list();
+                                }
+                            }
+                        });
                     ui.add_space(8.0);
                     ui.label(egui::RichText::new("MINIMUM BITRATE").small().weak());
                     egui::ComboBox::from_id_salt("nav-bitrate")
@@ -724,7 +926,14 @@ fn nav_button(ui: &mut egui::Ui, app: &mut BigWaveApp, page: Page, label: &str) 
             Page::Library | Page::Settings => {
                 app.stations.clear();
             }
-            Page::Search => {}
+            Page::Search => {
+                // Tags back the idle "pick a vibe" chips — fetch on first visit
+                // rather than at startup so they never block playback actions.
+                if app.tags.is_empty() {
+                    app.loading = true;
+                    let _ = app.job_tx.send(NetJob::Tags);
+                }
+            }
             Page::Tags => {
                 app.stations.clear();
                 if app.tags.is_empty() {

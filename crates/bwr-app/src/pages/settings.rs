@@ -106,7 +106,39 @@ pub fn ui(ui: &mut Ui, app: &mut BigWaveApp) {
                             }
                         }
                     });
+                ui.add_space(16.0);
+                ui.label("Format:");
+                egui::ComboBox::from_id_salt("codec-filter")
+                    .selected_text(if app.settings.codec.is_empty() {
+                        "Any format".to_string()
+                    } else {
+                        app.settings.codec.to_uppercase()
+                    })
+                    .show_ui(ui, |ui| {
+                        for c in ["", "mp3", "aac", "ogg", "flac", "opus"] {
+                            let label = if c.is_empty() {
+                                "Any format".to_string()
+                            } else {
+                                c.to_uppercase()
+                            };
+                            if ui
+                                .selectable_label(app.settings.codec == c, label)
+                                .clicked()
+                            {
+                                app.settings.codec = c.to_string();
+                                app.persist_settings();
+                                app.reload_current_list();
+                            }
+                        }
+                    });
             });
+            ui.label(
+                egui::RichText::new(
+                    "Applies everywhere: Discover lists, search, tags, countries, Surprise me.",
+                )
+                .small()
+                .weak(),
+            );
         });
 
         ui.add_space(10.0);

@@ -6,10 +6,10 @@ fn main() {
     println!("new(): {:?}", t0.elapsed());
 
     let t1 = Instant::now();
-    let stations = client.trending(256).expect("trending");
+    let stations = client.trending(256, "").expect("trending");
     println!("trending(): {:?} ({} stations)", t1.elapsed(), stations.len());
 
     let t2 = Instant::now();
-    let stations = client.trending(256).expect("trending2");
+    let stations = client.trending(256, "").expect("trending2");
     println!("trending2(): {:?} ({} stations)", t2.elapsed(), stations.len());
 }

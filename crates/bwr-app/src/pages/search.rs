@@ -9,6 +9,10 @@ use crate::widgets::station_card::station_grid;
 pub fn ui(ui: &mut Ui, app: &mut BigWaveApp) {
     ui.heading("Search");
     ui.add_space(2.0);
+    if let Some(label) = &app.similar_label {
+        ui.label(egui::RichText::new(format!("✨ {label}")).size(13.0).weak());
+        ui.add_space(4.0);
+    }
 
     let mut changed = false;
     ui.horizontal(|ui| {
@@ -42,7 +46,23 @@ pub fn ui(ui: &mut Ui, app: &mut BigWaveApp) {
     if app.search_active {
         station_grid(ui, app);
     } else {
-        // Idle state: popular tag chips as quick picks.
+        // Idle state: recent searches first, then popular tag chips as quick picks.
+        if !app.settings.search_history.is_empty() {
+            ui.label(egui::RichText::new("Recent searches").size(13.0).weak());
+            ui.add_space(4.0);
+            ui.horizontal_wrapped(|ui| {
+                for q in app.settings.search_history.clone() {
+                    if chip(ui, app, &q) {
+                        app.query = q.clone();
+                        app.last_searched = q.clone();
+                        app.last_keystroke = None;
+                        app.loading = true;
+                        let _ = app.job_tx.send(NetJob::Search(q));
+                    }
+                }
+            });
+            ui.add_space(12.0);
+        }
         ui.label("Pick a vibe below, or start typing to search every station by name.");
         ui.add_space(8.0);
         ui.horizontal_wrapped(|ui| {

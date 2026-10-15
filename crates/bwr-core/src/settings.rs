@@ -59,10 +59,18 @@ pub struct Settings {
     pub accent: Accent,
     /// Minimum stream bitrate in kbps, 0 = any.
     pub min_bitrate: u32,
+    /// Stream codec filter, empty = any (MP3, AAC, OGG, FLAC, OPUS…).
+    pub codec: String,
     pub volume: f32,
     /// Hide the window to the tray on minimize/close instead of exiting.
     pub minimize_to_tray: bool,
+    /// Recent search queries, most recent first (capped at MAX_SEARCH_HISTORY).
+    #[serde(default)]
+    pub search_history: Vec<String>,
 }
+
+/// Cap on the number of remembered searches.
+pub const MAX_SEARCH_HISTORY: usize = 8;
 
 impl Default for Settings {
     fn default() -> Self {
@@ -70,8 +78,10 @@ impl Default for Settings {
             theme: Theme::System,
             accent: Accent::System,
             min_bitrate: 0,
+            codec: String::new(),
             volume: 0.8,
             minimize_to_tray: false,
+            search_history: Vec::new(),
         }
     }
 }

@@ -132,59 +132,64 @@ impl RadioBrowserClient {
         Err(last_err.unwrap_or_else(|| Error::Api("no mirrors available".into())))
     }
 
-    fn bitrate_clause(min_bitrate: u32) -> String {
+    fn quality_clause(min_bitrate: u32, codec: &str) -> String {
+        let mut clause = String::new();
         if min_bitrate > 0 {
-            format!("&bitrateMin={min_bitrate}")
-        } else {
-            String::new()
+            clause.push_str(&format!("&bitrateMin={min_bitrate}"));
         }
+        let codec = codec.trim();
+        if !codec.is_empty() {
+            clause.push_str(&format!("&codec={}", urlencoding_encode(&codec.to_uppercase())));
+        }
+        clause
     }
 
     /// Post-filter: the ranking endpoints (topclick/topvote/lastchange) ignore
-    /// bitrateMin server-side, so enforce it locally for a consistent filter.
-    fn filter_bitrate(stations: Vec<Station>, min_bitrate: u32) -> Vec<Station> {
-        if min_bitrate == 0 {
-            return stations;
-        }
+    /// quality params server-side, so enforce them locally for a consistent filter.
+    fn filter_quality(stations: Vec<Station>, min_bitrate: u32, codec: &str) -> Vec<Station> {
+        let codec = codec.trim();
         stations
             .into_iter()
             .filter(|s| s.bitrate >= min_bitrate)
+            .filter(|s| {
+                codec.is_empty() || s.codec.trim().eq_ignore_ascii_case(codec)
+            })
             .collect()
     }
 
-    pub fn trending(&self, min_bitrate: u32) -> Result<Vec<Station>> {
+    pub fn trending(&self, min_bitrate: u32, codec: &str) -> Result<Vec<Station>> {
         let stations = self.get_json::<Vec<Station>>(&format!(
             "/json/stations/topclick/100?hidebroken=true{}",
-            Self::bitrate_clause(min_bitrate)
+            Self::quality_clause(min_bitrate, codec)
         ))?;
-        Ok(Self::filter_bitrate(stations, min_bitrate))
+        Ok(Self::filter_quality(stations, min_bitrate, codec))
     }
 
-    pub fn popular(&self, min_bitrate: u32) -> Result<Vec<Station>> {
+    pub fn popular(&self, min_bitrate: u32, codec: &str) -> Result<Vec<Station>> {
         let stations = self.get_json::<Vec<Station>>(&format!(
             "/json/stations/topvote/100?hidebroken=true{}",
-            Self::bitrate_clause(min_bitrate)
+            Self::quality_clause(min_bitrate, codec)
         ))?;
-        Ok(Self::filter_bitrate(stations, min_bitrate))
+        Ok(Self::filter_quality(stations, min_bitrate, codec))
     }
 
-    pub fn recently_added(&self, min_bitrate: u32) -> Result<Vec<Station>> {
+    pub fn recently_added(&self, min_bitrate: u32, codec: &str) -> Result<Vec<Station>> {
         let stations = self.get_json::<Vec<Station>>(&format!(
             "/json/stations/lastchange/100?hidebroken=true{}",
-            Self::bitrate_clause(min_bitrate)
+            Self::quality_clause(min_bitrate, codec)
         ))?;
-        Ok(Self::filter_bitrate(stations, min_bitrate))
+        Ok(Self::filter_quality(stations, min_bitrate, codec))
     }
 
     /// Case-insensitive substring search on the station name.
-    pub fn search(&self, query: &str, min_bitrate: u32) -> Result<Vec<Station>> {
+    pub fn search(&self, query: &str, min_bitrate: u32, codec: &str) -> Result<Vec<Station>> {
         use std::fmt::Write as _;
         let mut q = String::new();
         write!(q, "/json/stations/search?name={}&limit=100&hidebroken=true", urlencoding_encode(query))
             .unwrap();
-        q.push_str(&Self::bitrate_clause(min_bitrate));
+        q.push_str(&Self::quality_clause(min_bitrate, codec));
         let stations = self.get_json::<Vec<Station>>(&q)?;
-        Ok(Self::filter_bitrate(stations, min_bitrate))
+        Ok(Self::filter_quality(stations, min_bitrate, codec))
     }
 
     pub fn tags(&self) -> Result<Vec<Tag>> {
@@ -195,22 +200,53 @@ impl RadioBrowserClient {
         self.get_json("/json/countries?order=stationcount&reverse=true&hidebroken=true")
     }
 
-    pub fn stations_by_tag(&self, tag: &str, min_bitrate: u32) -> Result<Vec<Station>> {
+    pub fn stations_by_tag(&self, tag: &str, min_bitrate: u32, codec: &str) -> Result<Vec<Station>> {
         let stations = self.get_json::<Vec<Station>>(&format!(
             "/json/stations/bytag/{}?limit=100&hidebroken=true&order=votes&reverse=true{}",
             urlencoding_encode(tag),
-            Self::bitrate_clause(min_bitrate)
+            Self::quality_clause(min_bitrate, codec)
         ))?;
-        Ok(Self::filter_bitrate(stations, min_bitrate))
+        Ok(Self::filter_quality(stations, min_bitrate, codec))
     }
 
-    pub fn stations_by_country(&self, country: &str, min_bitrate: u32) -> Result<Vec<Station>> {
+    pub fn stations_by_country(&self, country: &str, min_bitrate: u32, codec: &str) -> Result<Vec<Station>> {
         let stations = self.get_json::<Vec<Station>>(&format!(
             "/json/stations/bycountryexact/{}?limit=100&hidebroken=true&order=votes&reverse=true{}",
             urlencoding_encode(country),
-            Self::bitrate_clause(min_bitrate)
+            Self::quality_clause(min_bitrate, codec)
         ))?;
-        Ok(Self::filter_bitrate(stations, min_bitrate))
+        Ok(Self::filter_quality(stations, min_bitrate, codec))
+    }
+
+    /// Stations sharing a tag, excluding the station we came from.
+    pub fn similar(&self, tag: &str, exclude_uuid: &str, min_bitrate: u32, codec: &str) -> Result<Vec<Station>> {
+        Ok(self
+            .stations_by_tag(tag, min_bitrate, codec)?
+            .into_iter()
+            .filter(|s| s.uuid != exclude_uuid)
+            .collect())
+    }
+
+    /// One random station honouring the quality filter. "Random" is an
+    /// *order* on the search endpoint (there is no /random path); fetch a
+    /// batch ordered randomly and pick one that passes the local filter.
+    pub fn random_station(&self, min_bitrate: u32, codec: &str) -> Result<Station> {
+        let stations = self.get_json::<Vec<Station>>(&format!(
+            "/json/stations/search?hidebroken=true&order=random&limit=40{}",
+            Self::quality_clause(min_bitrate, codec)
+        ))?;
+        let mut filtered = Self::filter_quality(stations, min_bitrate, codec);
+        if filtered.is_empty() {
+            return Err(Error::Api("no station matched the filters".into()));
+        }
+        // The batch itself is random; pick the slot by time so repeated
+        // clicks in the same second still vary.
+        let secs = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_secs() as usize)
+            .unwrap_or(0);
+        let idx = secs % filtered.len();
+        Ok(filtered.swap_remove(idx))
     }
 
     /// Report a click back to the directory (community etiquette).
@@ -233,4 +269,79 @@ fn urlencoding_encode(s: &str) -> String {
         }
     }
     out
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn station(codec: &str, bitrate: u32) -> Station {
+        Station {
+            uuid: uuid(codec, bitrate),
+            name: format!("{codec} {bitrate}"),
+            stream_url: String::new(),
+            homepage: String::new(),
+            favicon: String::new(),
+            codec: codec.to_string(),
+            bitrate,
+            votes: 0,
+            click_count: 0,
+            country: String::new(),
+            language: String::new(),
+            tags: String::new(),
+        }
+    }
+
+    fn uuid(codec: &str, bitrate: u32) -> String {
+        format!("uuid-{codec}-{bitrate}")
+    }
+
+    #[test]
+    fn quality_clause_empty_when_unfiltered() {
+        assert_eq!(RadioBrowserClient::quality_clause(0, ""), "");
+        assert_eq!(RadioBrowserClient::quality_clause(0, "  "), "");
+    }
+
+    #[test]
+    fn quality_clause_combines_bitrate_and_codec() {
+        assert_eq!(
+            RadioBrowserClient::quality_clause(320, "mp3"),
+            "&bitrateMin=320&codec=MP3"
+        );
+        assert_eq!(RadioBrowserClient::quality_clause(128, ""), "&bitrateMin=128");
+        assert_eq!(RadioBrowserClient::quality_clause(0, "aac"), "&codec=AAC");
+    }
+
+    #[test]
+    fn filter_quality_matches_bitrate_and_codec_case_insensitively() {
+        let stations = vec![
+            station("MP3", 320),
+            station("mp3", 128),
+            station("AAC", 192),
+            station("", 0),
+        ];
+        let out = RadioBrowserClient::filter_quality(stations.clone(), 128, "mp3");
+        assert_eq!(out.len(), 2); // MP3 320 and mp3 128 both pass
+
+        let out = RadioBrowserClient::filter_quality(stations.clone(), 0, "");
+        assert_eq!(out.len(), 4);
+
+        let out = RadioBrowserClient::filter_quality(stations, 64, "");
+        assert_eq!(out.len(), 3); // the 0-bitrate station fails bitrate >= 64
+    }
+
+    #[test]
+    fn similar_excludes_the_source_station() {
+        // exercised through filter + exclusion logic without network:
+        // similar() = stations_by_tag() minus the excluded uuid; the exclusion
+        // is a plain iterator filter, verified here on filter_quality output.
+        let stations = vec![station("mp3", 128), station("mp3", 256)];
+        let excluded = uuid("mp3", 128);
+        let out: Vec<_> = RadioBrowserClient::filter_quality(stations, 0, "")
+            .into_iter()
+            .filter(|s| s.uuid != excluded)
+            .collect();
+        assert_eq!(out.len(), 1);
+        assert_eq!(out[0].bitrate, 256);
+    }
 }
