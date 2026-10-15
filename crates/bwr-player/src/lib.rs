@@ -159,6 +159,11 @@ fn worker_loop(
                 spectrum.reset();
             }
             Command::Stop => {
+                // Drop any decoded audio still buffered in the output queue,
+                // otherwise the tail (~3 s) keeps playing after Stop.
+                if let Some((_, _, queue)) = &out {
+                    queue.lock().unwrap().clear();
+                }
                 let _ = event_tx.send((generation.load(Ordering::SeqCst), PlayerEvent::Stopped));
             }
             Command::SetVolume(_) => {}
