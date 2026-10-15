@@ -1,15 +1,17 @@
 //! Notification-area (tray) icon with a right-click menu.
 //!
-//! Lives on its own hidden window. The UI thread pings it every frame; if the
-//! pings stop (app exited or crashed) the thread removes the icon, so no
-//! ghost icon is ever left behind in the tray.
+//! Lives on its own hidden window. The icon stays up for the lifetime of the
+//! app: Windows removes the icons of dead processes automatically, and
+//! [`Drop`] sends an explicit removal on a clean exit. (An earlier heartbeat
+//! design that self-removed the icon when UI frames stalled was the cause of
+//! the "app vanished and I had to End Task" bug — repaints can legitimately
+//! pause, so the icon must not depend on them.)
 
 #![cfg(windows)]
 
 use std::ffi::c_void;
 use std::sync::mpsc;
-use std::sync::{Arc, Mutex};
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
 use windows::core::{w, PCWSTR};
 use windows::Win32::Foundation::{HWND, LPARAM, LRESULT, POINT, WPARAM};
@@ -19,15 +21,16 @@ use windows::Win32::Graphics::Gdi::{
 };
 use windows::Win32::System::LibraryLoader::GetModuleHandleW;
 use windows::Win32::UI::Shell::{
-    Shell_NotifyIconW, NOTIFYICONDATAW, NIF_ICON, NIF_MESSAGE, NIF_TIP, NIM_ADD, NIM_DELETE,
+    Shell_NotifyIconW, NOTIFYICONDATAW, NIF_ICON, NIF_INFO, NIF_MESSAGE, NIF_TIP, NIIF_INFO,
+    NIIF_NOSOUND, NIM_ADD, NIM_DELETE, NIM_MODIFY,
 };
 use windows::Win32::UI::WindowsAndMessaging::{
     AppendMenuW, CreateIconIndirect, CreatePopupMenu, CreateWindowExW, DefWindowProcW, DestroyMenu,
-    DispatchMessageW, GetCursorPos, GetWindowLongPtrW, PeekMessageW, PostMessageW, RegisterClassW,
+    DispatchMessageW, GetCursorPos, GetWindowLongPtrW, PostMessageW, RegisterClassW,
     SetForegroundWindow, SetMenuDefaultItem, SetWindowLongPtrW, TrackPopupMenu, CW_USEDEFAULT,
-    GWLP_USERDATA, HICON, ICONINFO, MF_SEPARATOR, MF_STRING, MSG, PM_REMOVE, TPM_LEFTALIGN,
-    TPM_RETURNCMD, WINDOW_EX_STYLE, WINDOW_STYLE, WM_APP, WM_DESTROY, WM_LBUTTONUP, WM_NULL,
-    WM_QUIT, WM_RBUTTONUP, WNDCLASSW,
+    GWLP_USERDATA, HICON, ICONINFO, MF_SEPARATOR, MF_STRING, MSG, TPM_LEFTALIGN, TPM_RETURNCMD,
+    WINDOW_EX_STYLE, WINDOW_STYLE, WM_APP, WM_DESTROY, WM_LBUTTONUP, WM_NULL, WM_QUIT,
+    WM_RBUTTONUP, WNDCLASSW,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -48,46 +51,88 @@ const MENU_QUIT: usize = 1005;
 
 pub struct Tray {
     rx: mpsc::Receiver<TrayCmd>,
-    last_ping: Arc<Mutex<Instant>>,
+    hwnd: HWND,
+    /// Icon installed; without it nothing may hide the main window.
+    icon_ok: bool,
+}
+
+fn to_wchar<const N: usize>(s: &str) -> [u16; N] {
+    let mut buf = [0u16; N];
+    let v: Vec<u16> = s.encode_utf16().collect();
+    let n = v.len().min(N - 1);
+    buf[..n].copy_from_slice(&v[..n]);
+    buf
 }
 
 impl Tray {
     /// Install the tray icon. Returns None if the icon could not be created.
     pub fn new() -> Option<Self> {
         let (tx, rx) = mpsc::channel::<TrayCmd>();
-        let (started_tx, started_rx) = mpsc::channel::<bool>();
-        let last_ping = Arc::new(Mutex::new(Instant::now()));
+        // HWND is a raw pointer and not Send; pass it across as an isize.
+        let (started_tx, started_rx) = mpsc::channel::<isize>();
 
-        std::thread::spawn({
-            let last_ping = last_ping.clone();
-            move || tray_thread(tx, started_tx, last_ping)
-        });
+        std::thread::spawn(move || tray_thread(tx, started_tx));
 
         // Wait for the icon to come up — on a busy machine (e.g. Defender
         // scanning a freshly installed exe) window creation can take a few
         // seconds. Never wait for the thread itself, which keeps running.
-        let started = started_rx
+        let hwnd = started_rx
             .recv_timeout(Duration::from_secs(5))
-            .unwrap_or(false);
-
-        if started {
-            Some(Self { rx, last_ping })
-        } else {
+            .map(|p| HWND(p as *mut c_void))
+            .unwrap_or(HWND(std::ptr::null_mut()));
+        let icon_ok = hwnd.0 != std::ptr::null_mut();
+        if !icon_ok {
             eprintln!("[tray] icon did not come up within 5s; tray unavailable");
             crate::diag::log("[tray] icon did not come up within 5s; tray unavailable");
-            None
         }
+        Some(Self { rx, hwnd, icon_ok })
     }
 
-    /// Call once per UI frame so the tray thread knows the app is alive.
-    pub fn ping(&self) {
-        if let Ok(mut t) = self.last_ping.lock() {
-            *t = Instant::now();
-        }
+    /// True only if the shell confirmed the icon was added. The app uses
+    /// this as the fail-safe gate before hiding the main window.
+    pub fn icon_ok(&self) -> bool {
+        self.icon_ok
     }
 
     pub fn try_recv(&self) -> Option<TrayCmd> {
         self.rx.try_recv().ok()
+    }
+
+    /// Show a balloon/toast above the tray icon (Windows notification).
+    pub fn notify(&self, title: &str, text: &str) {
+        if !self.icon_ok {
+            return;
+        }
+        let mut nid = NOTIFYICONDATAW {
+            cbSize: std::mem::size_of::<NOTIFYICONDATAW>() as u32,
+            hWnd: self.hwnd,
+            uID: 1,
+            uFlags: NIF_INFO,
+            szInfo: to_wchar::<256>(text),
+            szInfoTitle: to_wchar::<64>(title),
+            dwInfoFlags: NIIF_INFO | NIIF_NOSOUND,
+            ..Default::default()
+        };
+        unsafe {
+            let _ = Shell_NotifyIconW(NIM_MODIFY, &mut nid);
+        }
+    }
+}
+
+impl Drop for Tray {
+    fn drop(&mut self) {
+        if self.icon_ok {
+            unsafe {
+                let mut nid = NOTIFYICONDATAW {
+                    cbSize: std::mem::size_of::<NOTIFYICONDATAW>() as u32,
+                    hWnd: self.hwnd,
+                    uID: 1,
+                    ..Default::default()
+                };
+                let _ = Shell_NotifyIconW(NIM_DELETE, &mut nid);
+                let _ = PostMessageW(self.hwnd, WM_QUIT, None, None);
+            }
+        }
     }
 }
 
@@ -207,20 +252,16 @@ fn load_tray_icon() -> Option<HICON> {
     }
 }
 
-/// Runs the tray window's message loop. `started_tx` receives true once the
-/// icon is installed, false on any setup failure.
-fn tray_thread(
-    tx: mpsc::Sender<TrayCmd>,
-    started_tx: mpsc::Sender<bool>,
-    last_ping: Arc<Mutex<Instant>>,
-) {
+/// Runs the tray window's message loop. `started_tx` receives the window
+/// handle once the icon is installed, or 0 on any setup failure.
+fn tray_thread(tx: mpsc::Sender<TrayCmd>, started_tx: mpsc::Sender<isize>) {
     unsafe {
         macro_rules! fail {
             ($what:expr) => {{
                 let why = $what;
                 eprintln!("[tray] failed: {}", why);
                 crate::diag::log(&format!("[tray] failed: {why}"));
-                let _ = started_tx.send(false);
+                let _ = started_tx.send(0);
                 return;
             }};
         }
@@ -256,7 +297,7 @@ fn tray_thread(
             None,
         ) {
             Ok(h) => h,
-            Err(_) => fail!("GetModuleHandleW"),
+            Err(_) => fail!("CreateWindowExW"),
         };
 
         // Hand the sender to the window proc.
@@ -275,13 +316,7 @@ fn tray_thread(
             uFlags: NIF_MESSAGE | NIF_ICON | NIF_TIP,
             uCallbackMessage: TRAY_MSG,
             hIcon: icon,
-            szTip: {
-                let mut tip = [0u16; 128];
-                let s: Vec<u16> = "BigWave Radio".encode_utf16().collect();
-                let n = s.len().min(tip.len() - 1);
-                tip[..n].copy_from_slice(&s[..n]);
-                tip
-            },
+            szTip: to_wchar::<128>("BigWave Radio"),
             ..Default::default()
         };
         if !Shell_NotifyIconW(NIM_ADD, &mut nid).as_bool() {
@@ -289,26 +324,22 @@ fn tray_thread(
         }
         eprintln!("[tray] icon added");
         crate::diag::log("[tray] icon added");
-        let _ = started_tx.send(true);
+        let _ = started_tx.send(hwnd.0 as isize);
 
         let mut msg = MSG::default();
-        'outer: loop {
-            // Heartbeat: app gone -> remove icon and leave.
-            let alive = last_ping
-                .lock()
-                .map(|t| t.elapsed() < Duration::from_secs(4))
-                .unwrap_or(false);
-            if !alive {
-                break 'outer;
+        loop {
+            // Block until a message arrives; exit only on WM_QUIT (posted by
+            // Tray::drop) or WM_QUIT from the system.
+            let got = windows::Win32::UI::WindowsAndMessaging::GetMessageW(
+                &mut msg,
+                None,
+                0,
+                0,
+            );
+            if !got.as_bool() || msg.message == WM_QUIT {
+                break;
             }
-
-            while PeekMessageW(&mut msg, None, 0, 0, PM_REMOVE).as_bool() {
-                if msg.message == WM_QUIT {
-                    break 'outer;
-                }
-                DispatchMessageW(&msg);
-            }
-            std::thread::sleep(Duration::from_millis(150));
+            DispatchMessageW(&msg);
         }
 
         let _ = Shell_NotifyIconW(NIM_DELETE, &mut nid);

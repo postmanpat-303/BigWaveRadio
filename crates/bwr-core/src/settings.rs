@@ -62,8 +62,12 @@ pub struct Settings {
     /// Stream codec filter, empty = any (MP3, AAC, OGG, FLAC, OPUS…).
     pub codec: String,
     pub volume: f32,
-    /// Hide the window to the tray on minimize/close instead of exiting.
+    /// Hide the window to the tray on close instead of exiting.
     pub minimize_to_tray: bool,
+    /// One-time toast the first time the window hides to the tray, so the
+    /// user knows where it went and how to get it back.
+    #[serde(default)]
+    pub tray_hint_shown: bool,
     /// Recent search queries, most recent first (capped at MAX_SEARCH_HISTORY).
     #[serde(default)]
     pub search_history: Vec<String>,
@@ -81,6 +85,7 @@ impl Default for Settings {
             codec: String::new(),
             volume: 0.8,
             minimize_to_tray: false,
+            tray_hint_shown: false,
             search_history: Vec::new(),
         }
     }

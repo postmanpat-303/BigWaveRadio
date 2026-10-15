@@ -274,13 +274,7 @@ impl BigWaveApp {
         #[cfg(windows)]
         let hotkey_rx = crate::hotkeys::spawn();
         #[cfg(windows)]
-        let tray = {
-            let t = crate::tray::Tray::new();
-            if let Some(t) = &t {
-                t.ping();
-            }
-            t
-        };
+        let tray = crate::tray::Tray::new();
 
         let app = Self {
             settings,
@@ -639,17 +633,28 @@ impl eframe::App for BigWaveApp {
             // SMTC also receives hardware media keys; consuming both would
             // double-toggle. Only fall back to RegisterHotKey when SMTC is
             // unavailable.
-            if self.smtc.is_none() {
-                while let Ok(key) = self.hotkey_rx.try_recv() {
-                    match key {
-                        MediaKey::PlayPause => self.toggle_play_pause(),
-                        MediaKey::Next => self.next_station(),
-                        MediaKey::Previous => self.previous_station(),
+            // Drain always: Show must work regardless of SMTC state, and the
+            // channel must never grow unboundedly.
+            while let Ok(key) = self.hotkey_rx.try_recv() {
+                match key {
+                    // SMTC also receives hardware media keys; consuming both
+                    // would double-toggle, so ignore those when SMTC is up.
+                    MediaKey::PlayPause if self.smtc.is_none() => self.toggle_play_pause(),
+                    MediaKey::Next if self.smtc.is_none() => self.next_station(),
+                    MediaKey::Previous if self.smtc.is_none() => self.previous_station(),
+                    MediaKey::Show => {
+                        if self.hidden_to_tray {
+                            self.show_from_tray();
+                        } else if let Some(hwnd) = self.hwnd {
+                            unsafe {
+                                let _ = windows::Win32::UI::WindowsAndMessaging::SetForegroundWindow(
+                                    hwnd,
+                                );
+                            }
+                        }
                     }
+                    _ => {}
                 }
-            } else {
-                // Keep the channel drained so it can't grow unboundedly.
-                while self.hotkey_rx.try_recv().is_ok() {}
             }
 
             // Taskbar / media-flyout buttons arrive over a channel.
@@ -676,9 +681,6 @@ impl eframe::App for BigWaveApp {
                     SmtcEvent::Next => self.next_station(),
                     SmtcEvent::Previous => self.previous_station(),
                 }
-            }
-            if let Some(tray) = &self.tray {
-                tray.ping();
             }
             let mut cmds = Vec::new();
             if let Some(tray) = &self.tray {
@@ -757,25 +759,12 @@ impl eframe::App for BigWaveApp {
                 }
             }
 
-            // Minimize -> tray. egui is event-driven, so while the setting is
-            // on we keep a slow repaint heartbeat going — otherwise update()
-            // never runs in the idle state and a minimize would go unnoticed.
-            // NEVER hide the window unless the tray icon actually exists:
-            // otherwise the app vanishes with no way back but Task Manager.
-            let tray_ok = self.tray.is_some();
-            if self.settings.minimize_to_tray && tray_ok {
-                ctx.request_repaint_after(Duration::from_millis(400));
-                if !self.hidden_to_tray {
-                    if let Some(hwnd) = self.hwnd {
-                        unsafe {
-                            if windows::Win32::UI::WindowsAndMessaging::IsIconic(hwnd).as_bool() {
-                                hide_main_window(hwnd);
-                                self.hidden_to_tray = true;
-                            }
-                        }
-                    }
-                }
-            } else if self.hidden_to_tray {
+            // Minimize now behaves normally: the window minimizes to a normal
+            // taskbar button, so the thumbnail/SMTC quick controls stay
+            // available. Only CLOSE hides to the tray.
+            let tray_ok = self.tray.as_ref().is_some_and(|t| t.icon_ok());
+            if !self.settings.minimize_to_tray && self.hidden_to_tray {
+                // Setting was turned off while hidden: come back.
                 self.show_from_tray();
             }
 
@@ -788,10 +777,22 @@ impl eframe::App for BigWaveApp {
                     unsafe { hide_main_window(hwnd) };
                 }
                 self.hidden_to_tray = true;
+                // First time hiding: point at the tray icon so the app can
+                // never "vanish" without the user knowing where it went.
+                if !self.settings.tray_hint_shown {
+                    self.settings.tray_hint_shown = true;
+                    self.persist_settings();
+                    if let Some(tray) = &self.tray {
+                        tray.notify(
+                            "BigWave Radio",
+                            "Still playing. Click the wave icon near the clock (or press Ctrl+Alt+B) to bring it back.",
+                        );
+                    }
+                }
             }
 
-            // While hidden, keep a slow heartbeat repaint going so the tray
-            // thread keeps receiving pings.
+            // While hidden, keep a slow heartbeat repaint going so tray menu
+            // commands (Show / Play / Quit) actually get processed.
             if self.hidden_to_tray {
                 ctx.request_repaint_after(Duration::from_millis(500));
             }
