@@ -28,6 +28,6 @@ fn main() {
         }
         let mut out = format!("P6 {w} {h} 255\n").into_bytes();
         for c in px.chunks(4) { out.extend_from_slice(&c[..3]); }
-        std::fs::write(format!("/tmp/vs-{s}.ppm"), out).unwrap();
+        std::fs::write(std::env::temp_dir().join(format!("vs-{s}.ppm")), out).unwrap();
     }
 }

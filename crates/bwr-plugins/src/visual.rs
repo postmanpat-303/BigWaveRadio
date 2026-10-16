@@ -22,7 +22,7 @@ pub const MAX_LUM_STEP: f32 = 0.02;
 /// Cap on the mean output luminance (0..1).
 pub const MAX_MEAN_LUM: f32 = 0.5;
 /// Framebuffer height at quality 1.0 (width follows the aspect ratio).
-pub const BASE_HEIGHT: usize = 240;
+pub const BASE_HEIGHT: usize = 360;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct VisualParams {

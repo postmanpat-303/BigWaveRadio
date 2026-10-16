@@ -37,7 +37,7 @@ fn secs(label) {
 }
 
 fn quality_of(label) {
-    if label == "Low" { 0.6 } else if label == "High" { 1.4 } else { 1.0 }
+    if label == "Low" { 0.55 } else if label == "High" { 1.05 } else { 1.0 }
 }
 
 fn lerp(a, b, t) { a + (b - a) * t }
