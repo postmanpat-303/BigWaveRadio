@@ -851,6 +851,27 @@ impl PluginHost {
         }
     }
 
+    /// Programmatically fire a plugin's `on_hotkey(ctx, action)` hook, as if
+    /// the user had pressed the hotkey bound to that action. Used by the
+    /// idle-Visions screensaver. Returns false when the plugin is not
+    /// running or an overlay is already open. Overlay requests made by the
+    /// hook skip the warning screen (the user opted in via Settings).
+    pub fn trigger_action(&mut self, plugin_id: &str, action: &str) -> bool {
+        if self.overlay.is_some() {
+            return false;
+        }
+        let Some(idx) = self.index_of(plugin_id) else { return false };
+        if self.plugins[idx].status != PluginStatus::Running {
+            return false;
+        }
+        self.hotkey_plugin = Some(plugin_id.to_string());
+        self.call(idx, "on_hotkey", vec![action.into()]);
+        let others = self.take_requests();
+        self.hotkey_plugin = None;
+        self.requests.extend(others);
+        true
+    }
+
     /// Pages contributed by running plugins: (plugin id, page).
     pub fn pages(&self) -> Vec<(String, PageSpec)> {
         self.plugins

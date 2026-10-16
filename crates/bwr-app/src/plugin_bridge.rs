@@ -22,6 +22,12 @@ pub struct PluginBridge {
     last_station: Option<String>,
     fullscreen: bool,
     toasts: Vec<(String, Instant)>,
+    /// Last frame with real mouse/keyboard input (idle-Visions screensaver).
+    last_input: Instant,
+    /// True while the visualiser running was started by the idle timer, so
+    /// the next input closes it (a Visions session the user started by
+    /// hotkey or button is left alone).
+    idle_started: bool,
     /// Pages contributed by running plugins, indexed by `Page::PluginPage(i)`.
     pub pages: Vec<(String, PageSpec)>,
     pub import_path: String,
@@ -40,6 +46,8 @@ impl PluginBridge {
             last_station: None,
             fullscreen: false,
             toasts: Vec::new(),
+            last_input: Instant::now(),
+            idle_started: false,
             pages,
             import_path: String::new(),
         }
@@ -190,6 +198,83 @@ pub fn pre_frame(app: &mut BigWaveApp, ctx: &Context) {
     if want != b.fullscreen {
         b.fullscreen = want;
         ctx.send_viewport_cmd(egui::ViewportCommand::Fullscreen(want));
+    }
+
+    idle_visions(app, ctx);
+}
+
+/// Idle Visions screensaver: after `settings.idle_minutes` without mouse or
+/// keyboard input, start the bundled Visions visualiser; any input closes it
+/// again. A Visions session the user started by hotkey or button is left
+/// running — only sessions started by the timer are auto-closed.
+fn idle_visions(app: &mut BigWaveApp, ctx: &Context) {
+    if !app.settings.idle_visions {
+        return;
+    }
+    let b = &mut app.plugins;
+    if std::env::var_os("BWR_IDLE_DEBUG").is_some() {
+        thread_local! { static T: std::cell::Cell<f64> = const { std::cell::Cell::new(-10.0) }; }
+        let now = b.host.now();
+        T.with(|t| {
+            if now - t.get() >= 1.0 {
+                t.set(now);
+                let status = b.host.get("visions").map(|p| format!("{:?}", p.status)).unwrap_or_else(|| "missing".into());
+                eprintln!("[idle] elapsed={:.0}s overlay={} idle_started={} visions={status}",
+                    b.last_input.elapsed().as_secs_f64(), b.host.overlay.is_some(), b.idle_started);
+            }
+        });
+    }
+    let active = ctx.input(|i| {
+        i.events.iter().any(|e| {
+            matches!(
+                e,
+                egui::Event::PointerMoved(_)
+                    | egui::Event::PointerButton { pressed: true, .. }
+                    | egui::Event::PointerGone
+                    | egui::Event::MouseWheel { .. }
+                    | egui::Event::Key { pressed: true, .. }
+                    | egui::Event::Text(_)
+            )
+        })
+    });
+    if active {
+        if std::env::var_os("BWR_IDLE_DEBUG").is_some() {
+            let evts: Vec<String> = ctx.input(|i| {
+                i.events.iter().filter(|e| {
+                    matches!(
+                        e,
+                        egui::Event::PointerMoved(_)
+                            | egui::Event::PointerButton { pressed: true, .. }
+                            | egui::Event::PointerGone
+                            | egui::Event::MouseWheel { .. }
+                            | egui::Event::Key { pressed: true, .. }
+                            | egui::Event::Text(_)
+                    )
+                }).map(|e| format!("{e:?}")).collect()
+            });
+            eprintln!("[idle] reset by: {evts:?}");
+        }
+        b.last_input = Instant::now();
+        if b.idle_started && b.host.overlay.as_ref().is_some_and(|s| s.plugin_id == "visions") {
+            b.host.end_overlay();
+        }
+        b.idle_started = false;
+        return;
+    }
+    if b.idle_started {
+        // Ended another way (e.g. Esc): re-arm with a fresh timeout.
+        if b.host.overlay.is_none() {
+            b.idle_started = false;
+            b.last_input = Instant::now();
+        }
+        return;
+    }
+    if b.host.overlay.is_some() {
+        return; // Something else is on screen; never stack overlays.
+    }
+    let timeout = std::time::Duration::from_secs(app.settings.idle_minutes.max(1) as u64 * 60);
+    if b.last_input.elapsed() >= timeout && b.host.trigger_action("visions", "start") {
+        b.idle_started = true;
     }
 }
 

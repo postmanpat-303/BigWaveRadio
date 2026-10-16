@@ -387,6 +387,28 @@ fn strobe_hotkey_starts_immediately_without_warning() {
 }
 
 #[test]
+fn idle_trigger_action_starts_visions_without_hotkey() {
+    let tmp = tempfile::tempdir().unwrap();
+    let mut host = strobe_host(tmp.path());
+    host.approve("visions");
+
+    assert!(!host.trigger_action("visions", "start") || host.overlay.is_some());
+    let s = host.overlay.clone().expect("visions started");
+    assert_eq!(s.plugin_id, "visions");
+    assert_eq!(s.phase, OverlayPhase::Running, "non-flashing plugin skips the warning screen");
+    assert!(s.fullscreen, "default display is fullscreen");
+
+    // No stacking: a second trigger while open is a no-op, and unknown
+    // plugin ids are reported as failures.
+    assert!(!host.trigger_action("visions", "start"), "already open");
+    assert!(!host.trigger_action("nope", "start"), "unknown plugin");
+
+    host.end_overlay();
+    assert!(host.overlay.is_none());
+    assert!(host.trigger_action("visions", "start"), "re-arms after close");
+}
+
+#[test]
 fn panel_start_still_shows_warning() {
     let tmp = tempfile::tempdir().unwrap();
     let mut host = strobe_host(tmp.path());

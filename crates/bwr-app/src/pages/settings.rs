@@ -187,6 +187,46 @@ pub fn ui(ui: &mut Ui, app: &mut BigWaveApp) {
 
         ui.add_space(10.0);
 
+        // --- Idle Visions -------------------------------------------------------
+        ui.group(|ui| {
+            ui.label(egui::RichText::new("Idle Visions").heading().size(16.0));
+            if ui
+                .checkbox(
+                    &mut app.settings.idle_visions,
+                    "Start the Visions visualiser when the app is left untouched",
+                )
+                .changed()
+            {
+                app.persist_settings();
+            }
+            ui.horizontal(|ui| {
+                ui.label("After");
+                egui::ComboBox::from_id_salt("idle-minutes")
+                    .selected_text(format!("{} minutes", app.settings.idle_minutes))
+                    .show_ui(ui, |ui| {
+                        for m in [1u32, 2, 5, 10, 15, 30] {
+                            if ui
+                                .selectable_label(app.settings.idle_minutes == m, format!("{m} minutes"))
+                                .clicked()
+                            {
+                                app.settings.idle_minutes = m;
+                                app.persist_settings();
+                            }
+                        }
+                    });
+            });
+            ui.label(
+                egui::RichText::new(
+                    "Any mouse move or keypress closes the visualiser again. Only applies to \
+                     Visions sessions started by the timer — ones you start yourself keep running.",
+                )
+                .small()
+                .weak(),
+            );
+        });
+
+        ui.add_space(10.0);
+
         // --- About -------------------------------------------------------------
         ui.group(|ui| {
             ui.add_space(6.0);

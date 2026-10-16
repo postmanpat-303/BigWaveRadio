@@ -66,6 +66,12 @@ pub struct Settings {
     pub volume: f32,
     /// Hide the window to the tray on close instead of exiting.
     pub minimize_to_tray: bool,
+    /// Start the Visions visualiser after the app is left untouched.
+    #[serde(default = "default_true")]
+    pub idle_visions: bool,
+    /// Minutes of no mouse/keyboard input before Visions starts.
+    #[serde(default = "default_idle_minutes")]
+    pub idle_minutes: u32,
     /// Recent search queries, most recent first (capped at MAX_SEARCH_HISTORY).
     #[serde(default)]
     pub search_history: Vec<String>,
@@ -73,6 +79,14 @@ pub struct Settings {
 
 /// Cap on the number of remembered searches.
 pub const MAX_SEARCH_HISTORY: usize = 8;
+
+fn default_true() -> bool {
+    true
+}
+
+fn default_idle_minutes() -> u32 {
+    5
+}
 
 impl Default for Settings {
     fn default() -> Self {
@@ -84,6 +98,8 @@ impl Default for Settings {
             codec: String::new(),
             volume: 0.8,
             minimize_to_tray: false,
+            idle_visions: default_true(),
+            idle_minutes: default_idle_minutes(),
             search_history: Vec::new(),
         }
     }
