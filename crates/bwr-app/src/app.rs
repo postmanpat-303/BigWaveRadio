@@ -740,6 +740,16 @@ impl BigWaveApp {
         self.loading = false;
         match result {
             NetResult::Stations(stations) => {
+                // A slow Discover/search/browse answer must not overwrite a
+                // page that shows its own list (it used to replace a mood's
+                // results with Trending).
+                if matches!(
+                    self.page,
+                    Page::Mood(_) | Page::Stars | Page::Library | Page::Plugins | Page::PluginPage(_) | Page::Settings
+                ) {
+                    self.search_pending = false;
+                    return;
+                }
                 self.stations = stations;
                 if self.page == Page::Search && self.search_pending {
                     self.search_active = true;

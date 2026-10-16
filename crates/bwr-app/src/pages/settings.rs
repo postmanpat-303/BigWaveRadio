@@ -143,6 +143,27 @@ pub fn ui(ui: &mut Ui, app: &mut BigWaveApp) {
 
         ui.add_space(10.0);
 
+        // --- Station cards -----------------------------------------------------
+        ui.group(|ui| {
+            ui.label(egui::RichText::new("Station cards").heading().size(16.0));
+            ui.horizontal(|ui| {
+                let mut comfy = app.discovery.comfortable_cards;
+                let a = ui.radio_value(&mut comfy, false, "Compact");
+                let b = ui.radio_value(&mut comfy, true, "Comfortable");
+                if a.changed() || b.changed() || comfy != app.discovery.comfortable_cards {
+                    app.discovery.comfortable_cards = comfy;
+                    app.discovery.save();
+                }
+            });
+            ui.label(
+                egui::RichText::new("Compact fits about twice as many stations on screen.")
+                    .small()
+                    .weak(),
+            );
+        });
+
+        ui.add_space(10.0);
+
         // --- Behaviour ---------------------------------------------------------
         ui.group(|ui| {
             ui.label(egui::RichText::new("Behaviour").heading().size(16.0));

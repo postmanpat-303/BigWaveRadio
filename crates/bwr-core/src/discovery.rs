@@ -420,6 +420,8 @@ pub struct DiscoveryState {
     pub show_talk: bool,
     /// Recently played, newest first.
     pub recent: Vec<Station>,
+    /// Station cards in the roomier pre-0.9.1 size (default: compact).
+    pub comfortable_cards: bool,
     #[serde(skip)]
     path: PathBuf,
 }

@@ -18,13 +18,14 @@ pub fn ui(ui: &mut Ui, app: &mut BigWaveApp) {
              (you can also drag a .zip onto the window). Edits reload automatically.",
             dir.display()
         ))
-        .small()
-        .weak(),
+        .size(13.0)
+        .color(secondary_text(ui)),
     );
-    ui.add_space(6.0);
+    ui.add_space(10.0);
     ui.horizontal(|ui| {
+        ui.spacing_mut().item_spacing.x = 8.0;
         #[cfg(windows)]
-        if ui.button("📦  Import .zip…").clicked() {
+        if action_button(ui, "📦", "Import .zip…", Btn::Primary).clicked() {
             if let Some(p) = rfd::FileDialog::new().add_filter("Plugin archive", &["zip"]).pick_file() {
                 app.plugins.import(&p);
             }
@@ -32,25 +33,28 @@ pub fn ui(ui: &mut Ui, app: &mut BigWaveApp) {
         #[cfg(not(windows))]
         {
             ui.add(egui::TextEdit::singleline(&mut app.plugins.import_path).hint_text("path/to/plugin.zip").desired_width(220.0));
-            if ui.button("📦  Import .zip").clicked() {
+            if action_button(ui, "📦", "Import .zip", Btn::Primary).clicked() {
                 let p = std::path::PathBuf::from(app.plugins.import_path.trim());
                 app.plugins.import(&p);
             }
         }
-        if ui.button("📂  Open folder").clicked() {
+        if action_button(ui, "📂", "Open folder", Btn::Secondary).clicked() {
             #[cfg(windows)]
             let _ = std::process::Command::new("explorer").arg(&dir).spawn();
             #[cfg(not(windows))]
             let _ = std::process::Command::new("xdg-open").arg(&dir).spawn();
         }
-        if ui.button("⟳  Reload all").clicked() {
+        if action_button(ui, "⟳", "Reload all", Btn::Secondary).clicked() {
             app.plugins.host.scan();
         }
-        ui.add_space(8.0);
-        ui.hyperlink_to("🌐  Browse community plugins", COMMUNITY_URL)
+        ui.add_space(4.0);
+        let browse = action_button(ui, "🌐", "Browse community plugins", Btn::Link)
             .on_hover_text("The community plugin hub on GitHub: download a plugin's .zip there, then import it here.");
+        if browse.clicked() {
+            ui.ctx().open_url(egui::OpenUrl::new_tab(COMMUNITY_URL));
+        }
     });
-    ui.add_space(8.0);
+    ui.add_space(12.0);
 
     egui::ScrollArea::vertical().auto_shrink([false, false]).show(ui, |ui| {
         flash_safety(ui, app);
@@ -61,14 +65,16 @@ pub fn ui(ui: &mut Ui, app: &mut BigWaveApp) {
         }
         for id in ids {
             plugin_card(ui, app, &id);
-            ui.add_space(12.0);
+            ui.add_space(10.0);
         }
-        ui.add_space(4.0);
+        ui.add_space(6.0);
+        let hint = secondary_text(ui);
         ui.label(
             RichText::new("Writing a plugin (or asking an AI to)? See PLUGIN_GUIDE.md in the plugins folder, and test it with: BigWaveRadio.exe --check-plugin <folder>")
-                .small()
-                .weak(),
+                .size(12.5)
+                .color(hint),
         );
+        ui.add_space(8.0);
     });
 }
 
@@ -133,21 +139,15 @@ fn plugin_card(ui: &mut Ui, app: &mut BigWaveApp, id: &str) {
 
     let accent = manifest.as_ref().map(|m| m.accent.clone()).unwrap_or_default();
     let (fill, border, tint) = card_colors(ui, id, &accent);
-    egui::Frame::new()
+    let card = egui::Frame::new()
         .fill(fill)
-        .stroke(egui::Stroke::new(1.0, border))
-        .corner_radius(10.0)
-        .inner_margin(egui::Margin { left: 16, right: 12, top: 10, bottom: 10 })
+        .stroke(egui::Stroke::new(1.0_f32, border))
+        .corner_radius(CARD_RADIUS)
+        .inner_margin(egui::Margin { left: 18, right: 12, top: 10, bottom: 10 })
         .outer_margin(egui::Margin::symmetric(2, 0))
         .show(ui, |ui| {
         ui.set_width(ui.available_width());
-        // Accent stripe down the left edge.
-        let r = ui.max_rect();
-        ui.painter().rect_filled(
-            egui::Rect::from_min_max(egui::pos2(r.left() - 11.0, r.top() - 4.0), egui::pos2(r.left() - 7.0, r.bottom() + 4.0)),
-            2.0,
-            tint,
-        );
+        ui.spacing_mut().item_spacing.y = 5.0;
         ui.horizontal(|ui| {
             ui.label(RichText::new(&name).strong().size(16.0));
             if let Some(m) = &manifest {
@@ -158,22 +158,23 @@ fn plugin_card(ui: &mut Ui, app: &mut BigWaveApp, id: &str) {
             }
             status_badge(ui, &status);
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                if ui.small_button("⟳ Reload").clicked() {
+                ui.spacing_mut().item_spacing.x = 6.0;
+                if action_button(ui, "⟳", "Reload", Btn::Small).clicked() {
                     app.plugins.host.reload(id);
                 }
                 match &status {
                     PluginStatus::Running => {
-                        if ui.small_button("Disable").clicked() {
+                        if action_button(ui, "⏸", "Disable", Btn::Small).clicked() {
                             app.plugins.host.set_enabled(id, false);
                         }
                     }
                     PluginStatus::Disabled => {
-                        if ui.small_button("Enable").clicked() {
+                        if action_button(ui, "▶", "Enable", Btn::SmallPrimary).clicked() {
                             app.plugins.host.approve(id);
                         }
                     }
                     PluginStatus::NeedsApproval => {
-                        if ui.small_button("Allow & enable").clicked() {
+                        if action_button(ui, "✔", "Allow & enable", Btn::SmallPrimary).clicked() {
                             app.plugins.host.approve(id);
                         }
                     }
@@ -184,12 +185,12 @@ fn plugin_card(ui: &mut Ui, app: &mut BigWaveApp, id: &str) {
         ui.add_space(2.0);
         if let Some(m) = &manifest {
             if !m.description.is_empty() {
-                ui.label(RichText::new(&m.description).small());
+                ui.label(RichText::new(&m.description).size(14.0));
             }
             let perms: Vec<String> = m.permission_set().into_iter().map(|p: Permission| p.describe().to_string()).collect();
             if !perms.is_empty() {
                 let prefix = if status == PluginStatus::NeedsApproval { "Wants to: " } else { "Can: " };
-                ui.label(RichText::new(format!("{prefix}{}", perms.join(", "))).small().weak());
+                ui.label(RichText::new(format!("{prefix}{}", perms.join(", "))).size(12.5).color(secondary_text(ui)));
             }
         }
         if let PluginStatus::Error(e) = &status {
@@ -220,6 +221,119 @@ fn plugin_card(ui: &mut Ui, app: &mut BigWaveApp, id: &str) {
             });
         }
     });
+    // Accent bar: painted AFTER layout from the card's real rect, clipped to
+    // the card's rounded shape so it can never spill past the card.
+    let (shape, clip) = accent_bar(card.response.rect, ACCENT_BAR_W);
+    ui.painter()
+        .with_clip_rect(clip.intersect(ui.clip_rect()))
+        .rect_filled(shape, CARD_RADIUS, tint);
+}
+
+const CARD_RADIUS: f32 = 10.0;
+const ACCENT_BAR_W: f32 = 5.0;
+
+/// Geometry of a card's left accent bar: paint `shape` (the card's own
+/// rounded rect, inset by the 1px border) clipped to `clip` (its left
+/// `width` pixels). The bar therefore has exactly the card's height and its
+/// left corners follow the card's rounding.
+pub(crate) fn accent_bar(card: egui::Rect, width: f32) -> (egui::Rect, egui::Rect) {
+    let shape = card.shrink(1.0);
+    let clip = egui::Rect::from_min_max(shape.min, egui::pos2((shape.left() + width).min(shape.right()), shape.bottom()));
+    (shape, clip)
+}
+
+/// Readable secondary text: the normal text colour at reduced strength
+/// (egui's "weak" is too faint on the tinted cards).
+fn secondary_text(ui: &Ui) -> Color32 {
+    let base = ui.visuals().text_color();
+    let bg = ui.visuals().panel_fill;
+    let mix = |a: u8, b: u8| ((a as f32) * 0.72 + (b as f32) * 0.28).round() as u8;
+    Color32::from_rgb(mix(base.r(), bg.r()), mix(base.g(), bg.g()), mix(base.b(), bg.b()))
+}
+
+#[derive(Clone, Copy, PartialEq)]
+pub(crate) enum Btn {
+    Primary,
+    Secondary,
+    Link,
+    Small,
+    SmallPrimary,
+}
+
+/// A framed button with padding, an icon and a hover state.
+pub(crate) fn action_button(ui: &mut Ui, icon: &str, label: &str, kind: Btn) -> egui::Response {
+    use egui::{Align2, CornerRadius, FontId, Sense, Stroke, StrokeKind, Vec2};
+    let accent = ui.visuals().selection.bg_fill;
+    let small = matches!(kind, Btn::Small | Btn::SmallPrimary);
+    let font = FontId::proportional(if small { 13.0 } else { 14.0 });
+    let text = format!("{icon}  {label}");
+    let galley = ui.fonts(|f| f.layout_no_wrap(text, font, Color32::WHITE));
+    let pad = if small { Vec2::new(10.0, 4.0) } else { Vec2::new(14.0, 7.0) };
+    let size = galley.size() + pad * 2.0;
+    let (rect, resp) = ui.allocate_exact_size(size, Sense::click());
+    let hovered = resp.hovered();
+    let pressed = resp.is_pointer_button_down_on();
+    let dark = ui.visuals().dark_mode;
+    let neutral = if dark { Color32::from_gray(52) } else { Color32::from_gray(228) };
+    let neutral_hover = if dark { Color32::from_gray(66) } else { Color32::from_gray(212) };
+    let (fill, stroke, text_col) = match kind {
+        Btn::Primary | Btn::SmallPrimary => (
+            if pressed { accent.gamma_multiply(0.8) } else if hovered { accent.gamma_multiply(1.15) } else { accent },
+            Stroke::new(1.0_f32, accent),
+            Color32::WHITE,
+        ),
+        Btn::Secondary | Btn::Small => (
+            if hovered { neutral_hover } else { neutral },
+            Stroke::new(1.0_f32, ui.visuals().widgets.inactive.bg_stroke.color.gamma_multiply(1.5)),
+            ui.visuals().strong_text_color(),
+        ),
+        Btn::Link => (
+            if hovered { accent.gamma_multiply(0.15) } else { Color32::TRANSPARENT },
+            Stroke::new(1.0_f32, accent.gamma_multiply(if hovered { 1.0 } else { 0.6 })),
+            if dark { accent.gamma_multiply(1.4) } else { accent },
+        ),
+    };
+    let r = CornerRadius::same(if small { 6 } else { 8 });
+    ui.painter().rect(rect, r, fill, stroke, StrokeKind::Inside);
+    ui.painter().galley_with_override_text_color(
+        Align2::CENTER_CENTER.align_size_within_rect(galley.size(), rect).min,
+        galley,
+        text_col,
+    );
+    if hovered {
+        ui.ctx().set_cursor_icon(egui::CursorIcon::PointingHand);
+    }
+    resp
+}
+
+#[cfg(test)]
+mod tests {
+    use super::accent_bar;
+    use eframe::egui::{pos2, Rect};
+
+    #[test]
+    fn accent_bar_stays_inside_its_card() {
+        let card = Rect::from_min_max(pos2(100.0, 200.0), pos2(700.0, 330.0));
+        let (shape, clip) = accent_bar(card, 5.0);
+        // Same height as the card, never taller (the old bug used the
+        // remaining page height).
+        assert!(card.contains_rect(shape) && card.contains_rect(clip));
+        assert_eq!(clip.top(), card.top() + 1.0);
+        assert_eq!(clip.bottom(), card.bottom() - 1.0);
+        assert_eq!(clip.left(), shape.left());
+        assert_eq!(clip.width(), 5.0);
+        // Paint = shape ∩ clip: the left strip of the card's own rounded rect.
+        let painted = shape.intersect(clip);
+        assert_eq!(painted, clip);
+    }
+
+    #[test]
+    fn accent_bar_on_tiny_card_is_clamped() {
+        let card = Rect::from_min_max(pos2(0.0, 0.0), pos2(4.0, 20.0));
+        let (shape, clip) = accent_bar(card, 5.0);
+        assert!(clip.right() <= shape.right());
+        assert!(card.contains_rect(clip));
+    }
 }
 
 fn m_has(m: &Option<bwr_plugins::Manifest>, p: Permission) -> bool {
