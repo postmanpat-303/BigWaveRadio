@@ -1,3 +1,4 @@
 target/
 *.log
 shot*.png
+staging/
