@@ -165,7 +165,8 @@ fn on_overlay(ctx, draw) {
 </details>
 
 * Authoring guide (for people and AI assistants): [docs/PLUGIN_GUIDE.md](docs/PLUGIN_GUIDE.md), plus [AGENTS.md](AGENTS.md). More examples are in [docs/plugin-examples](docs/plugin-examples).
-* Validate a plugin without opening the window: `BigWaveRadio.exe --check-plugin <folder>` (exit code 0 = OK).
+* Validate a plugin without opening the window: `BigWaveRadio.exe --check-plugin <folder>` (exit code 0 = OK), or the standalone Linux `bwr-plugin-check` attached to each release.
+* 🌐 **Community plugins:** browse and share plugins at [BigWaveRadio-Plugins](https://github.com/postmanpat-303/BigWaveRadio-Plugins) (linked from the Plugins page). Each plugin card on the Plugins page gets its own colour; set `accent = "#rrggbb"` in `plugin.toml` to choose it.
 
 ## 🏗️ Architecture
 

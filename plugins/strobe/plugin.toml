@@ -1,13 +1,14 @@
 # Beat Strobe — bundled with BigWave Radio.
 id = "strobe"
 name = "Beat Strobe"
-version = "1.4.0"
+version = "1.4.1"
 api = 1
 runtime = "rhai"
 entry = "main.rhai"
 author = "BigWave Radio"
 description = "Strobe that randomly syncs to the beat, blacks out during breaks and flashes AI-uprising symbols. In-window or fullscreen."
 permissions = ["audio", "overlay", "fullscreen", "hotkeys", "panel", "page"]
+accent = "#e01030"     # card colour on the Plugins page
 
 [[pages]]
 id = "strobe"

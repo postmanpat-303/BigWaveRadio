@@ -1,7 +1,7 @@
 # Visions — bundled with BigWave Radio.
 id = "visions"
 name = "Visions"
-version = "1.0.0"
+version = "1.0.1"
 api = 1
 runtime = "rhai"
 entry = "main.rhai"
@@ -11,6 +11,7 @@ permissions = ["audio", "overlay", "fullscreen", "hotkeys", "panel", "page"]
 # Never flashes: opens without the photosensitivity warning (the host
 # flash limiter and the visual engine's luminance guard still apply).
 flashing = false
+accent = "#7b2ff7"     # card colour on the Plugins page
 
 [[pages]]
 id = "visions"

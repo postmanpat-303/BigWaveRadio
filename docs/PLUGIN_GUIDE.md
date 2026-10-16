@@ -52,6 +52,8 @@ entry = "main.rhai"         # optional, default main.rhai
 author = "You"              # optional
 description = "One line"    # optional
 permissions = ["audio", "overlay"]   # see the table below
+accent = "#7b2ff7"          # optional: card colour on the Plugins page
+                            # (default: a tint derived from the id)
 flashing = true             # optional; false = never flashes (e.g. a draw.visual
                             # visualiser): the overlay opens without the warning
 
@@ -494,7 +496,16 @@ fn on_page(ctx, page_id, ui) {
 }
 ```
 
-## 11. Checklist before you hand over a plugin
+## 11. Sharing: the community plugin hub
+
+Publish plugins at **https://github.com/postmanpat-303/BigWaveRadio-Plugins**
+(the app links to it from the Plugins page). Fork it, copy
+`templates/hello-plugin/` to `plugins/<your-id>/`, edit, open a pull request;
+CI validates it and adds it to the catalog. Outside the app you can validate
+with the standalone `bwr-plugin-check <folder>` (a Linux binary attached to
+each BigWave Radio release).
+
+## 12. Checklist before you hand over a plugin
 
 1. `id` matches the folder name; `api = 1`.
 2. Every API you call has its permission declared, and no extra ones.

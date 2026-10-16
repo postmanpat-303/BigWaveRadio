@@ -102,6 +102,9 @@ pub fn check_plugin(dir: &Path) -> CheckReport {
     if !m.pages.is_empty() && !r.hooks.iter().any(|h| h == "on_page") {
         r.warnings.push("[[pages]] declared but there is no on_page(ctx, page_id, ui) hook".into());
     }
+    if !m.accent.is_empty() && crate::Rgba::parse(m.accent.trim()).is_none() {
+        r.warnings.push(format!("accent \"{}\" is not a colour (use \"#rrggbb\")", m.accent));
+    }
     if r.errors.is_empty() {
         r.errors.extend(host.smoke_test(&m.id).into_iter().map(|e| format!("runtime: {e}")));
     }

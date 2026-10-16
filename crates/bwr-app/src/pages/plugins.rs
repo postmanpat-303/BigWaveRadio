@@ -6,6 +6,9 @@ use eframe::egui::{self, Color32, RichText, Ui};
 use crate::app::BigWaveApp;
 use crate::plugin_bridge::render_widgets;
 
+/// The community plugin hub.
+pub const COMMUNITY_URL: &str = "https://github.com/postmanpat-303/BigWaveRadio-Plugins";
+
 pub fn ui(ui: &mut Ui, app: &mut BigWaveApp) {
     ui.heading("Plugins");
     let dir = app.plugins.host.dir.clone();
@@ -43,6 +46,9 @@ pub fn ui(ui: &mut Ui, app: &mut BigWaveApp) {
         if ui.button("⟳  Reload all").clicked() {
             app.plugins.host.scan();
         }
+        ui.add_space(8.0);
+        ui.hyperlink_to("🌐  Browse community plugins", COMMUNITY_URL)
+            .on_hover_text("The community plugin hub on GitHub: download a plugin's .zip there, then import it here.");
     });
     ui.add_space(8.0);
 
@@ -55,7 +61,7 @@ pub fn ui(ui: &mut Ui, app: &mut BigWaveApp) {
         }
         for id in ids {
             plugin_card(ui, app, &id);
-            ui.add_space(8.0);
+            ui.add_space(12.0);
         }
         ui.add_space(4.0);
         ui.label(
@@ -90,12 +96,32 @@ fn flash_safety(ui: &mut Ui, app: &mut BigWaveApp) {
 
 fn status_badge(ui: &mut Ui, s: &PluginStatus) {
     let (text, color) = match s {
-        PluginStatus::Running => ("running", Color32::from_rgb(80, 200, 120)),
-        PluginStatus::Disabled => ("disabled", Color32::GRAY),
-        PluginStatus::NeedsApproval => ("needs approval", Color32::from_rgb(240, 190, 60)),
-        PluginStatus::Error(_) => ("error", Color32::from_rgb(240, 80, 80)),
+        PluginStatus::Running => ("ENABLED", Color32::from_rgb(70, 190, 110)),
+        PluginStatus::Disabled => ("DISABLED", Color32::from_rgb(130, 130, 140)),
+        PluginStatus::NeedsApproval => ("NEEDS APPROVAL", Color32::from_rgb(235, 175, 40)),
+        PluginStatus::Error(_) => ("ERROR", Color32::from_rgb(230, 70, 70)),
     };
-    ui.label(RichText::new(text).color(color).small());
+    egui::Frame::new()
+        .fill(color.gamma_multiply(0.22))
+        .stroke(egui::Stroke::new(1.0, color))
+        .corner_radius(8.0)
+        .inner_margin(egui::Margin::symmetric(7, 1))
+        .show(ui, |ui| {
+            ui.label(RichText::new(text).color(color).size(10.5).strong());
+        });
+}
+
+/// Card colours: a subtle tint of the plugin's colour over the panel.
+fn card_colors(ui: &Ui, id: &str, accent: &str) -> (Color32, Color32, Color32) {
+    let t = bwr_plugins::card_tint(id, accent);
+    let tint = Color32::from_rgb(t.0[0], t.0[1], t.0[2]);
+    let base = ui.visuals().panel_fill;
+    let mix = |a: Color32, b: Color32, k: f32| {
+        let l = |x: u8, y: u8| (x as f32 + (y as f32 - x as f32) * k).round() as u8;
+        Color32::from_rgb(l(a.r(), b.r()), l(a.g(), b.g()), l(a.b(), b.b()))
+    };
+    let k = if ui.visuals().dark_mode { 0.10 } else { 0.14 };
+    (mix(base, tint, k), mix(base, tint, 0.45), tint)
 }
 
 fn plugin_card(ui: &mut Ui, app: &mut BigWaveApp, id: &str) {
@@ -105,12 +131,30 @@ fn plugin_card(ui: &mut Ui, app: &mut BigWaveApp, id: &str) {
     let log: Vec<String> = p.log.iter().rev().take(20).cloned().collect();
     let name = p.name();
 
-    egui::Frame::group(ui.style()).show(ui, |ui| {
+    let accent = manifest.as_ref().map(|m| m.accent.clone()).unwrap_or_default();
+    let (fill, border, tint) = card_colors(ui, id, &accent);
+    egui::Frame::new()
+        .fill(fill)
+        .stroke(egui::Stroke::new(1.0, border))
+        .corner_radius(10.0)
+        .inner_margin(egui::Margin { left: 16, right: 12, top: 10, bottom: 10 })
+        .outer_margin(egui::Margin::symmetric(2, 0))
+        .show(ui, |ui| {
         ui.set_width(ui.available_width());
+        // Accent stripe down the left edge.
+        let r = ui.max_rect();
+        ui.painter().rect_filled(
+            egui::Rect::from_min_max(egui::pos2(r.left() - 11.0, r.top() - 4.0), egui::pos2(r.left() - 7.0, r.bottom() + 4.0)),
+            2.0,
+            tint,
+        );
         ui.horizontal(|ui| {
-            ui.label(RichText::new(&name).strong().size(15.0));
+            ui.label(RichText::new(&name).strong().size(16.0));
             if let Some(m) = &manifest {
-                ui.label(RichText::new(format!("v{}{}", m.version, if m.author.is_empty() { String::new() } else { format!(" by {}", m.author) })).small().weak());
+                ui.label(RichText::new(format!("v{}", m.version)).small().monospace());
+                if !m.author.is_empty() {
+                    ui.label(RichText::new(format!("by {}", m.author)).small().weak());
+                }
             }
             status_badge(ui, &status);
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
@@ -137,6 +181,7 @@ fn plugin_card(ui: &mut Ui, app: &mut BigWaveApp, id: &str) {
                 }
             });
         });
+        ui.add_space(2.0);
         if let Some(m) = &manifest {
             if !m.description.is_empty() {
                 ui.label(RichText::new(&m.description).small());

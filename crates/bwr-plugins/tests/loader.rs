@@ -802,3 +802,22 @@ fn visual_api_validates() {
         assert!(msg.contains(err), "{n}: {msg}");
     }
 }
+
+#[test]
+fn card_tints_are_stable_and_honour_accent() {
+    assert_eq!(card_tint("visions", ""), card_tint("visions", ""));
+    assert_ne!(card_tint("strobe", ""), card_tint("visions", ""));
+    assert_eq!(card_tint("anything", "#123456"), Rgba([0x12, 0x34, 0x56, 255]));
+    assert_eq!(card_tint("x", "not a colour"), card_tint("x", ""));
+    // Every bundled plugin declares a valid accent.
+    for (folder, files) in BUNDLED {
+        let m = Manifest::parse(files.iter().find(|f| f.0 == "plugin.toml").unwrap().1).unwrap();
+        assert!(Rgba::parse(&m.accent).is_some(), "{folder}");
+    }
+    let tmp = tempfile::tempdir().unwrap();
+    let dir = write_plugin(tmp.path(), "acc", "", "fn on_load(ctx) {}");
+    let toml = std::fs::read_to_string(dir.join("plugin.toml")).unwrap() + "accent = \"purple-ish\"\n";
+    std::fs::write(dir.join("plugin.toml"), toml).unwrap();
+    let r = check_plugin(&dir);
+    assert!(r.ok() && r.warnings.iter().any(|w| w.contains("accent")), "{r}");
+}

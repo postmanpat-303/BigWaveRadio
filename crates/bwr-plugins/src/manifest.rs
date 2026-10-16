@@ -146,6 +146,39 @@ pub struct Manifest {
     /// warning. The host flash limiter still applies.
     #[serde(default = "default_true")]
     pub flashing: bool,
+    /// Optional card colour on the Plugins page ("#rrggbb"); otherwise a
+    /// tint is derived from the id.
+    #[serde(default)]
+    pub accent: String,
+}
+
+/// Card tint for a plugin: its `accent` colour if valid, otherwise a
+/// stable colour derived from a hash of the id (same id, same colour).
+pub fn card_tint(id: &str, accent: &str) -> crate::Rgba {
+    if let Some(c) = crate::Rgba::parse(accent.trim()) {
+        return crate::Rgba([c.0[0], c.0[1], c.0[2], 255]);
+    }
+    // FNV-1a hash -> hue; fixed saturation / value so tints stay subtle.
+    let mut h: u32 = 0x811c_9dc5;
+    for b in id.bytes() {
+        h ^= b as u32;
+        h = h.wrapping_mul(0x0100_0193);
+    }
+    let hue = (h % 360) as f32 / 60.0;
+    let (s, v) = (0.55f32, 0.85f32);
+    let c = v * s;
+    let x = c * (1.0 - (hue % 2.0 - 1.0).abs());
+    let (r, g, b) = match hue as u32 {
+        0 => (c, x, 0.0),
+        1 => (x, c, 0.0),
+        2 => (0.0, c, x),
+        3 => (0.0, x, c),
+        4 => (x, 0.0, c),
+        _ => (c, 0.0, x),
+    };
+    let m = v - c;
+    let to = |f: f32| ((f + m) * 255.0).round() as u8;
+    crate::Rgba([to(r), to(g), to(b), 255])
 }
 
 fn default_true() -> bool {
