@@ -11,7 +11,9 @@ plugin API (v1) and starts with a one-shot prompt. In short:
   (Rhai script, not Rust). Installed copies live in
   `%LOCALAPPDATA%\BigWaveRadio\plugins\<id>\`.
 * Declare permissions in `plugin.toml`; there is no network or file access.
-* Draw by returning commands (`draw.fill/rect/circle/line/text/svg`), never egui.
+* Draw by returning commands (`draw.fill/rect/circle/line/text/svg/rings`),
+  never egui. `draw.rings` is the efficient way to do concentric-ring /
+  moiré effects (one command per disc).
 * Validate before handing over:
   `cargo run -p bwr-app -- --check-plugin path/to/plugin` (or
   `BigWaveRadio.exe --check-plugin <folder>`). It must print `OK`.

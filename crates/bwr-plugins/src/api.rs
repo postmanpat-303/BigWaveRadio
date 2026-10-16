@@ -302,6 +302,26 @@ pub(crate) fn build_engine() -> Engine {
         },
     );
 
+    // draw.rings(cx, cy, radius, ring_width, [colours]): concentric rings,
+    // one host command however many rings there are.
+    e.register_fn(
+        "rings",
+        |d: &mut Draw, cx: Dynamic, cy: Dynamic, r: Dynamic, w: Dynamic, cols: Array| -> Res<()> {
+            let (radius, width) = (num(&r, "rings")?.clamp(0.0, 10.0), num(&w, "rings")?);
+            if width <= 0.0 {
+                return Err("draw.rings: ring_width must be > 0".into());
+            }
+            if (radius / width) as usize > crate::draw::MAX_RINGS {
+                return Err(format!("draw.rings: too many rings (radius / ring_width > {})", crate::draw::MAX_RINGS).into());
+            }
+            if cols.is_empty() {
+                return Err("draw.rings: needs at least one colour".into());
+            }
+            let colors = cols.iter().map(color).collect::<Res<Vec<_>>>()?;
+            d.push(DrawCmd::Rings { cx: num(&cx, "rings")?, cy: num(&cy, "rings")?, radius, width, colors })
+        },
+    );
+
     // ---- ui ----------------------------------------------------------------------
     e.register_type_with_name::<Ui>("Ui");
     e.register_fn("heading", |u: &mut Ui, t: Dynamic| {

@@ -58,7 +58,8 @@ access.
   (default); *Fixed rate* (default) or *Random beat* mode; speeds 1–12 Hz
   (default 12) limited by the flash cap (3 Hz default, opt-in up to 12 Hz under
   Plugins → Flash safety, enforced by the app); arrow keys change speed;
-  black screen during breaks; random AI-vs-humanity line-art symbols. Esc
+  black screen during breaks; random AI-vs-humanity line-art symbols; Amiga-style black-and-white
+  interference rings in Random beat mode (optional in Fixed rate). Esc
   always exits (handled by the app), as does any other key or a click.
 
 ## Building

@@ -187,6 +187,7 @@ build them from 0..255 ints. Numbers may be ints or floats.
 | `draw.text(x, y, text, color)` / `draw.text(x, y, text, size_px, color)` | text, top-left at (x, y) |
 | `draw.text_center(x, y, text, size_px, color)` | text centred on (x, y) |
 | `draw.svg(path_d, cx, cy, size, width_px, color)` | SVG path line art |
+| `draw.rings(cx, cy, radius, ring_width, [colors])` | a disc of concentric rings centred on (cx, cy); `radius` and `ring_width` are fractions of the height; colours cycle from the outside in; `"#00000000"` (transparent) leaves a gap. One command however many rings (max 400 per call) |
 
 `draw.svg` takes SVG path data (the `d` attribute) in a **100x100 viewBox**,
 centred at `(cx, cy)` and `size` tall (fraction of height). It is drawn as
@@ -195,6 +196,12 @@ case). Arcs (`A`) are not supported: use `C` curves or `draw.circle`.
 A circle of radius r at (cx, cy) as cubic curves:
 `M cx-r cy C cx-r cy-0.55r cx-0.55r cy-r cx cy-r C ...` (see the strobe's
 `symbols()` for complete examples).
+
+**Moiré / interference rings**: draw two `draw.rings` discs that move,
+the first with `[ink, "#00000000"]` and the second with
+`["#00000000", background]` on top. Where they overlap the ring gaps
+interfere (the classic Amiga demo effect; see the bundled strobe's
+`draw_rings`). Moving rings count as motion, not flashing (see section 9).
 
 Max 5000 draw commands per frame.
 
@@ -251,10 +258,13 @@ return floats), `rgb(...)`, `rgba(...)`, plus Rhai's built-ins
 * The app shows a photosensitivity warning before any overlay; the user must
   press Enter / click to continue. The only exception is an overlay opened
   from `on_hotkey`, because the user pressed the plugin's hotkey on purpose.
-* The app limits dark-to-bright transitions of large areas (>= 25 % of the
-  overlay) to `ctx.flash_cap` per second (3 by default; the user can opt in
-  up to 12). Extra flashes are painted black, so design for the cap: use
-  `1.0 / ctx.flash_cap` as the minimum gap between flashes.
+* The app estimates each overlay frame's average brightness. A rise of 10 %
+  or more over the darkest recent level is a flash, and flashes are limited
+  to `ctx.flash_cap` per second (3 by default; the user can opt in up to 12).
+  Extra flashes have their large bright shapes painted black (or the whole
+  frame, if needed), so design for the cap: use `1.0 / ctx.flash_cap` as the
+  minimum gap between flashes. Ring discs count with their average colour,
+  so swinging rings are motion, not flashing.
 * Esc, any unhandled key and clicks close the overlay. Don't try to trap the user.
 * Avoid saturated red full-screen flashes; prefer short white or dim colours.
 

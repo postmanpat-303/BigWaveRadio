@@ -25,6 +25,11 @@ impl Rgba {
         }
     }
 
+    /// Relative luminance (WCAG) ignoring alpha, 0..1.
+    pub fn luminance_opaque(self) -> f32 {
+        Rgba([self.0[0], self.0[1], self.0[2], 255]).luminance()
+    }
+
     /// Relative luminance (WCAG), scaled by alpha, 0..1.
     pub fn luminance(self) -> f32 {
         let lin = |c: u8| {
@@ -51,7 +56,15 @@ pub enum DrawCmd {
     /// Stroked polylines from `draw.svg`: points are offsets from the centre
     /// (`cx`, `cy`, area fractions) measured in units of the area *height*.
     Paths { cx: f32, cy: f32, paths: Vec<Vec<(f32, f32)>>, width: f32, color: Rgba },
+    /// Concentric rings (from `draw.rings`): a disc of `radius` (height
+    /// units) centred on (`cx`, `cy`), cut into rings `width` thick,
+    /// coloured by cycling through `colors` from the outside in. Fully
+    /// transparent colours leave gaps, so stacked discs make moiré.
+    Rings { cx: f32, cy: f32, radius: f32, width: f32, colors: Vec<Rgba> },
 }
+
+/// Max rings in one `draw.rings` call.
+pub const MAX_RINGS: usize = 400;
 
 impl DrawCmd {
     /// Fraction of the area this command covers when it is a solid fill.
@@ -64,14 +77,48 @@ impl DrawCmd {
         }
     }
 
-    pub fn color_mut(&mut self) -> &mut Rgba {
-        match self {
+    pub fn color_mut(&mut self) -> Option<&mut Rgba> {
+        Some(match self {
+            DrawCmd::Rings { .. } => return None,
             DrawCmd::Fill(c) => c,
             DrawCmd::Rect { color, .. }
             | DrawCmd::Circle { color, .. }
             | DrawCmd::Line { color, .. }
             | DrawCmd::Text { color, .. }
             | DrawCmd::Paths { color, .. } => color,
+        })
+    }
+
+    /// Colour this command gives to point (x, y) in area fractions, as
+    /// (luminance, coverage alpha), or None if it doesn't cover the point.
+    /// Rings report their *average* colour so their motion doesn't read as
+    /// flicker. `aspect` = width / height. Thin shapes are ignored.
+    pub fn sample(&self, x: f32, y: f32, aspect: f32) -> Option<(f32, f32)> {
+        let lum_a = |c: &Rgba| (c.luminance_opaque(), c.0[3] as f32 / 255.0);
+        let inside_disc = |cx: f32, cy: f32, r: f32| {
+            let dx = (x - cx) * aspect;
+            let dy = y - cy;
+            dx * dx + dy * dy <= r * r
+        };
+        match self {
+            DrawCmd::Fill(c) => Some(lum_a(c)),
+            DrawCmd::Rect { x: rx, y: ry, w, h, color } => {
+                (x >= *rx && x <= rx + w && y >= *ry && y <= ry + h).then(|| lum_a(color))
+            }
+            DrawCmd::Circle { x: cx, y: cy, r, color, stroke: None } => inside_disc(*cx, *cy, *r).then(|| lum_a(color)),
+            DrawCmd::Rings { cx, cy, radius, colors, .. } if !colors.is_empty() => {
+                if !inside_disc(*cx, *cy, *radius) {
+                    return None;
+                }
+                let n = colors.len() as f32;
+                let a: f32 = colors.iter().map(|c| c.0[3] as f32 / 255.0).sum::<f32>() / n;
+                if a <= 0.0 {
+                    return None;
+                }
+                let l: f32 = colors.iter().map(|c| c.luminance_opaque() * c.0[3] as f32 / 255.0).sum::<f32>() / n / a;
+                Some((l, a))
+            }
+            _ => None,
         }
     }
 }

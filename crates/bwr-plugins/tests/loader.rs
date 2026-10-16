@@ -450,7 +450,8 @@ fn install_bundled_upgrades_older_versions_with_backup() {
     install_bundled(tmp.path());
     let toml = tmp.path().join("strobe/plugin.toml");
     let src = std::fs::read_to_string(&toml).unwrap();
-    let old = src.replace("version = \"1.1.0\"", "version = \"1.0.0\"");
+    let cur = src.lines().find(|l| l.starts_with("version = ")).unwrap();
+    let old = src.replace(cur, "version = \"1.0.0\"");
     assert_ne!(src, old);
     std::fs::write(&toml, &old).unwrap();
     assert_eq!(install_bundled(tmp.path()), vec!["strobe".to_string()]);
@@ -458,4 +459,102 @@ fn install_bundled_upgrades_older_versions_with_backup() {
     assert!(tmp.path().join(".strobe-backup-1.0.0/plugin.toml").is_file());
     let host = PluginHost::new(tmp.path());
     assert_eq!(host.plugins.len(), 1, "backups are not loaded");
+}
+
+fn start_strobe_with(tmp: &Path, settings: &[(&str, serde_json::Value)]) -> PluginHost {
+    let mut host = strobe_host(tmp);
+    for (k, v) in settings {
+        host.set_setting("strobe", k, v.clone());
+    }
+    host.reload("strobe");
+    host.hotkey_key("F", CTRL);
+    host.hotkey_key("U", CTRL);
+    assert!(host.overlay.is_some());
+    host
+}
+
+fn has_rings(cmds: &[DrawCmd]) -> bool {
+    cmds.iter().filter(|c| matches!(c, DrawCmd::Rings { .. })).count() == 2
+}
+
+#[test]
+fn strobe_rings_in_random_beat_mode_under_symbols() {
+    let tmp = tempfile::tempdir().unwrap();
+    let mut host = start_strobe_with(tmp.path(), &[("mode", "Random beat".into())]);
+    let mut beat = AudioFrame { playing: true, ..Default::default() };
+    beat.features.level = 0.5;
+    beat.features.bass = 0.8;
+    beat.features.quiet = false;
+    let mut saw_rings = 0;
+    let mut symbol_above_rings = false;
+    let mut flashes_with_rings = 0;
+    let mut lums = Vec::new();
+    for i in 0..400 {
+        beat.features.beat = i % 20 == 0; // 180 BPM
+        host.frame(1.0 / 60.0, &beat);
+        let cmds = host.overlay_commands();
+        if has_rings(&cmds) {
+            saw_rings += 1;
+            let r = cmds.iter().rposition(|c| matches!(c, DrawCmd::Rings { .. })).unwrap();
+            if let Some(p) = cmds.iter().position(|c| matches!(c, DrawCmd::Paths { .. })) {
+                symbol_above_rings |= p > r;
+                assert!(p > r, "symbols must be drawn over the rings");
+            }
+            if matches!(cmds[0], DrawCmd::Fill(c) if c.luminance() > 0.5) {
+                flashes_with_rings += 1;
+            }
+        }
+        lums.push(frame_luminance(&cmds, 16.0 / 9.0));
+        std::thread::sleep(std::time::Duration::from_millis(2));
+    }
+    assert!(saw_rings > 300, "rings visible between flashes ({saw_rings})");
+    assert!(flashes_with_rings > 0, "rings stay visible during flashes");
+    let _ = symbol_above_rings;
+    assert!(host.plugins[0].log.iter().all(|l| !l.starts_with("error")), "{:?}", host.plugins[0].log);
+
+    // Black during breaks.
+    beat.features.quiet = true;
+    beat.features.beat = false;
+    host.frame(1.0 / 60.0, &beat);
+    assert_eq!(host.overlay_commands(), vec![DrawCmd::Fill(Rgba::BLACK)]);
+}
+
+#[test]
+fn strobe_rings_settings() {
+    let tmp = tempfile::tempdir().unwrap();
+    // Default Fixed rate: rings off unless rings_fixed.
+    let mut host = start_strobe_with(tmp.path(), &[]);
+    host.frame(0.016, &AudioFrame::default());
+    assert!(!has_rings(&host.overlay_commands()));
+
+    let tmp = tempfile::tempdir().unwrap();
+    let mut host = start_strobe_with(tmp.path(), &[("rings_fixed", true.into())]);
+    host.frame(0.016, &AudioFrame::default());
+    assert!(has_rings(&host.overlay_commands()));
+
+    let tmp = tempfile::tempdir().unwrap();
+    let mut host = start_strobe_with(tmp.path(), &[("mode", "Random beat".into()), ("rings", false.into())]);
+    host.frame(0.016, &AudioFrame::default());
+    assert!(!has_rings(&host.overlay_commands()));
+}
+
+#[test]
+fn rings_api_validates() {
+    let tmp = tempfile::tempdir().unwrap();
+    write_plugin(
+        tmp.path(),
+        "rg",
+        "\"overlay\"",
+        "fn ok(ctx) { let d = 0; }\nfn many(ctx) {}\n",
+    );
+    let dir = write_plugin(
+        tmp.path(),
+        "rg2",
+        "\"overlay\"",
+        "fn on_overlay(ctx, draw) { draw.rings(0.5, 0.5, 1, 0.001, [\"#fff\"]); }",
+    );
+    let r = check_plugin(&dir);
+    assert!(r.to_string().contains("too many rings"), "{r}");
+    let dir = write_plugin(tmp.path(), "rg3", "\"overlay\"", "fn on_overlay(ctx, draw) { draw.rings(0.5, 0.5, 0.9, 0.02, [\"#ffffff\", \"#00000000\"]); }");
+    assert!(check_plugin(&dir).ok());
 }

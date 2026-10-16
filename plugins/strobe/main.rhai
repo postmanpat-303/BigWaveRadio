@@ -88,6 +88,26 @@ fn on_tick(ctx, dt) {
     ctx.state = s;
 }
 
+fn rings_enabled(ctx, mode) {
+    if mode == "Fixed rate" { ctx.settings.rings_fixed } else { ctx.settings.rings }
+}
+
+// Amiga-style interference rings: two discs of concentric rings swing on
+// Lissajous paths. Disc A draws rings, disc B draws the opposite colour
+// over them with gaps, so where they overlap you get moire. Colours swap
+// during a flash so the pattern stays visible on white.
+fn draw_rings(draw, t, on) {
+    let ink = if on { "#000000" } else { "#ffffff" };
+    let back = if on { "#ffffff" } else { "#000000" };
+    let clear = "#00000000";
+    let ax = 0.5 + 0.30 * (t * 0.63).sin();
+    let ay = 0.5 + 0.22 * (t * 0.91 + 1.0).sin();
+    let bx = 0.5 + 0.30 * (t * 0.77 + 2.0).sin();
+    let by = 0.5 + 0.22 * (t * 0.53).sin();
+    draw.rings(ax, ay, 0.95, 0.016, [ink, clear]);
+    draw.rings(bx, by, 0.95, 0.016, [clear, back]);
+}
+
 fn on_overlay(ctx, draw) {
     let s = ctx.state;
     if s.quiet {
@@ -96,6 +116,9 @@ fn on_overlay(ctx, draw) {
     }
     let on = s.flash > 0.0;
     draw.fill(if on { ctx.settings.color } else { "#000000" });
+    if rings_enabled(ctx, s.mode) {
+        draw_rings(draw, ctx.now, on);   // under the symbols and text
+    }
     if s.symbol >= 0 && ctx.now < s.sym_until {
         let sym = symbols()[s.symbol];
         let ink = if on { "#000000" } else { "#e01030" };
@@ -103,10 +126,14 @@ fn on_overlay(ctx, draw) {
         draw.text_center(0.5, 0.8, s.caption, 30.0, ink);
     }
     if !on {
+        if rings_enabled(ctx, s.mode) {
+            draw.rect(0.0, 0.935, 1.0, 0.065, "#000000d0");   // keep the HUD readable
+        }
         let rate = fmin(s.rate, ctx.flash_cap);
         draw.text(0.02, 0.95, `${s.mode} | ${rate} Hz (cap ${ctx.flash_cap} Hz) | arrows: speed | Esc, any key or click: exit`, 14.0, "#5a5a5a");
         if s.mode != "Fixed rate" && !s.playing {
-            draw.text_center(0.5, 0.5, "Play a station: the strobe follows the beat", 24.0, "#777777");
+            draw.rect(0.25, 0.46, 0.5, 0.08, "#000000d0");
+            draw.text_center(0.5, 0.5, "Play a station: the strobe follows the beat", 24.0, "#999999");
         }
     }
 }

@@ -192,13 +192,15 @@ pub fn post_frame(app: &mut BigWaveApp, ctx: &Context) {
     if let Some(session) = b.host.overlay.clone() {
         let rect = ctx.screen_rect();
         let name = b.host.get(&session.plugin_id).map(|p| p.name()).unwrap_or_default();
+        b.host.limiter.aspect = rect.width() / rect.height().max(1.0);
         let cmds = if session.phase == OverlayPhase::Running { b.host.overlay_commands() } else { Vec::new() };
         let cap = b.host.flash_cap();
         let mut accept = false;
         let mut cancel = false;
         let mut clicked = false;
+        // Debug is egui's top layer: nothing (not even tooltips) shows over it.
         egui::Area::new(egui::Id::new("plugin-overlay"))
-            .order(egui::Order::Foreground)
+            .order(egui::Order::Debug)
             .fixed_pos(rect.min)
             .show(ctx, |ui| {
                 let resp = ui.allocate_rect(rect, egui::Sense::click());
@@ -303,6 +305,19 @@ pub fn paint(painter: &egui::Painter, rect: Rect, cmds: &[DrawCmd]) {
             DrawCmd::Text { x, y, text, size, color, centered } => {
                 let align = if *centered { egui::Align2::CENTER_CENTER } else { egui::Align2::LEFT_TOP };
                 painter.text(at(*x, *y), align, text, egui::FontId::proportional(*size), c32(*color));
+            }
+            DrawCmd::Rings { cx, cy, radius, width, colors } => {
+                let centre = at(*cx, *cy);
+                let n = ((radius / width).ceil() as usize).min(bwr_plugins::MAX_RINGS);
+                for k in 0..n {
+                    let col = colors[k % colors.len()];
+                    if col.0[3] == 0 {
+                        continue;
+                    }
+                    let outer = radius - k as f32 * width;
+                    let w = width.min(outer);
+                    painter.circle_stroke(centre, (outer - w / 2.0) * h, Stroke::new(w * h, c32(col)));
+                }
             }
             DrawCmd::Paths { cx, cy, paths, width, color } => {
                 let centre = at(*cx, *cy);
