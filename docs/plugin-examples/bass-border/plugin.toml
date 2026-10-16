@@ -1,0 +1,9 @@
+id = "bass-border"
+name = "Bass Border"
+version = "1.0.0"
+api = 1
+description = "A glowing border that pulses with the bass, drawn in-window over the app."
+permissions = ["audio", "overlay", "hotkeys", "panel"]
+
+[settings]
+color = { type = "color", default = "#3aa0ff", label = "Border colour" }

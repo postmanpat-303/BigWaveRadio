@@ -1,0 +1,22 @@
+# Beat Strobe — bundled with BigWave Radio.
+id = "strobe"
+name = "Beat Strobe"
+version = "1.0.0"
+api = 1
+runtime = "rhai"
+entry = "main.rhai"
+author = "BigWave Radio"
+description = "Strobe that randomly syncs to the beat, blacks out during breaks and flashes AI-uprising symbols. In-window or fullscreen."
+permissions = ["audio", "overlay", "fullscreen", "hotkeys", "panel", "page"]
+
+[[pages]]
+id = "strobe"
+title = "Strobe"
+icon = "⚡"
+
+[settings]
+rate    = { type = "float",  default = 3.0, min = 1.0, max = 12.0, label = "Starting speed (Hz, limited by the flash cap)" }
+mode    = { type = "choice", default = "Random beat", options = ["Random beat", "Fixed rate"], label = "Mode" }
+display = { type = "choice", default = "Fullscreen", options = ["Fullscreen", "In window"], label = "Display" }
+symbols = { type = "bool",   default = true, label = "Show symbols" }
+color   = { type = "color",  default = "#ffffff", label = "Flash colour" }

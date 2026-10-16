@@ -293,6 +293,11 @@ fn play_once(
                     let mut q = queue.lock().unwrap();
                     if q.len() + resampled.len() <= QUEUE_CAP {
                         q.extend(resampled.iter().copied());
+                        // Keep the analyser in step with what is audible now.
+                        let queued_frames = q.len() / out_channels.max(1);
+                        spectrum.set_delay_samples(
+                            (queued_frames as u64 * spec.rate as u64 / out_rate.max(1) as u64) as usize,
+                        );
                         break;
                     }
                 }

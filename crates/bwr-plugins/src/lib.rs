@@ -1,0 +1,41 @@
+//! BigWave Radio plugin host.
+//!
+//! Plugins are folders containing `plugin.toml` + `main.rhai`, living in
+//! `%LOCALAPPDATA%\BigWaveRadio\plugins\<id>\`. Scripts never touch egui:
+//! they return declarative drawing commands ([`DrawCmd`]) and simple widget
+//! descriptions ([`Widget`]) which the app renders. See `docs/PLUGIN_GUIDE.md`.
+
+mod api;
+mod bundled;
+mod check;
+mod draw;
+mod host;
+mod manifest;
+mod safety;
+mod ui;
+mod zipimport;
+
+use std::path::PathBuf;
+
+pub use api::Request;
+pub use bundled::{install_bundled, BUNDLED};
+pub use check::{check_plugin, CheckReport};
+pub use draw::{parse_svg_path, DrawCmd, Rgba};
+pub use host::{AudioFrame, HostState, OverlayPhase, OverlaySession, Plugin, PluginHost, PluginStatus, StationInfo};
+pub use manifest::{Manifest, PageSpec, Permission, SettingKind, SettingSpec};
+pub use safety::FlashLimiter;
+pub use ui::{UiResult, Widget};
+pub use zipimport::import_zip;
+
+/// Version of the script API this host implements (`api = 1` in plugin.toml).
+pub const API_VERSION: u32 = 1;
+/// Default host-enforced flash cap (WCAG 2.3.1 "three flashes" guidance).
+pub const DEFAULT_FLASH_HZ: f64 = 3.0;
+/// Absolute ceiling, even with the user's opt-in.
+pub const HARD_MAX_FLASH_HZ: f64 = 12.0;
+
+/// `%LOCALAPPDATA%\BigWaveRadio\plugins` (falls back to `./BigWaveRadio/plugins`).
+pub fn default_plugins_dir() -> PathBuf {
+    let base = std::env::var("LOCALAPPDATA").map(PathBuf::from).unwrap_or_else(|_| PathBuf::from("."));
+    base.join("BigWaveRadio").join("plugins")
+}

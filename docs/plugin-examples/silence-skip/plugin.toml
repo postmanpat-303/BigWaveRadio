@@ -1,0 +1,9 @@
+id = "silence-skip"
+name = "Silence Skipper"
+version = "1.0.0"
+api = 1
+description = "Skips to the next station in the list after 20 seconds of silence."
+permissions = ["audio", "player_control", "now_playing", "panel"]
+
+[settings]
+seconds = { type = "int", default = 20, min = 5, max = 120, label = "Seconds of silence" }

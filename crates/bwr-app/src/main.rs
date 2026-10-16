@@ -10,6 +10,7 @@ mod diag;
 #[cfg(windows)]
 mod hotkeys;
 mod pages;
+mod plugin_bridge;
 #[cfg(windows)]
 mod smtc;
 mod theme;
@@ -20,6 +21,11 @@ mod widgets;
 use app::BigWaveApp;
 
 fn main() -> eframe::Result<()> {
+    // `--check-plugin <dir>`: validate a plugin and exit (no window).
+    let args: Vec<String> = std::env::args().collect();
+    if let Some(i) = args.iter().position(|a| a == "--check-plugin") {
+        std::process::exit(check_plugin_cli(args.get(i + 1)));
+    }
     #[cfg(debug_assertions)]
     eprintln!("[startup] settings: {:?}", bwr_core::Settings::load());
     eframe::run_native(
@@ -51,5 +57,28 @@ fn window_icon() -> egui::IconData {
         rgba: image.into_raw(),
         width,
         height,
+    }
+}
+
+/// Prints a report and returns the process exit code (0 = OK, 1 = problems,
+/// 2 = usage error).
+fn check_plugin_cli(dir: Option<&String>) -> i32 {
+    // Release builds use the GUI subsystem; reattach to the calling console
+    // so the report is visible when run from a terminal.
+    #[cfg(windows)]
+    unsafe {
+        use windows::Win32::System::Console::{AttachConsole, ATTACH_PARENT_PROCESS};
+        let _ = AttachConsole(ATTACH_PARENT_PROCESS);
+    }
+    let Some(dir) = dir else {
+        eprintln!("usage: BigWaveRadio --check-plugin <plugin folder>");
+        return 2;
+    };
+    let report = bwr_plugins::check_plugin(std::path::Path::new(dir));
+    print!("{report}");
+    if report.ok() {
+        0
+    } else {
+        1
     }
 }
