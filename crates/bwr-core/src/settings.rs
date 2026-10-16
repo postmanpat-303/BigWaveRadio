@@ -59,8 +59,8 @@ pub struct Settings {
     pub accent: Accent,
     /// Minimum stream bitrate in kbps, 0 = any.
     pub min_bitrate: u32,
-    /// Minimum user rating (stars), 0 = any.
-    pub min_rating: u8,
+    /// Show only stations rated exactly this many stars, 0 = any.
+    pub rating_filter: u8,
     /// Stream codec filter, empty = any (MP3, AAC, OGG, FLAC, OPUS…).
     pub codec: String,
     pub volume: f32,
@@ -80,7 +80,7 @@ impl Default for Settings {
             theme: Theme::System,
             accent: Accent::System,
             min_bitrate: 0,
-            min_rating: 0,
+            rating_filter: 0,
             codec: String::new(),
             volume: 0.8,
             minimize_to_tray: false,

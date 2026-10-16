@@ -459,15 +459,15 @@ impl BigWaveApp {
         self.hidden_to_tray = false;
     }
 
-    /// Stations to show, honouring the client-side minimum rating filter.
+    /// Stations to show, honouring the client-side exact rating filter.
     pub fn visible_stations(&self) -> Vec<Station> {
-        let min = self.settings.min_rating;
-        if min == 0 {
+        let want = self.settings.rating_filter;
+        if want == 0 {
             return self.stations.clone();
         }
         self.stations
             .iter()
-            .filter(|s| self.ratings.get(&s.uuid) >= min)
+            .filter(|s| self.ratings.get(&s.uuid) == want)
             .cloned()
             .collect()
     }
@@ -997,18 +997,27 @@ impl eframe::App for BigWaveApp {
                     theme::chrome_fill(ui.ctx(), self.settings.theme),
                 );
                 ui.add_space(8.0);
-                nav_button(ui, self, Page::Discover, "🏠  Discover");
-                nav_button(ui, self, Page::Search, "🔎  Search");
-                nav_button(ui, self, Page::Library, "★  My Library");
-                ui.add_space(10.0);
-                ui.separator();
-                ui.add_space(10.0);
-                nav_button(ui, self, Page::Tags, "🏷  Tags");
-                nav_button(ui, self, Page::Countries, "🗺  Countries");
-                ui.add_space(10.0);
-                ui.separator();
-                ui.add_space(10.0);
-                nav_button(ui, self, Page::Settings, "⚙  Settings");
+                // Nav scrolls when the window is short so the filter block
+                // below (which is bottom-anchored) never gets pushed out.
+                let reserve = 340.0;
+                egui::ScrollArea::vertical()
+                    .id_salt("nav-scroll")
+                    .auto_shrink([false, false])
+                    .max_height((ui.available_height() - reserve).max(72.0))
+                    .show(ui, |ui| {
+                        nav_button(ui, self, Page::Discover, "🏠  Discover");
+                        nav_button(ui, self, Page::Search, "🔎  Search");
+                        nav_button(ui, self, Page::Library, "★  My Library");
+                        ui.add_space(10.0);
+                        ui.separator();
+                        ui.add_space(10.0);
+                        nav_button(ui, self, Page::Tags, "🏷  Tags");
+                        nav_button(ui, self, Page::Countries, "🗺  Countries");
+                        ui.add_space(10.0);
+                        ui.separator();
+                        ui.add_space(10.0);
+                        nav_button(ui, self, Page::Settings, "⚙  Settings");
+                    });
 
                 ui.with_layout(egui::Layout::bottom_up(egui::Align::LEFT), |ui| {
                     ui.add_space(8.0);
@@ -1060,29 +1069,8 @@ impl eframe::App for BigWaveApp {
                                 }
                             }
                         });
-                    ui.add_space(8.0);
-                    ui.label(egui::RichText::new("MINIMUM RATING").small().weak());
-                    egui::ComboBox::from_id_salt("nav-rating")
-                        .selected_text(match self.settings.min_rating {
-                            0 => "Any rating".to_string(),
-                            r => "★".repeat(r as usize) + " & up",
-                        })
-                        .show_ui(ui, |ui| {
-                            for r in 0u8..=5 {
-                                let label = if r == 0 {
-                                    "Any rating".to_string()
-                                } else {
-                                    format!("{} & up", "★".repeat(r as usize))
-                                };
-                                if ui
-                                    .selectable_label(self.settings.min_rating == r, label)
-                                    .clicked()
-                                {
-                                    self.settings.min_rating = r;
-                                    self.persist_settings();
-                                }
-                            }
-                        });
+                    ui.add_space(10.0);
+                    rating_filter_card(ui, self);
                 });
             });
 
@@ -1143,8 +1131,7 @@ impl eframe::App for BigWaveApp {
 }
 
 fn nav_button(ui: &mut egui::Ui, app: &mut BigWaveApp, page: Page, label: &str) {
-    let selected = app.page == page;
-    let button = egui::Button::new(egui::RichText::new(label).size(14.0))
+    let selected = app.page == page;    let button = egui::Button::new(egui::RichText::new(label).size(14.0))
         .selected(selected)
         .min_size(egui::vec2(ui.available_width(), 30.0));
     if ui.add(button).clicked() && !selected {
@@ -1178,5 +1165,126 @@ fn nav_button(ui: &mut egui::Ui, app: &mut BigWaveApp, page: Page, label: &str) 
                 }
             }
         }
+    }
+}
+
+/// Always-visible star rating filter card: rows 5→1 that filter the station
+/// grids to exactly that rating, plus a Clear row at the bottom.
+fn rating_filter_card(ui: &mut egui::Ui, app: &mut BigWaveApp) {
+    use eframe::egui::{Align2, Color32, CornerRadius, FontId, Pos2, Rect, Sense, Stroke, Vec2};
+
+    let accent = theme::accent_color(app.settings.accent);
+    let weak = ui.visuals().weak_text_color();
+    let strong = if theme::is_dark(ui.ctx(), app.settings.theme) {
+        Color32::from_gray(215)
+    } else {
+        Color32::from_gray(45)
+    };
+    let active = app.settings.rating_filter;
+
+    let row_h = 24.0f32;
+    let clear_h = 22.0f32;
+    let pad = 6.0f32;
+    let title_h = 14.0f32;
+    let card_h = pad + title_h + 4.0 + 5.0 * row_h + 6.0 + clear_h + pad;
+    let card_w = ui.available_width();
+    let (card_rect, _) = ui.allocate_exact_size(Vec2::new(card_w, card_h), Sense::hover());
+
+    // Card frame.
+    ui.painter().rect_filled(
+        card_rect,
+        CornerRadius::same(6),
+        ui.visuals().faint_bg_color,
+    );
+    ui.painter().rect(
+        card_rect,
+        CornerRadius::same(6),
+        Color32::TRANSPARENT,
+        Stroke::new(1.0, ui.visuals().widgets.noninteractive.bg_stroke.color),
+        eframe::egui::StrokeKind::Inside,
+    );
+    ui.painter().text(
+        Pos2::new(card_rect.left() + pad, card_rect.top() + pad),
+        Align2::LEFT_TOP,
+        "STAR RATING",
+        FontId::proportional(10.5),
+        weak,
+    );
+
+    let mut picked: Option<u8> = None;
+    let rows_top = card_rect.top() + pad + title_h + 4.0;
+    for (i, r) in (1u8..=5).rev().enumerate() {
+        let row = Rect::from_min_size(
+            Pos2::new(card_rect.left() + 2.0, rows_top + i as f32 * row_h),
+            Vec2::new(card_rect.width() - 4.0, row_h),
+        );
+        let response = ui.interact(row, ui.id().with(("rating_row", r)), Sense::click());
+        let selected = active == r;
+        if selected {
+            ui.painter().rect_filled(row.shrink2(Vec2::new(2.0, 2.0)), CornerRadius::same(4), accent.gamma_multiply(0.16));
+        } else if response.hovered() {
+            ui.painter().rect_filled(row.shrink2(Vec2::new(2.0, 2.0)), CornerRadius::same(4), accent.gamma_multiply(0.09));
+        }
+
+        let star_color = if selected {
+            accent
+        } else if response.hovered() {
+            strong
+        } else {
+            weak
+        };
+        let cx = row.left() + 10.0;
+        let cy = row.center().y;
+        for s in 0..5u8 {
+            let filled = s < r;
+            ui.painter().text(
+                Pos2::new(cx + s as f32 * 14.0, cy),
+                Align2::LEFT_CENTER,
+                if filled { "★" } else { "☆" },
+                FontId::proportional(13.0),
+                if filled { star_color } else { weak.gamma_multiply(0.6) },
+            );
+        }
+        let n = app.ratings.count(r);
+        if n > 0 {
+            ui.painter().text(
+                Pos2::new(row.right() - 10.0, cy),
+                Align2::RIGHT_CENTER,
+                n.to_string(),
+                FontId::proportional(11.0),
+                weak,
+            );
+        }
+        if response.clicked() {
+            // Clicking the active row clears, like the Clear row.
+            picked = Some(if selected { 0 } else { r });
+        }
+    }
+
+    // Clear row at the bottom.
+    let clear = Rect::from_min_size(
+        Pos2::new(card_rect.left() + 2.0, card_rect.bottom() - pad - clear_h),
+        Vec2::new(card_rect.width() - 4.0, clear_h),
+    );
+    let clear_resp = ui.interact(clear, ui.id().with("rating_clear"), Sense::click());
+    if active == 0 {
+        ui.painter().rect_filled(clear.shrink2(Vec2::new(2.0, 2.0)), CornerRadius::same(4), accent.gamma_multiply(0.16));
+    } else if clear_resp.hovered() {
+        ui.painter().rect_filled(clear.shrink2(Vec2::new(2.0, 2.0)), CornerRadius::same(4), accent.gamma_multiply(0.09));
+    }
+    ui.painter().text(
+        Pos2::new(clear.center().x, clear.center().y),
+        Align2::CENTER_CENTER,
+        if active == 0 { "Any rating" } else { "Clear" },
+        FontId::proportional(12.0),
+        if active == 0 { weak } else if clear_resp.hovered() { strong } else { weak },
+    );
+    if clear_resp.clicked() && active != 0 {
+        picked = Some(0);
+    }
+
+    if let Some(p) = picked {
+        app.settings.rating_filter = p;
+        app.persist_settings();
     }
 }

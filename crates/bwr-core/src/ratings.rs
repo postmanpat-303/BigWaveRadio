@@ -56,4 +56,9 @@ impl Ratings {
     pub fn is_empty(&self) -> bool {
         self.map.is_empty()
     }
+
+    /// How many stations carry exactly `r` stars.
+    pub fn count(&self, r: u8) -> usize {
+        self.map.values().filter(|&&v| v == r).count()
+    }
 }
