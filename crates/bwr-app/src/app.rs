@@ -26,6 +26,10 @@ pub enum Page {
     Plugins,
     /// A page added by a plugin (index into `plugins.pages`).
     PluginPage(usize),
+    /// Mood chip results (index into `moods.moods`).
+    Mood(usize),
+    /// Your Stars: every rated station, across all categories.
+    Stars,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -38,7 +42,7 @@ pub enum DiscoverTab {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum LibraryTab {
     Favourites,
-    Rated,
+    Recent,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -54,10 +58,26 @@ pub enum NetJob {
     Tags,
     Countries,
     StationsFor(BrowseSel),
-    /// Stations sharing a tag, excluding one uuid (More like this).
+    /// Stations sharing a tag, excluding one uuid (station-info tag chips).
     MoreLike { tag: String, exclude: String },
-    /// Pick one random station honouring the quality filter (Surprise me).
-    Surprise,
+    /// ✨ More like this: stations sharing the seed's tags, weighted by the
+    /// user's ratings.
+    MoreLikeStation {
+        seed: Station,
+        tags: Vec<String>,
+        profile: std::collections::HashMap<String, f64>,
+        stars: std::collections::HashMap<String, u8>,
+    },
+    /// Stations for a mood chip (all of the mood's tags, ranked).
+    Mood { idx: usize, mood: bwr_core::Mood },
+    /// 🎲 Surprise me within the moods: maybe a well-rated favourite, else
+    /// a popular working station from a random mood tag.
+    Surprise {
+        tags: Vec<String>,
+        rated_good: Vec<Station>,
+        stars: std::collections::HashMap<String, u8>,
+        cfg: Box<bwr_core::MoodConfig>,
+    },
     Click(String),
     /// Fetch full records for rated uuids (the Rated smart list).
     Rated(Vec<String>),
@@ -68,6 +88,8 @@ pub enum NetResult {
     Stations(Vec<Station>),
     /// Result of a "More like this" request, with the tag it was for.
     MoreLike(String, Vec<Station>),
+    /// Ranked stations for mood chip `idx`.
+    Mood(usize, Vec<Station>),
     Surprise(Station),
     /// Full records for rated uuids, cached into the ratings store.
     Rated(Vec<Station>),
@@ -96,6 +118,15 @@ pub struct BigWaveApp {
     pub settings: Settings,
     pub library: Library,
     pub ratings: bwr_core::Ratings,
+    /// Mood chips + talk filter config (editable moods.json).
+    pub moods: bwr_core::MoodConfig,
+    /// Show-talk toggle + Recently played (discovery.json; settings.json is
+    /// left exactly as the C# app wrote it).
+    pub discovery: bwr_core::DiscoveryState,
+    /// Your Stars level filter: 0 = all rated, sorted by stars.
+    pub stars_level: u8,
+    /// The rail's Advanced (format / bitrate) section is expanded.
+    pub advanced_open: bool,
     /// Rated uuids already requested from the network (dedupe fetches).
     pub rated_inflight: std::collections::HashSet<String>,
     pub player: Player,
@@ -227,7 +258,7 @@ impl BigWaveApp {
                     }
                     NetJob::Search(ref q) => {
                         let (min, codec) = filter_worker.snapshot();
-                        let res = client.search(q, min, &codec);
+                        let res = client.search(q, min, &codec).map(bwr_core::discovery::rank_and_dedupe);
                         send_result(&result_tx, res);
                     }
                     NetJob::Tags => match client.tags() {
@@ -256,7 +287,7 @@ impl BigWaveApp {
                     }
                     NetJob::MoreLike { ref tag, ref exclude } => {
                         let (min, codec) = filter_worker.snapshot();
-                        match client.similar(tag, exclude, min, &codec) {
+                        match client.similar(tag, exclude, min, &codec).map(bwr_core::discovery::rank_and_dedupe) {
                             Ok(stations) => {
                                 let _ = result_tx.send(NetResult::MoreLike(tag.clone(), stations));
                             }
@@ -265,15 +296,84 @@ impl BigWaveApp {
                             }
                         }
                     }
-                    NetJob::Surprise => {
+                    NetJob::MoreLikeStation { ref seed, ref tags, ref profile, ref stars } => {
                         let (min, codec) = filter_worker.snapshot();
-                        match client.random_station(min, &codec) {
-                            Ok(station) => {
-                                let _ = result_tx.send(NetResult::Surprise(station));
+                        match client.stations_by_tags(tags, 60, min, &codec) {
+                            Ok(found) => {
+                                let found: Vec<Station> =
+                                    found.into_iter().filter(|s| s.uuid != seed.uuid).collect();
+                                let ranked = bwr_core::discovery::rank_by(found, |c| {
+                                    bwr_core::discovery::similarity(
+                                        seed,
+                                        c,
+                                        profile,
+                                        stars.get(&c.uuid).copied().unwrap_or(0),
+                                    )
+                                });
+                                // Drop the seed's own duplicates (same cleaned name).
+                                let key = bwr_core::discovery::dedupe_key(&seed.name);
+                                let ranked = ranked
+                                    .into_iter()
+                                    .filter(|s| bwr_core::discovery::dedupe_key(&s.name) != key)
+                                    .take(120)
+                                    .collect();
+                                let _ = result_tx.send(NetResult::MoreLike(tags.join(", #"), ranked));
                             }
                             Err(e) => {
                                 let _ = result_tx.send(NetResult::Failed(e.to_string()));
                             }
+                        }
+                    }
+                    NetJob::Mood { idx, ref mood } => {
+                        let (min, codec) = filter_worker.snapshot();
+                        match client.stations_by_tags(&mood.tags, 60, min, &codec) {
+                            Ok(found) => {
+                                let found = found.into_iter().filter(|s| mood.accepts(s)).collect();
+                                let mut ranked = bwr_core::discovery::rank_and_dedupe(found);
+                                ranked.truncate(200);
+                                let _ = result_tx.send(NetResult::Mood(idx, ranked));
+                            }
+                            Err(e) => {
+                                let _ = result_tx.send(NetResult::Failed(e.to_string()));
+                            }
+                        }
+                    }
+                    NetJob::Surprise { ref tags, ref rated_good, ref stars, ref cfg } => {
+                        let (min, codec) = filter_worker.snapshot();
+                        let mut rng = bwr_core::discovery::Rng::seeded();
+                        // ~1 in 3: one of your 4–5★ stations.
+                        let mut pick = None;
+                        if !rated_good.is_empty() && rng.below(3) == 0 {
+                            pick = Some(rated_good[rng.below(rated_good.len())].clone());
+                        }
+                        if pick.is_none() && !tags.is_empty() {
+                            // One random mood tag, its most-voted stations.
+                            let chosen = vec![tags[rng.below(tags.len())].clone()];
+                            if let Ok(found) = client.stations_by_tags(&chosen, 60, min, &codec) {
+                                let ranked = bwr_core::discovery::rank_and_dedupe(found);
+                                pick = bwr_core::discovery::pick_surprise(
+                                    &ranked,
+                                    cfg,
+                                    |u| stars.get(u).copied().unwrap_or(0),
+                                    &mut rng,
+                                );
+                            }
+                        }
+                        if pick.is_none() && !rated_good.is_empty() {
+                            pick = Some(rated_good[rng.below(rated_good.len())].clone());
+                        }
+                        match pick {
+                            Some(station) => {
+                                let _ = result_tx.send(NetResult::Surprise(station));
+                            }
+                            None => match client.random_station(min, &codec) {
+                                Ok(station) => {
+                                    let _ = result_tx.send(NetResult::Surprise(station));
+                                }
+                                Err(e) => {
+                                    let _ = result_tx.send(NetResult::Failed(e.to_string()));
+                                }
+                            },
                         }
                     }
                     NetJob::Click(ref uuid) => client.report_click(uuid),
@@ -317,6 +417,10 @@ impl BigWaveApp {
             settings,
             library: Library::load(),
             ratings: bwr_core::Ratings::load(),
+            moods: bwr_core::MoodConfig::load(),
+            discovery: bwr_core::DiscoveryState::load(),
+            stars_level: 0,
+            advanced_open: false,
             rated_inflight: std::collections::HashSet::new(),
             player,
             page: Page::Discover,
@@ -377,6 +481,7 @@ impl BigWaveApp {
         self.current = Some(station.clone());
         self.player.play(&station.stream_url);
         self.is_playing = true;
+        self.discovery.note_played(&station);
         let _ = self.job_tx.send(NetJob::Click(station.uuid.clone()));
         if !station.favicon.trim().is_empty()
             && !self.favicons.contains_key(&station.uuid)
@@ -442,10 +547,84 @@ impl BigWaveApp {
         theme::apply(&self.ctx, self.settings.theme, self.settings.accent);
     }
 
-    /// 🎲 Surprise me: play one random station honouring the quality filter.
+    /// 🎲 Surprise me: a well-rated or popular station within the moods —
+    /// the open mood page's mood, otherwise any of them.
     pub fn surprise(&mut self) {
         self.status = "Finding a station for you…".into();
-        let _ = self.job_tx.send(NetJob::Surprise);
+        let tags = match self.page {
+            Page::Mood(i) if i < self.moods.moods.len() => self.moods.moods[i].tags.clone(),
+            _ => self.moods.all_mood_tags(),
+        };
+        let mood_tags: std::collections::HashSet<String> =
+            tags.iter().map(|t| t.to_lowercase()).collect();
+        let rated_good: Vec<Station> = self
+            .ratings
+            .rated_stations()
+            .into_iter()
+            .filter(|(r, s)| {
+                *r >= 4
+                    && bwr_core::discovery::tag_list(&s.tags)
+                        .iter()
+                        .any(|t| mood_tags.iter().any(|m| t.contains(m.as_str())))
+            })
+            .map(|(_, s)| s)
+            .collect();
+        let _ = self.job_tx.send(NetJob::Surprise {
+            tags,
+            rated_good,
+            stars: self.star_map(),
+            cfg: Box::new(self.moods.clone()),
+        });
+    }
+
+    fn star_map(&self) -> std::collections::HashMap<String, u8> {
+        self.ratings
+            .rated_stations()
+            .into_iter()
+            .map(|(r, s)| (s.uuid, r))
+            .collect()
+    }
+
+    /// ✨ More like this for a whole station: its best tags, weighted by
+    /// the user's ratings.
+    pub fn more_like_station(&mut self, seed: &Station) {
+        let rated = self.ratings.rated_stations();
+        let profile = bwr_core::discovery::taste_profile(rated.iter().map(|(r, s)| (*r, s)));
+        let tags = bwr_core::discovery::seed_tags(seed, &self.moods, &profile, 4);
+        if tags.is_empty() {
+            self.status = "This station has no tags to match on".into();
+            return;
+        }
+        self.page = Page::Search;
+        self.search_active = true;
+        self.search_pending = false;
+        self.similar_label = Some(format!("More like {} · #{}", seed.name, tags.join(" #")));
+        self.query.clear();
+        self.last_searched.clear();
+        self.loading = true;
+        self.stations.clear();
+        let _ = self.job_tx.send(NetJob::MoreLikeStation {
+            seed: seed.clone(),
+            tags,
+            profile,
+            stars: self.star_map(),
+        });
+    }
+
+    /// Open a mood chip's results.
+    pub fn open_mood(&mut self, idx: usize) {
+        let Some(mood) = self.moods.moods.get(idx) else { return };
+        let mood = mood.clone();
+        self.page = Page::Mood(idx);
+        self.browse_selection = None;
+        self.stations.clear();
+        self.loading = true;
+        let _ = self.job_tx.send(NetJob::Mood { idx, mood });
+    }
+
+    /// Talk/news/sport stations are hidden unless "Show talk" is on.
+    pub fn hides_talk(&self) -> bool {
+        !self.discovery.show_talk && !matches!(self.page, Page::Library | Page::Stars)
     }
 
     /// ✨ More like this: fill the search page with stations sharing `tag`.
@@ -463,6 +642,18 @@ impl BigWaveApp {
             tag: tag.to_string(),
             exclude,
         });
+    }
+
+    /// Run a search right away (history picks, chips): no debounce.
+    pub fn run_search_now(&mut self, q: String) {
+        self.query = q.clone();
+        self.page = Page::Search;
+        self.similar_label = None;
+        self.last_searched = q.clone();
+        self.last_keystroke = None;
+        self.loading = true;
+        self.search_pending = true;
+        let _ = self.job_tx.send(NetJob::Search(q));
     }
 
     /// Remember a search query (deduped case-insensitively, newest first).
@@ -489,17 +680,25 @@ impl BigWaveApp {
         self.hidden_to_tray = false;
     }
 
-    /// Stations to show, honouring the client-side exact rating filter.
+    /// Stations to show: talk stations filtered out unless "Show talk" is on
+    /// (your own Library and Your Stars lists are never filtered).
     pub fn visible_stations(&self) -> Vec<Station> {
-        let want = self.settings.rating_filter;
-        if want == 0 {
+        if !self.hides_talk() {
             return self.stations.clone();
         }
         self.stations
             .iter()
-            .filter(|s| self.ratings.get(&s.uuid) == want)
+            .filter(|s| !self.moods.is_talk(s))
             .cloned()
             .collect()
+    }
+
+    /// How many stations the talk filter is hiding from the current list.
+    pub fn hidden_talk_count(&self) -> usize {
+        if !self.hides_talk() {
+            return 0;
+        }
+        self.stations.iter().filter(|s| self.moods.is_talk(s)).count()
     }
 
     /// Re-request the visible list after the bitrate filter changes.
@@ -508,6 +707,10 @@ impl BigWaveApp {
         let job = match self.page {
             Page::Discover => NetJob::Discover(self.discover_tab),
             Page::Search if self.search_active => NetJob::Search(self.query.clone()),
+            Page::Mood(i) => {
+                self.open_mood(i);
+                return;
+            }
             Page::Tags | Page::Countries => {
                 if let Some(sel) = self.browse_selection.clone() {
                     NetJob::StationsFor(sel)
@@ -549,6 +752,12 @@ impl BigWaveApp {
                 // Keep the richer label set by more_like_this() if present.
                 if self.similar_label.is_none() {
                     self.similar_label = Some(format!("#{tag}"));
+                }
+            }
+            NetResult::Mood(idx, stations) => {
+                // Ignore a late result for a mood the user already left.
+                if self.page == Page::Mood(idx) {
+                    self.stations = stations;
                 }
             }
             NetResult::Surprise(station) => {
@@ -961,9 +1170,16 @@ impl eframe::App for BigWaveApp {
 
                 // Recent searches popup under the field.
                 let popup_id = ui.make_persistent_id("search-history");
-                let show_history = response.has_focus()
-                    && self.query.is_empty()
-                    && !self.settings.search_history.is_empty();
+                // Focus opens the popup; it then stays open until a pick,
+                // typing or a click outside (see search_history.rs for the
+                // root cause of the old "click does nothing" bug).
+                let was_open = ui.memory(|mem| mem.is_popup_open(popup_id));
+                let show_history = crate::search_history::popup_open(
+                    was_open,
+                    response.has_focus(),
+                    self.query.is_empty(),
+                    !self.settings.search_history.is_empty(),
+                );
                 ui.memory_mut(|mem| {
                     if show_history {
                         mem.open_popup(popup_id);
@@ -988,7 +1204,7 @@ impl eframe::App for BigWaveApp {
                                         .selectable_label(false, format!("🕘  {q}"))
                                         .clicked();
                                     if ui
-                                        .add(egui::Button::new("✕").small().frame(false))
+                                        .add(egui::Button::new("🗙").small().frame(false))
                                         .on_hover_text("Remove from history")
                                         .clicked()
                                     {
@@ -1004,13 +1220,13 @@ impl eframe::App for BigWaveApp {
                                 self.settings.save();
                             }
                             if picked {
-                                self.query = q.clone();
-                                self.page = Page::Search;
-                                self.last_searched = q.clone();
-                                self.last_keystroke = None;
-                                self.loading = true;
-                                self.search_pending = true;
-                                let _ = self.job_tx.send(NetJob::Search(q));
+                                let pick = crate::search_history::pick(
+                                    &q,
+                                    &mut self.settings.search_history,
+                                    bwr_core::settings::MAX_SEARCH_HISTORY,
+                                );
+                                self.settings.save();
+                                self.run_search_now(pick.query);
                                 ui.memory_mut(|m| m.close_popup());
                             }
                         }
@@ -1027,7 +1243,7 @@ impl eframe::App for BigWaveApp {
 
         egui::SidePanel::left("nav")
             .resizable(false)
-            .exact_width(170.0)
+            .exact_width(188.0)
             .show(ctx, |ui| {
                 ui.painter().rect_filled(
                     ui.max_rect(),
@@ -1037,7 +1253,7 @@ impl eframe::App for BigWaveApp {
                 ui.add_space(8.0);
                 // Nav scrolls when the window is short so the filter block
                 // below (which is bottom-anchored) never gets pushed out.
-                let reserve = 340.0;
+                let reserve = crate::widgets::mood_rail::reserved_height(self);
                 egui::ScrollArea::vertical()
                     .id_salt("nav-scroll")
                     .auto_shrink([false, false])
@@ -1063,59 +1279,8 @@ impl eframe::App for BigWaveApp {
                         nav_button(ui, self, Page::Settings, "⚙  Settings");
                     });
 
-                ui.with_layout(egui::Layout::bottom_up(egui::Align::LEFT), |ui| {
-                    ui.add_space(8.0);
-                    ui.label(egui::RichText::new("FORMAT").small().weak());
-                    egui::ComboBox::from_id_salt("nav-codec")
-                        .selected_text(if self.settings.codec.is_empty() {
-                            "Any format".to_string()
-                        } else {
-                            self.settings.codec.to_uppercase()
-                        })
-                        .show_ui(ui, |ui| {
-                            for c in ["", "mp3", "aac", "ogg", "flac", "opus"] {
-                                let label = if c.is_empty() {
-                                    "Any format".to_string()
-                                } else {
-                                    c.to_uppercase()
-                                };
-                                if ui
-                                    .selectable_label(self.settings.codec == c, label)
-                                    .clicked()
-                                {
-                                    self.settings.codec = c.to_string();
-                                    self.persist_settings();
-                                    self.reload_current_list();
-                                }
-                            }
-                        });
-                    ui.add_space(8.0);
-                    ui.label(egui::RichText::new("MINIMUM BITRATE").small().weak());
-                    egui::ComboBox::from_id_salt("nav-bitrate")
-                        .selected_text(match self.settings.min_bitrate {
-                            0 => "Any bitrate".to_string(),
-                            b => format!("{b} kbps+"),
-                        })
-                        .show_ui(ui, |ui| {
-                            for b in [0u32, 64, 128, 192, 256, 320] {
-                                let label = if b == 0 {
-                                    "Any bitrate".to_string()
-                                } else {
-                                    format!("{b} kbps or more")
-                                };
-                                if ui
-                                    .selectable_label(self.settings.min_bitrate == b, label)
-                                    .clicked()
-                                {
-                                    self.settings.min_bitrate = b;
-                                    self.persist_settings();
-                                    self.reload_current_list();
-                                }
-                            }
-                        });
-                    ui.add_space(10.0);
-                    rating_filter_card(ui, self);
-                });
+                ui.add_space(6.0);
+                crate::widgets::mood_rail::rail(ui, self);
             });
 
         egui::TopBottomPanel::bottom("now-playing")
@@ -1157,6 +1322,8 @@ impl eframe::App for BigWaveApp {
                 Page::Settings => pages::settings::ui(ui, self),
                 Page::Plugins => pages::plugins::ui(ui, self),
                 Page::PluginPage(i) => pages::plugins::plugin_page(ui, self, i),
+                Page::Mood(i) => pages::moods::mood_page(ui, self, i),
+                Page::Stars => pages::moods::stars_page(ui, self),
             }
         });
         crate::plugin_bridge::post_frame(self, ctx);
@@ -1190,6 +1357,8 @@ fn nav_button(ui: &mut egui::Ui, app: &mut BigWaveApp, page: Page, label: &str) 
                 app.stations.clear();
             }
             Page::Plugins | Page::PluginPage(_) => {}
+            Page::Mood(i) => app.open_mood(i),
+            Page::Stars => app.stations.clear(),
             Page::Search => {
                 // Tags back the idle "pick a vibe" chips — fetch on first visit
                 // rather than at startup so they never block playback actions.
@@ -1213,126 +1382,5 @@ fn nav_button(ui: &mut egui::Ui, app: &mut BigWaveApp, page: Page, label: &str) 
                 }
             }
         }
-    }
-}
-
-/// Always-visible star rating filter card: rows 5→1 that filter the station
-/// grids to exactly that rating, plus a Clear row at the bottom.
-fn rating_filter_card(ui: &mut egui::Ui, app: &mut BigWaveApp) {
-    use eframe::egui::{Align2, Color32, CornerRadius, FontId, Pos2, Rect, Sense, Stroke, Vec2};
-
-    let accent = theme::accent_color(app.settings.accent);
-    let weak = ui.visuals().weak_text_color();
-    let strong = if theme::is_dark(ui.ctx(), app.settings.theme) {
-        Color32::from_gray(215)
-    } else {
-        Color32::from_gray(45)
-    };
-    let active = app.settings.rating_filter;
-
-    let row_h = 24.0f32;
-    let clear_h = 22.0f32;
-    let pad = 6.0f32;
-    let title_h = 14.0f32;
-    let card_h = pad + title_h + 4.0 + 5.0 * row_h + 6.0 + clear_h + pad;
-    let card_w = ui.available_width();
-    let (card_rect, _) = ui.allocate_exact_size(Vec2::new(card_w, card_h), Sense::hover());
-
-    // Card frame.
-    ui.painter().rect_filled(
-        card_rect,
-        CornerRadius::same(6),
-        ui.visuals().faint_bg_color,
-    );
-    ui.painter().rect(
-        card_rect,
-        CornerRadius::same(6),
-        Color32::TRANSPARENT,
-        Stroke::new(1.0, ui.visuals().widgets.noninteractive.bg_stroke.color),
-        eframe::egui::StrokeKind::Inside,
-    );
-    ui.painter().text(
-        Pos2::new(card_rect.left() + pad, card_rect.top() + pad),
-        Align2::LEFT_TOP,
-        "STAR RATING",
-        FontId::proportional(10.5),
-        weak,
-    );
-
-    let mut picked: Option<u8> = None;
-    let rows_top = card_rect.top() + pad + title_h + 4.0;
-    for (i, r) in (1u8..=5).rev().enumerate() {
-        let row = Rect::from_min_size(
-            Pos2::new(card_rect.left() + 2.0, rows_top + i as f32 * row_h),
-            Vec2::new(card_rect.width() - 4.0, row_h),
-        );
-        let response = ui.interact(row, ui.id().with(("rating_row", r)), Sense::click());
-        let selected = active == r;
-        if selected {
-            ui.painter().rect_filled(row.shrink2(Vec2::new(2.0, 2.0)), CornerRadius::same(4), accent.gamma_multiply(0.16));
-        } else if response.hovered() {
-            ui.painter().rect_filled(row.shrink2(Vec2::new(2.0, 2.0)), CornerRadius::same(4), accent.gamma_multiply(0.09));
-        }
-
-        let star_color = if selected {
-            accent
-        } else if response.hovered() {
-            strong
-        } else {
-            weak
-        };
-        let cx = row.left() + 10.0;
-        let cy = row.center().y;
-        for s in 0..5u8 {
-            let filled = s < r;
-            ui.painter().text(
-                Pos2::new(cx + s as f32 * 14.0, cy),
-                Align2::LEFT_CENTER,
-                if filled { "★" } else { "☆" },
-                FontId::proportional(13.0),
-                if filled { star_color } else { weak.gamma_multiply(0.6) },
-            );
-        }
-        let n = app.ratings.count(r);
-        if n > 0 {
-            ui.painter().text(
-                Pos2::new(row.right() - 10.0, cy),
-                Align2::RIGHT_CENTER,
-                n.to_string(),
-                FontId::proportional(11.0),
-                weak,
-            );
-        }
-        if response.clicked() {
-            // Clicking the active row clears, like the Clear row.
-            picked = Some(if selected { 0 } else { r });
-        }
-    }
-
-    // Clear row at the bottom.
-    let clear = Rect::from_min_size(
-        Pos2::new(card_rect.left() + 2.0, card_rect.bottom() - pad - clear_h),
-        Vec2::new(card_rect.width() - 4.0, clear_h),
-    );
-    let clear_resp = ui.interact(clear, ui.id().with("rating_clear"), Sense::click());
-    if active == 0 {
-        ui.painter().rect_filled(clear.shrink2(Vec2::new(2.0, 2.0)), CornerRadius::same(4), accent.gamma_multiply(0.16));
-    } else if clear_resp.hovered() {
-        ui.painter().rect_filled(clear.shrink2(Vec2::new(2.0, 2.0)), CornerRadius::same(4), accent.gamma_multiply(0.09));
-    }
-    ui.painter().text(
-        Pos2::new(clear.center().x, clear.center().y),
-        Align2::CENTER_CENTER,
-        if active == 0 { "Any rating" } else { "Clear" },
-        FontId::proportional(12.0),
-        if active == 0 { weak } else if clear_resp.hovered() { strong } else { weak },
-    );
-    if clear_resp.clicked() && active != 0 {
-        picked = Some(0);
-    }
-
-    if let Some(p) = picked {
-        app.settings.rating_filter = p;
-        app.persist_settings();
     }
 }

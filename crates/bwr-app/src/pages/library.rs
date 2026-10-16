@@ -1,8 +1,9 @@
-//! My Library page: favourites and the Rated smart list.
+//! My Library page: favourites and Recently played. (Ratings live in the
+//! Your Stars view in the left rail.)
 
 use eframe::egui::Ui;
 
-use crate::app::{BigWaveApp, LibraryTab, NetJob};
+use crate::app::{BigWaveApp, LibraryTab};
 use crate::pages::discover::tab_button;
 use crate::widgets::station_card::station_grid;
 
@@ -13,7 +14,7 @@ pub fn ui(ui: &mut Ui, app: &mut BigWaveApp) {
     ui.horizontal(|ui| {
         for (label, tab) in [
             ("Favourites", LibraryTab::Favourites),
-            ("Rated", LibraryTab::Rated),
+            ("Recently played", LibraryTab::Recent),
         ] {
             if tab_button(ui, app, label, app.library_tab == tab) && app.library_tab != tab {
                 app.library_tab = tab;
@@ -26,7 +27,7 @@ pub fn ui(ui: &mut Ui, app: &mut BigWaveApp) {
 
     match app.library_tab {
         LibraryTab::Favourites => favourites(ui, app),
-        LibraryTab::Rated => rated(ui, app),
+        LibraryTab::Recent => recent(ui, app),
     }
 }
 
@@ -50,44 +51,21 @@ fn favourites(ui: &mut Ui, app: &mut BigWaveApp) {
     }
 }
 
-/// Every station the user rated, best stars first.
-fn rated(ui: &mut Ui, app: &mut BigWaveApp) {
-    ui.label(
-        egui::RichText::new("Every station you rated — best stars first.")
-            .small()
-            .weak(),
-    );
+/// Recently played stations, newest first.
+fn recent(ui: &mut Ui, app: &mut BigWaveApp) {
+    ui.horizontal(|ui| {
+        ui.label(egui::RichText::new("Stations you played lately — newest first.").small().weak());
+        if !app.discovery.recent.is_empty() && ui.small_button("Clear").clicked() {
+            app.discovery.recent.clear();
+            app.discovery.save();
+        }
+    });
     ui.add_space(8.0);
-
-    if app.ratings.is_empty() {
+    if app.discovery.recent.is_empty() {
         ui.add_space(30.0);
-        ui.label(
-            egui::RichText::new("Nothing rated yet. Play a station and set its stars in the info panel on the right.")
-                .weak(),
-        );
+        ui.label(egui::RichText::new("Nothing played yet.").weak());
         return;
     }
-
-    // Fetch full records for rated uuids we don't have yet (deduped).
-    let missing: Vec<String> = app
-        .ratings
-        .missing_records()
-        .into_iter()
-        .filter(|u| app.rated_inflight.insert(u.clone()))
-        .collect();
-    if !missing.is_empty() {
-        let _ = app.job_tx.send(NetJob::Rated(missing));
-    }
-
-    let rated = app.ratings.rated_stations();
-    if rated.is_empty() {
-        ui.add_space(30.0);
-        ui.label(egui::RichText::new("Fetching your rated stations…").weak());
-        return;
-    }
-
-    let remembered = std::mem::take(&mut app.stations);
-    app.stations = rated.into_iter().map(|(_, s)| s).collect();
+    app.stations = app.discovery.recent.clone();
     station_grid(ui, app);
-    let _ = remembered;
 }

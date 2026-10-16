@@ -185,7 +185,7 @@ impl RadioBrowserClient {
     pub fn search(&self, query: &str, min_bitrate: u32, codec: &str) -> Result<Vec<Station>> {
         use std::fmt::Write as _;
         let mut q = String::new();
-        write!(q, "/json/stations/search?name={}&limit=100&hidebroken=true", urlencoding_encode(query))
+        write!(q, "/json/stations/search?name={}&limit=150&order=votes&reverse=true", urlencoding_encode(query))
             .unwrap();
         q.push_str(&Self::quality_clause(min_bitrate, codec));
         let stations = self.get_json::<Vec<Station>>(&q)?;
@@ -216,6 +216,47 @@ impl RadioBrowserClient {
             Self::quality_clause(min_bitrate, codec)
         ))?;
         Ok(Self::filter_quality(stations, min_bitrate, codec))
+    }
+
+    /// Stations for several tags at once (mood chips, More like this,
+    /// Surprise me): one /bytag request per tag, run in parallel, merged.
+    /// Order is arbitrary; callers rank and de-duplicate. Fails only if
+    /// every request failed.
+    pub fn stations_by_tags(&self, tags: &[String], per_tag: u32, min_bitrate: u32, codec: &str) -> Result<Vec<Station>> {
+        let results: Vec<Result<Vec<Station>>> = std::thread::scope(|scope| {
+            let handles: Vec<_> = tags
+                .iter()
+                .map(|tag| {
+                    scope.spawn(move || {
+                        self.get_json::<Vec<Station>>(&format!(
+                            "/json/stations/bytag/{}?limit={per_tag}&hidebroken=true&order=votes&reverse=true{}",
+                            urlencoding_encode(tag),
+                            Self::quality_clause(min_bitrate, codec)
+                        ))
+                        .map(|v| Self::filter_quality(v, min_bitrate, codec))
+                    })
+                })
+                .collect();
+            handles.into_iter().map(|h| h.join().unwrap_or_else(|_| Err(Error::Api("worker panicked".into())))).collect()
+        });
+        let mut out = Vec::new();
+        let mut last_err = None;
+        let mut any_ok = false;
+        for r in results {
+            match r {
+                Ok(v) => {
+                    any_ok = true;
+                    out.extend(v);
+                }
+                Err(e) => last_err = Some(e),
+            }
+        }
+        if !any_ok {
+            if let Some(e) = last_err {
+                return Err(e);
+            }
+        }
+        Ok(out)
     }
 
     /// Look up full station records for a set of uuids (the Rated list).
@@ -296,6 +337,7 @@ mod tests {
             country: String::new(),
             language: String::new(),
             tags: String::new(),
+            last_check_ok: 1,
         }
     }
 

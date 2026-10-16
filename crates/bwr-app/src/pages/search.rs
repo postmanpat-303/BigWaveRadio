@@ -28,7 +28,7 @@ pub fn ui(ui: &mut Ui, app: &mut BigWaveApp) {
             ui.spinner();
         }
         if !app.query.is_empty()
-            && ui.button(egui::RichText::new("✕").size(16.0)).on_hover_text("Clear").clicked()
+            && ui.button(egui::RichText::new("🗙").size(16.0)).on_hover_text("Clear").clicked()
         {
             app.query.clear();
             app.search_active = false;
@@ -36,7 +36,11 @@ pub fn ui(ui: &mut Ui, app: &mut BigWaveApp) {
             app.stations.clear();
             changed = false;
         }
-        response.request_focus();
+        // Grab focus only when nothing else has it — stealing it every frame
+        // also took it from the top bar and its history drop-down.
+        if ui.memory(|m| m.focused().is_none()) {
+            response.request_focus();
+        }
     });
     ui.add_space(10.0);
 
@@ -45,6 +49,7 @@ pub fn ui(ui: &mut Ui, app: &mut BigWaveApp) {
     }
 
     if app.search_active {
+        crate::pages::moods::talk_note(ui, app);
         station_grid(ui, app);
     } else {
         // Idle state: recent searches, then the floating tag word cloud.
@@ -54,12 +59,7 @@ pub fn ui(ui: &mut Ui, app: &mut BigWaveApp) {
             ui.horizontal_wrapped(|ui| {
                 for q in app.settings.search_history.clone() {
                     if chip(ui, app, &q) {
-                        app.query = q.clone();
-                        app.last_searched = q.clone();
-                        app.last_keystroke = None;
-                        app.loading = true;
-                        app.search_pending = true;
-                        let _ = app.job_tx.send(NetJob::Search(q));
+                        app.run_search_now(q);
                     }
                 }
             });

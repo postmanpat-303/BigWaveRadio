@@ -18,15 +18,15 @@ pub fn station_grid(ui: &mut Ui, app: &mut BigWaveApp) {
     let available = ui.available_width();
     let cols = ((available + GAP) / (CARD_WIDTH + GAP)).floor().max(1.0) as usize;
 
-    let stations = app.visible_stations(); // honour the star rating filter
+    let stations = app.visible_stations(); // talk filter (unless Show talk)
     if stations.is_empty() {
         ui.add_space(40.0);
         ui.centered_and_justified(|ui| {
             ui.label(
                 egui::RichText::new(if app.loading {
                     "Loading…"
-                } else if app.settings.rating_filter > 0 && !app.stations.is_empty() {
-                    "No stations with that rating."
+                } else if !app.stations.is_empty() {
+                    "Only talk stations here — tick Show talk in the left rail to see them."
                 } else {
                     "No stations to show."
                 })

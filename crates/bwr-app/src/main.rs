@@ -10,6 +10,7 @@ mod diag;
 #[cfg(windows)]
 mod hotkeys;
 mod pages;
+mod search_history;
 mod plugin_bridge;
 #[cfg(windows)]
 mod smtc;

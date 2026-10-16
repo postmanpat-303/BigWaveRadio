@@ -33,16 +33,21 @@
 <table>
   <tr>
     <td width="33%" valign="top"><h4>📻 Discover</h4>Trending, popular and recently-added stations, plus Tags and Countries browsing.</td>
-    <td width="33%" valign="top"><h4>🔎 Live search</h4>Top-bar search with results that update as you type, and a tag/genre Search page.</td>
-    <td width="33%" valign="top"><h4>⭐ Ratings & library</h4>Star any station for My Library, rate stations 1–5 and filter by rating, with a smart list of everything you've rated.</td>
+    <td width="33%" valign="top"><h4>🎧 Mood chips</h4>One click for <b>Dance, Trance, Chill, Easy, 80s or 90s</b>. Each mood searches several radio-browser tags at once (trance covers progressive, uplifting, psytrance…). The mappings live in an editable <code>moods.json</code>.</td>
+    <td width="33%" valign="top"><h4>⭐ Your Stars</h4>Rate stations 1–5 from the now-playing panel. <b>Your Stars</b> lists every station you rated, from any category, by star level or all sorted by stars.</td>
   </tr>
   <tr>
-    <td valign="top"><h4>ℹ️ Now-playing panel</h4>Station art, format, bitrate, votes, clicks, tags, website and copy-stream-URL, plus Surprise me.</td>
-    <td valign="top"><h4>🎚️ Filters & transport</h4>Bitrate and format filters; previous / play / pause / stop / next and volume.</td>
+    <td valign="top"><h4>🔎 Music-first search</h4>Live top-bar search with one-click history. Results are ranked with working streams first, then votes, clicks and bitrate, and near-identical stations are merged. Talk, news, sport and religious stations are hidden unless you tick <b>Show talk</b>.</td>
+    <td valign="top"><h4>✨ More like this · 🎲 Surprise me</h4>Find stations that share the playing station's tags, weighted by your ratings, or get a well-rated or popular pick within your moods. <b>Recently played</b> sits in My Library.</td>
     <td valign="top"><h4>📊 Spectrum</h4>A 32-band spectrum analyser animated inside the playing station card.</td>
   </tr>
   <tr>
-    <td valign="top"><h4>🎨 Themes</h4>Dark / light / system, plus 8 accent colours. Settings are compatible with the original C# app.</td>
+    <td valign="top"><h4>ℹ️ Now-playing panel</h4>Station art, format, bitrate, votes, clicks, tags, website and copy-stream-URL.</td>
+    <td valign="top"><h4>🎚️ Transport & Advanced</h4>Previous / play / pause / stop / next and volume. Format and minimum-bitrate filters sit under <b>Advanced</b> in the left rail.</td>
+    <td valign="top"><h4>💾 Your data</h4><code>settings.json</code> stays compatible with the original C# app. New state goes in <code>discovery.json</code> and <code>moods.json</code>.</td>
+  </tr>
+  <tr>
+    <td valign="top"><h4>🎨 Themes</h4>Dark / light / system, plus 8 accent colours.</td>
     <td valign="top"><h4>🧩 Plugins</h4>Rhai scripts with permissions, hot reload, <code>.zip</code> import, panels, whole pages and overlays.</td>
     <td valign="top"><h4>⚡ Beat Strobe & 🌌 Visions</h4>Beat-synced strobe with AI-vs-humanity symbols and Amiga interference rings (flash rate capped by the app), plus a smooth MilkDrop-style visualiser with eight scenes.</td>
   </tr>
@@ -51,6 +56,10 @@
 ## 🖼️ Screenshots
 
 <table>
+  <tr>
+    <td><img src="docs/media/moods.png" alt="Trance mood results"><br><sub>Mood chips: Trance, talk stations hidden</sub></td>
+    <td><img src="docs/media/your-stars.png" alt="Your Stars view"><br><sub>Your Stars: every rated station, by level</sub></td>
+  </tr>
   <tr>
     <td><img src="docs/media/rating-card.png" alt="Now-playing panel with star rating"><br><sub>Now-playing panel with your star rating</sub></td>
     <td><img src="docs/media/plugins-page.png" alt="Plugins page"><br><sub>Plugins page: flash safety, permissions and settings</sub></td>

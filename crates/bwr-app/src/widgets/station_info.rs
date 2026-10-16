@@ -113,6 +113,15 @@ pub fn panel(ui: &mut Ui, app: &mut BigWaveApp) {
     }
     ui.add_space(6.0);
 
+    if ui
+        .button(egui::RichText::new("✨  More like this").size(14.0))
+        .on_hover_text("Stations sharing this one's tags, tuned by your star ratings")
+        .clicked()
+    {
+        app.more_like_station(&station);
+    }
+    ui.add_space(4.0);
+
     // Links.
     if !station.homepage.trim().is_empty() {
         ui.hyperlink_to("🌐 Station website", &station.homepage);
@@ -124,7 +133,7 @@ pub fn panel(ui: &mut Ui, app: &mut BigWaveApp) {
     // Surprise me.
     if ui
         .button(egui::RichText::new("🎲  Surprise me").size(14.0))
-        .on_hover_text("Play a random station (honours your quality filter)")
+        .on_hover_text("Play a well-rated or popular station from your moods")
         .clicked()
     {
         app.surprise();

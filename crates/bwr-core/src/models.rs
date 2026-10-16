@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 /// A radio station as returned by the radio-browser.info API.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct Station {
     #[serde(rename = "stationuuid")]
     pub uuid: String,
@@ -19,6 +19,14 @@ pub struct Station {
     pub country: String,
     pub language: String,
     pub tags: String,
+    /// 1 when radio-browser's last stream check succeeded. Defaults to 1 for
+    /// records saved by older versions (and the C# app), which never stored it.
+    #[serde(rename = "lastcheckok", default = "one")]
+    pub last_check_ok: u8,
+}
+
+fn one() -> u8 {
+    1
 }
 
 impl Station {
