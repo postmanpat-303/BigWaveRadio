@@ -218,9 +218,16 @@ impl RadioBrowserClient {
         Ok(Self::filter_quality(stations, min_bitrate, codec))
     }
 
+    /// Look up full station records for a set of uuids (the Rated list).
+    pub fn stations_by_uuids(&self, uuids: &[String]) -> Result<Vec<Station>> {
+        if uuids.is_empty() {
+            return Ok(Vec::new());
+        }
+        self.get_json(&format!("/json/stations/byuuid?uuids={}", uuids.join(",")))
+    }
+
     /// Stations sharing a tag, excluding the station we came from.
-    pub fn similar(&self, tag: &str, exclude_uuid: &str, min_bitrate: u32, codec: &str) -> Result<Vec<Station>> {
-        Ok(self
+    pub fn similar(&self, tag: &str, exclude_uuid: &str, min_bitrate: u32, codec: &str) -> Result<Vec<Station>> {        Ok(self
             .stations_by_tag(tag, min_bitrate, codec)?
             .into_iter()
             .filter(|s| s.uuid != exclude_uuid)

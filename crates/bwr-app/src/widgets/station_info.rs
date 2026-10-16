@@ -62,6 +62,10 @@ pub fn panel(ui: &mut Ui, app: &mut BigWaveApp) {
             }
             if let Some(r) = new_rating {
                 app.ratings.set(&station.uuid, r);
+                if r > 0 {
+                    // Cache the record so the Rated list can show it offline.
+                    app.ratings.record(&station);
+                }
             }
         });
     });

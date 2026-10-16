@@ -35,6 +35,12 @@ pub enum DiscoverTab {
     Recent,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum LibraryTab {
+    Favourites,
+    Rated,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum BrowseSel {
     Tag(String),
@@ -53,6 +59,8 @@ pub enum NetJob {
     /// Pick one random station honouring the quality filter (Surprise me).
     Surprise,
     Click(String),
+    /// Fetch full records for rated uuids (the Rated smart list).
+    Rated(Vec<String>),
     Favicon(String, String),
 }
 
@@ -61,6 +69,8 @@ pub enum NetResult {
     /// Result of a "More like this" request, with the tag it was for.
     MoreLike(String, Vec<Station>),
     Surprise(Station),
+    /// Full records for rated uuids, cached into the ratings store.
+    Rated(Vec<Station>),
     Tags(Vec<Tag>),
     Countries(Vec<Country>),
     Favicon(String, Vec<u8>),
@@ -86,10 +96,13 @@ pub struct BigWaveApp {
     pub settings: Settings,
     pub library: Library,
     pub ratings: bwr_core::Ratings,
+    /// Rated uuids already requested from the network (dedupe fetches).
+    pub rated_inflight: std::collections::HashSet<String>,
     pub player: Player,
 
     pub page: Page,
     pub discover_tab: DiscoverTab,
+    pub library_tab: LibraryTab,
     pub stations: Vec<Station>,
     pub current: Option<Station>,
     pub status: String,
@@ -264,6 +277,16 @@ impl BigWaveApp {
                         }
                     }
                     NetJob::Click(ref uuid) => client.report_click(uuid),
+                    NetJob::Rated(ref uuids) => {
+                        match client.stations_by_uuids(uuids) {
+                            Ok(stations) => {
+                                let _ = result_tx.send(NetResult::Rated(stations));
+                            }
+                            Err(e) => {
+                                let _ = result_tx.send(NetResult::Failed(e.to_string()));
+                            }
+                        }
+                    }
                     NetJob::Favicon(ref uuid, ref url) => {
                         match http.get(url).send() {
                             Ok(resp) => match resp.bytes() {
@@ -294,9 +317,11 @@ impl BigWaveApp {
             settings,
             library: Library::load(),
             ratings: bwr_core::Ratings::load(),
+            rated_inflight: std::collections::HashSet::new(),
             player,
             page: Page::Discover,
             discover_tab: DiscoverTab::Trending,
+            library_tab: LibraryTab::Favourites,
             stations: Vec::new(),
             current: None,
             status: "Ready".into(),
@@ -528,6 +553,12 @@ impl BigWaveApp {
             }
             NetResult::Surprise(station) => {
                 self.play_station(station);
+            }
+            NetResult::Rated(stations) => {
+                for s in &stations {
+                    self.ratings.record(s);
+                }
+                self.rated_inflight.clear();
             }
             NetResult::Tags(tags) => self.tags = tags,
             NetResult::Countries(countries) => {

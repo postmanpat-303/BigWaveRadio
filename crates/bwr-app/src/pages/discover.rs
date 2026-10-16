@@ -35,7 +35,7 @@ pub fn ui(ui: &mut Ui, app: &mut BigWaveApp) {
 }
 
 /// Outlined pill tab: accent fill when selected, outline always.
-fn tab_button(ui: &mut Ui, app: &BigWaveApp, label: &str, selected: bool) -> bool {
+pub(crate) fn tab_button(ui: &mut Ui, app: &BigWaveApp, label: &str, selected: bool) -> bool {
     let accent = theme::accent_color(app.settings.accent);
     let dark = theme::is_dark(ui.ctx(), app.settings.theme);
     let font = FontId::proportional(15.0);

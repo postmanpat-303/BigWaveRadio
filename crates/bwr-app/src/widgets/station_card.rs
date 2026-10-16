@@ -116,8 +116,26 @@ fn card(ui: &mut Ui, station: &Station, app: &mut BigWaveApp) {
         FontId::proportional(14.5),
         if dark { Color32::from_gray(240) } else { Color32::from_gray(20) },
     );
+    // Rated stations show their stars ahead of the summary line.
+    let rating = app.ratings.get(&station.uuid);
+    let meta_x = if rating > 0 {
+        let stars: String = (1..=5)
+            .map(|s| if s <= rating { '★' } else { '☆' })
+            .collect();
+        let star_font = FontId::proportional(11.0);
+        painter.text(
+            Pos2::new(text_left, rect.top() + 46.0),
+            Align2::LEFT_CENTER,
+            stars.clone(),
+            star_font.clone(),
+            accent,
+        );
+        text_left + ui.fonts(|f| f.layout_no_wrap(stars, star_font, Color32::WHITE).size().x) + 6.0
+    } else {
+        text_left
+    };
     painter.text(
-        Pos2::new(text_left, rect.top() + 46.0),
+        Pos2::new(meta_x, rect.top() + 46.0),
         Align2::LEFT_CENTER,
         station.summary_line(),
         FontId::proportional(12.0),
