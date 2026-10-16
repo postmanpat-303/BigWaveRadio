@@ -23,6 +23,8 @@ single ~8 MB executable.
 - **Now-playing transport** — previous / play / pause / stop / next
 - **32-band spectrum analyser** animated inside the playing station card
 - **Themes** — dark / light / system, plus 8 accent highlight colours
+- **Plugins** — Rhai script plugins with permissions, hot reload, `.zip`
+  import, extra nav pages and a bundled **Beat Strobe** (see below)
 - **Settings compatible with the C# app** — reads and writes the same
   `%LOCALAPPDATA%\BigWaveRadio\settings.json`, so your existing library and
   theme preferences carry over
@@ -34,7 +36,28 @@ single ~8 MB executable.
 | `bwr-core` | radio-browser.info API client (IPv4-only DNS resolver, mirror failover, Schannel TLS via `native-tls`), station/tag/country models, library + settings persistence |
 | `bwr-player` | stream download, decode (symphonia), audio output (cpal/WASAPI) on a worker thread |
 | `bwr-spectrum` | FFT band analysis (`rustfft`) fed by the decoded PCM |
+| `bwr-plugins` | plugin host: `plugin.toml` manifests, Rhai engine + script API, permissions, hot reload, flash-rate limiter, `.zip` import, `--check-plugin` |
 | `bwr-app` | egui user interface, worker-thread result pump |
+
+## Plugins
+
+Plugins are folders with `plugin.toml` + `main.rhai` in
+`%LOCALAPPDATA%\BigWaveRadio\plugins\`. Manage them on the **Plugins** page:
+approve permissions, enable/disable, edit settings, import a `.zip` (button or
+drag-and-drop). Saving a plugin's files reloads it automatically. Plugins can
+add panels, whole side-bar pages, and in-window or fullscreen overlays; they
+get audio levels, bands, beat/BPM and break detection, but no network or file
+access.
+
+* Authoring guide (for people and AI assistants): [docs/PLUGIN_GUIDE.md](docs/PLUGIN_GUIDE.md), plus [AGENTS.md](AGENTS.md)
+* Validate a plugin without opening the window:
+  `BigWaveRadio.exe --check-plugin <folder>` (exit code 0 = OK)
+* **Beat Strobe** (bundled, `plugins/strobe/`): photosensitivity warning
+  first; in-window or fullscreen; *Random beat* or *Fixed rate* mode; speeds
+  1–12 Hz limited by the flash cap (3 Hz default, opt-in up to 12 Hz under
+  Plugins → Flash safety, enforced by the app); arrow keys change speed;
+  black screen during breaks; random AI-vs-humanity line-art symbols. Esc
+  always exits (handled by the app), as does any other key or a click.
 
 ## Building
 

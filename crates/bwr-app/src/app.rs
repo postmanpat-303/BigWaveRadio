@@ -23,6 +23,9 @@ pub enum Page {
     Tags,
     Countries,
     Settings,
+    Plugins,
+    /// A page added by a plugin (index into `plugins.pages`).
+    PluginPage(usize),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -124,6 +127,7 @@ pub struct BigWaveApp {
     pub favicons: std::collections::HashMap<String, egui::TextureHandle>,
     favicon_pending: std::collections::HashSet<String>,
     pub about_logo: egui::TextureHandle,
+    pub plugins: crate::plugin_bridge::PluginBridge,
 
     // Windows integration
     #[cfg(windows)]
@@ -334,6 +338,7 @@ impl BigWaveApp {
             ctx: cc.egui_ctx.clone(),
             filter,
             first_frame: true,
+            plugins: crate::plugin_bridge::PluginBridge::new(),
         };
         theme::apply(&app.ctx, app.settings.theme, app.settings.accent);
         app
@@ -694,6 +699,7 @@ impl eframe::App for BigWaveApp {
             if gen != current_gen {
                 continue;
             }
+            self.plugins.note_player_event(&event);
             match event {
                 PlayerEvent::Connecting => self.status = "Connecting…".into(),
                 PlayerEvent::Playing => {
@@ -889,6 +895,7 @@ impl eframe::App for BigWaveApp {
         // --- Spectrum ------------------------------------------------------------
         self.player.spectrum.update();
         self.player.spectrum.snapshot(&mut self.bands);
+        crate::plugin_bridge::pre_frame(self, ctx);
 
         // --- Layout ---------------------------------------------------------------
         egui::TopBottomPanel::top("title-search").show(ctx, |ui| {
@@ -1016,6 +1023,11 @@ impl eframe::App for BigWaveApp {
                         ui.add_space(10.0);
                         ui.separator();
                         ui.add_space(10.0);
+                        for (i, (_, pg)) in self.plugins.pages.clone().into_iter().enumerate() {
+                            let icon = if pg.icon.is_empty() { "🔌".to_string() } else { pg.icon };
+                            nav_button(ui, self, Page::PluginPage(i), &format!("{icon}  {}", pg.title));
+                        }
+                        nav_button(ui, self, Page::Plugins, "🔌  Plugins");
                         nav_button(ui, self, Page::Settings, "⚙  Settings");
                     });
 
@@ -1111,8 +1123,11 @@ impl eframe::App for BigWaveApp {
                 Page::Tags => pages::browse::tags_page(ui, self),
                 Page::Countries => pages::browse::countries_page(ui, self),
                 Page::Settings => pages::settings::ui(ui, self),
+                Page::Plugins => pages::plugins::ui(ui, self),
+                Page::PluginPage(i) => pages::plugins::plugin_page(ui, self, i),
             }
         });
+        crate::plugin_bridge::post_frame(self, ctx);
 
         // Repaint scheduling MUST come after the layout: pages and widgets set
         // `loading` / `is_playing` while drawing, and egui is event-driven —
@@ -1142,6 +1157,7 @@ fn nav_button(ui: &mut egui::Ui, app: &mut BigWaveApp, page: Page, label: &str) 
             Page::Library | Page::Settings => {
                 app.stations.clear();
             }
+            Page::Plugins | Page::PluginPage(_) => {}
             Page::Search => {
                 // Tags back the idle "pick a vibe" chips — fetch on first visit
                 // rather than at startup so they never block playback actions.

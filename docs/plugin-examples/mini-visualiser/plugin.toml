@@ -1,0 +1,11 @@
+id = "mini-visualiser"
+name = "Mini Visualiser"
+version = "1.0.0"
+api = 1
+description = "Adds a whole Visualiser page to the side bar: spectrum bars and a BPM readout."
+permissions = ["audio", "page"]
+
+[[pages]]
+id = "vis"
+title = "Visualiser"
+icon = "🎵"

@@ -5,7 +5,10 @@
 //! (0.0..=1.0), computed with per-band auto-gain so the visualiser stays
 //! lively at any listening volume.
 
-use std::sync::atomic::{AtomicU32, Ordering};
+use std::sync::atomic::{AtomicU32, AtomicUsize, Ordering};
+
+mod beat;
+pub use beat::{AudioFeatures, BeatTracker};
 use std::sync::Mutex;
 
 use rustfft::num_complex::Complex32;
@@ -33,6 +36,10 @@ pub struct SpectrumFeed {
     fft: std::sync::Arc<dyn Fft<f32>>,
     scratch: Mutex<Vec<Complex32>>,
     band_max: Mutex<[f32; BANDS]>,
+    /// How many mono samples the analysis should lag behind the newest pushed
+    /// sample. The player decodes ahead of the speakers (it keeps an output
+    /// queue of up to ~3 s), so without this the visuals run early.
+    delay: AtomicUsize,
 }
 
 impl Default for SpectrumFeed {
@@ -53,6 +60,7 @@ impl SpectrumFeed {
             fft: rustfft::FftPlanner::new().plan_fft_forward(FFT_SIZE),
             scratch: Mutex::new(vec![Complex32::default(); FFT_SIZE]),
             band_max: Mutex::new([0.0001; BANDS]),
+            delay: AtomicUsize::new(0),
         }
     }
 
@@ -75,14 +83,22 @@ impl SpectrumFeed {
         }
     }
 
-    /// Read the newest `FFT_SIZE` mono samples without consuming them.
-    fn newest_window(&self, out: &mut [f32; FFT_SIZE]) -> bool {
+    /// Tell the analyser how far (in mono samples at the pushed rate) the
+    /// audible output lags behind the newest pushed sample.
+    pub fn set_delay_samples(&self, samples: usize) {
+        self.delay.store(samples.min(RING_CAP / 2), Ordering::Relaxed);
+    }
+
+    /// Read the newest audible `out.len()` mono samples without consuming them.
+    fn newest_window(&self, out: &mut [f32]) -> bool {
+        let n = out.len();
         let ring = self.ring.lock().unwrap();
         let available = (ring.write + RING_CAP - ring.read) & (RING_CAP - 1);
-        if available < FFT_SIZE {
+        if available < n {
             return false;
         }
-        let start = (ring.write + RING_CAP - FFT_SIZE) & (RING_CAP - 1);
+        let delay = self.delay.load(Ordering::Relaxed).min(available - n);
+        let start = (ring.write + RING_CAP - delay - n) & (RING_CAP - 1);
         for (i, slot) in out.iter_mut().enumerate() {
             *slot = ring.buf[(start + i) & (RING_CAP - 1)];
         }
@@ -143,6 +159,21 @@ impl SpectrumFeed {
         }
     }
 
+    /// RMS level and peak (both 0.0..=1.0) of the most recent audible ~21 ms.
+    pub fn level_peak(&self) -> (f32, f32) {
+        let mut window = [0.0f32; 1024];
+        if !self.newest_window(&mut window) {
+            return (0.0, 0.0);
+        }
+        let mut sum = 0.0f32;
+        let mut peak = 0.0f32;
+        for s in window {
+            sum += s * s;
+            peak = peak.max(s.abs());
+        }
+        ((sum / window.len() as f32).sqrt().clamp(0.0, 1.0), peak.clamp(0.0, 1.0))
+    }
+
     /// Copy the current 32 band levels (0.0..=1.0).
     pub fn snapshot(&self, out: &mut [f32; BANDS]) {
         for (i, b) in out.iter_mut().enumerate() {
@@ -155,6 +186,7 @@ impl SpectrumFeed {
         let mut ring = self.ring.lock().unwrap();
         ring.write = 0;
         ring.read = 0;
+        self.delay.store(0, Ordering::Relaxed);
         for b in &self.levels {
             b.store(0, Ordering::Relaxed);
         }

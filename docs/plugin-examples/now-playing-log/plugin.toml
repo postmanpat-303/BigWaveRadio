@@ -1,0 +1,6 @@
+id = "now-playing-log"
+name = "Now Playing Log"
+version = "1.0.0"
+api = 1
+description = "Keeps a list of the last 15 songs heard, with the station name."
+permissions = ["now_playing", "panel", "storage"]
