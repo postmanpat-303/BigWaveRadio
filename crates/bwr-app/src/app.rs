@@ -470,6 +470,11 @@ impl BigWaveApp {
             plugins: crate::plugin_bridge::PluginBridge::new(),
         };
         theme::apply(&app.ctx, app.settings.theme, app.settings.accent);
+        // Per-session motivational quote in the window title, after the app name.
+        cc.egui_ctx.send_viewport_cmd(egui::ViewportCommand::Title(format!(
+            "BigWave Radio — {}",
+            session_quote()
+        )));
         app
     }
 
@@ -819,6 +824,35 @@ impl BigWaveApp {
     }
 }
 
+/// Famous life quotes for the window title — one per session, picked at
+/// random. Kept short so the title bar and taskbar stay readable.
+const QUOTES: &[&str] = &[
+    "The unexamined life is not worth living. — Socrates",
+    "Not all those who wander are lost. — J.R.R. Tolkien",
+    "In the middle of difficulty lies opportunity. — Albert Einstein",
+    "Whatever you are, be a good one. — Abraham Lincoln",
+    "It does not matter how slowly you go, as long as you do not stop. — Confucius",
+    "The best way to predict the future is to invent it. — Alan Kay",
+    "He who has a why to live can bear almost any how. — Friedrich Nietzsche",
+    "Strive not to be a success, but rather to be of value. — Albert Einstein",
+    "Happiness depends upon ourselves. — Aristotle",
+    "Dream big and dare to fail. — Norman Vaughan",
+    "Turn your wounds into wisdom. — Oprah Winfrey",
+    "Well begun is half done. — Aristotle",
+    "The only true wisdom is in knowing you know nothing. — Socrates",
+    "Life shrinks or expands in proportion to one's courage. — Anaïs Nin",
+];
+
+/// Pick the session's quote. Seeded from the wall clock — no rand dependency,
+/// and a fresh pick on every launch.
+fn session_quote() -> &'static str {
+    let nanos = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.subsec_nanos() as u64 ^ d.as_secs())
+        .unwrap_or(0);
+    QUOTES[(nanos % QUOTES.len() as u64) as usize]
+}
+
 fn send_result(tx: &mpsc::Sender<NetResult>, res: bwr_core::client::Result<Vec<Station>>) {
     match res {
         Ok(stations) => {
@@ -830,9 +864,37 @@ fn send_result(tx: &mpsc::Sender<NetResult>, res: bwr_core::client::Result<Vec<S
     }
 }
 
+/// Paint the native title bar dark grey with light text via the Windows 11
+/// DWM caption-colour attributes. Best effort: older Windows keeps whatever
+/// theme it had.
+#[cfg(windows)]
+fn dark_caption(hwnd: windows::Win32::Foundation::HWND) {
+    use windows::Win32::Graphics::Dwm::{DwmSetWindowAttribute, DWMWA_CAPTION_COLOR, DWMWA_TEXT_COLOR};
+    /// COLORREF packs 0x00BBGGRR.
+    const fn colorref(r: u8, g: u8, b: u8) -> u32 {
+        (r as u32) | ((g as u32) << 8) | ((b as u32) << 16)
+    }
+    unsafe {
+        // A hair darker than the app's dark chrome fill (30,31,37).
+        let caption = colorref(20, 21, 26);
+        let _ = DwmSetWindowAttribute(
+            hwnd,
+            DWMWA_CAPTION_COLOR,
+            &caption as *const u32 as *const _,
+            4,
+        );
+        let text = colorref(238, 238, 242);
+        let _ = DwmSetWindowAttribute(
+            hwnd,
+            DWMWA_TEXT_COLOR,
+            &text as *const u32 as *const _,
+            4,
+        );
+    }
+}
+
 /// Hide WITHOUT ShowWindow(SW_HIDE): a fully hidden window stops receiving
-/// paint events and the egui/winit event loop goes idle, which freezes tray
-/// menu commands, the Ctrl+Alt+B restore hotkey and SMTC. Moving the window
+/// paint events and the egui/winit event loop goes idle, which freezes tray/// menu commands, the Ctrl+Alt+B restore hotkey and SMTC. Moving the window
 /// far offscreen keeps every subsystem alive; the taskbar button is removed
 /// separately. Returns the on-screen position for show_main_window.
 #[cfg(windows)]
@@ -1056,6 +1118,10 @@ impl eframe::App for BigWaveApp {
                     self.hwnd = Some(windows::Win32::Foundation::HWND(
                         w.hwnd.get() as *mut core::ffi::c_void,
                     ));
+                    // Dark grey caption + light title text, so the title bar
+                    // matches the app's dark chrome instead of Windows'
+                    // default (DWM caption colours, Windows 11).
+                    dark_caption(self.hwnd.unwrap());
                 }
             }
 

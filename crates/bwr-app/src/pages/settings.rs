@@ -1,19 +1,47 @@
 //! Settings page: theme, highlight colour, bitrate filter, About.
 
 use bwr_core::settings::{Accent, Theme, ACCENTS};
-use eframe::egui::{self, Color32, Ui};
+use eframe::egui::{self, Color32, CornerRadius, Stroke, Ui};
 
 use crate::app::BigWaveApp;
 use crate::theme;
 
+/// Card styled like the transport buttons: rounded corners, base fill and a
+/// thin accent outline.
+fn card<R>(
+    ui: &mut Ui,
+    dark: bool,
+    accent: Color32,
+    title: &str,
+    body: impl FnOnce(&mut Ui) -> R,
+) -> R {
+    let fill = if dark {
+        Color32::from_gray(40)
+    } else {
+        Color32::from_gray(250)
+    };
+    egui::Frame::new()
+        .fill(fill)
+        .corner_radius(CornerRadius::same(12))
+        .stroke(Stroke::new(1.0, accent.gamma_multiply(0.6)))
+        .inner_margin(egui::Margin::same(14))
+        .show(ui, |ui| {
+            ui.label(egui::RichText::new(title).heading().size(16.0));
+            ui.add_space(6.0);
+            body(ui)
+        })
+        .inner
+}
+
 pub fn ui(ui: &mut Ui, app: &mut BigWaveApp) {
     ui.heading("Settings");
     ui.add_space(8.0);
+    let dark = theme::is_dark(ui.ctx(), app.settings.theme);
+    let accent = theme::accent_color(app.settings.accent);
 
     egui::ScrollArea::vertical().auto_shrink([false, false]).show(ui, |ui| {
         // --- Appearance ------------------------------------------------------
-        ui.group(|ui| {
-            ui.label(egui::RichText::new("Theme").heading().size(16.0));
+        card(ui, dark, accent, "Theme", |ui| {
             ui.horizontal(|ui| {
                 for (label, value) in [
                     ("Match system", Theme::System),
@@ -80,8 +108,7 @@ pub fn ui(ui: &mut Ui, app: &mut BigWaveApp) {
         ui.add_space(10.0);
 
         // --- Stream quality ---------------------------------------------------
-        ui.group(|ui| {
-            ui.label(egui::RichText::new("Stream quality").heading().size(16.0));
+        card(ui, dark, accent, "Stream quality", |ui| {
             ui.horizontal(|ui| {
                 ui.label("Minimum bitrate:");
                 egui::ComboBox::from_id_salt("min-bitrate")
@@ -144,8 +171,7 @@ pub fn ui(ui: &mut Ui, app: &mut BigWaveApp) {
         ui.add_space(10.0);
 
         // --- Station cards -----------------------------------------------------
-        ui.group(|ui| {
-            ui.label(egui::RichText::new("Station cards").heading().size(16.0));
+        card(ui, dark, accent, "Station cards", |ui| {
             ui.horizontal(|ui| {
                 let mut comfy = app.discovery.comfortable_cards;
                 let a = ui.radio_value(&mut comfy, false, "Compact");
@@ -165,8 +191,7 @@ pub fn ui(ui: &mut Ui, app: &mut BigWaveApp) {
         ui.add_space(10.0);
 
         // --- Behaviour ---------------------------------------------------------
-        ui.group(|ui| {
-            ui.label(egui::RichText::new("Behaviour").heading().size(16.0));
+        card(ui, dark, accent, "Behaviour", |ui| {
             if ui
                 .checkbox(&mut app.settings.minimize_to_tray, "Keep playing in the tray when I close the window")
                 .changed()
@@ -188,8 +213,7 @@ pub fn ui(ui: &mut Ui, app: &mut BigWaveApp) {
         ui.add_space(10.0);
 
         // --- Idle Visions -------------------------------------------------------
-        ui.group(|ui| {
-            ui.label(egui::RichText::new("Idle Visions").heading().size(16.0));
+        card(ui, dark, accent, "Idle Visions", |ui| {
             if ui
                 .checkbox(
                     &mut app.settings.idle_visions,
@@ -228,8 +252,7 @@ pub fn ui(ui: &mut Ui, app: &mut BigWaveApp) {
         ui.add_space(10.0);
 
         // --- About -------------------------------------------------------------
-        ui.group(|ui| {
-            ui.add_space(6.0);
+        card(ui, dark, accent, "About", |ui| {
             ui.horizontal(|ui| {
                 let logo = app.about_logo.clone();
                 let logo_w = logo.size()[0] as f32;
@@ -239,7 +262,24 @@ pub fn ui(ui: &mut Ui, app: &mut BigWaveApp) {
                 ui.add(egui::Image::new((logo.id(), egui::vec2(w, h))).corner_radius(8));
                 ui.add_space(12.0);
                 ui.vertical(|ui| {
-                    ui.label(egui::RichText::new("About BigWave Radio").heading().size(20.0));
+                    ui.horizontal(|ui| {
+                        ui.label(egui::RichText::new("About BigWave Radio").heading().size(20.0));
+                        ui.add_space(4.0);
+                        // Version pill, matching the transport-button outline.
+                        let accent = theme::accent_color(app.settings.accent);
+                        egui::Frame::new()
+                            .fill(accent.gamma_multiply(0.15))
+                            .corner_radius(CornerRadius::same(8))
+                            .stroke(Stroke::new(1.0, accent.gamma_multiply(0.6)))
+                            .inner_margin(egui::Margin::symmetric(8, 2))
+                            .show(ui, |ui| {
+                                ui.label(
+                                    egui::RichText::new(format!("v{}", env!("CARGO_PKG_VERSION")))
+                                        .size(12.0)
+                                        .color(accent),
+                                );
+                            });
+                    });
                     ui.add_space(6.0);
                     ui.label(
                         "BigWave Radio streams live stations from the community-powered \
