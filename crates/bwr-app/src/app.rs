@@ -1381,7 +1381,22 @@ impl eframe::App for BigWaveApp {
                         for (i, (pid, pg)) in self.plugins.pages.clone().into_iter().enumerate() {
                             let icon = if pg.icon.is_empty() { "🔌".to_string() } else { pg.icon };
                             let hint = self.plugins.hotkey_hint(&pid).map(|k| format!("   {k}")).unwrap_or_default();
-                            nav_button(ui, self, Page::PluginPage(i), &format!("{icon}  {}{hint}", pg.title));
+                            let resp = nav_button(ui, self, Page::PluginPage(i), &format!("{icon}  {}{hint}", pg.title));
+                            resp.clone().on_hover_text(format!("{} — double-click to start", pg.title));
+                            // Double-click a plugin in the side menu to start it
+                            // (prefers an action named "start", else its first action).
+                            if resp.double_clicked() {
+                                let actions: Vec<String> = self.plugins.host.hotkeys()
+                                    .into_iter()
+                                    .filter(|(id, _)| id == &pid)
+                                    .map(|(_, h)| h.action)
+                                    .collect();
+                                let action = actions.iter().find(|a| *a == "start").cloned()
+                                    .or_else(|| actions.first().cloned());
+                                if let Some(a) = action {
+                                    self.plugins.host.trigger_action(&pid, &a);
+                                }
+                            }
                         }
                         nav_button(ui, self, Page::Plugins, "🔌  Plugins");
                         nav_button(ui, self, Page::Settings, "⚙  Settings");
@@ -1454,11 +1469,12 @@ impl eframe::App for BigWaveApp {
     }
 }
 
-fn nav_button(ui: &mut egui::Ui, app: &mut BigWaveApp, page: Page, label: &str) {
+fn nav_button(ui: &mut egui::Ui, app: &mut BigWaveApp, page: Page, label: &str) -> egui::Response {
     let selected = app.page == page;    let button = egui::Button::new(egui::RichText::new(label).size(14.0))
         .selected(selected)
         .min_size(egui::vec2(ui.available_width(), 30.0));
-    if ui.add(button).clicked() && !selected {
+    let response = ui.add(button);
+    if response.clicked() && !selected {
         app.page = page;
         app.browse_selection = None;
         match page {
@@ -1494,4 +1510,5 @@ fn nav_button(ui: &mut egui::Ui, app: &mut BigWaveApp, page: Page, label: &str) 
             Page::About => app.stations.clear(),
         }
     }
+    response
 }
