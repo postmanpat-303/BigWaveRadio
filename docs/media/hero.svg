@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 260" width="900" height="260" role="img" aria-label="BigWave Radio">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0b0420"/><stop offset="1" stop-color="#1a0b3d"/>
+    </linearGradient>
+    <linearGradient id="copper" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ff3cac"><animate attributeName="stop-color" values="#ff3cac;#2b86c5;#00f0ff;#ff3cac" dur="6s" repeatCount="indefinite"/></stop>
+      <stop offset="1" stop-color="#ffcc00"><animate attributeName="stop-color" values="#ffcc00;#ff3cac;#784ba0;#ffcc00" dur="6s" repeatCount="indefinite"/></stop>
+    </linearGradient>
+    <g id="disc" fill="none" stroke="#fff" stroke-opacity=".08" stroke-width="6">
+      <circle r="24"/><circle r="48"/><circle r="72"/><circle r="96"/><circle r="120"/><circle r="144"/><circle r="168"/><circle r="192"/><circle r="216"/><circle r="240"/><circle r="264"/>
+    </g>
+  </defs>
+  <rect width="900" height="260" fill="url(#sky)"/>
+  <!-- Amiga interference rings -->
+  <use href="#disc" x="300" y="130"><animateTransform attributeName="transform" type="translate" values="0 0;120 30;40 -40;0 0" dur="9s" repeatCount="indefinite"/></use>
+  <use href="#disc" x="600" y="130"><animateTransform attributeName="transform" type="translate" values="0 0;-110 -25;-30 35;0 0" dur="7s" repeatCount="indefinite"/></use>
+  <!-- copper bars -->
+  <rect x="0" y="0" width="900" height="6" fill="url(#copper)"/>
+  <rect x="0" y="254" width="900" height="6" fill="url(#copper)"/>
+  <!-- spectrum -->
+  <g fill="url(#copper)" opacity=".85">
+    <rect x="70" y="200" width="14" height="40"><animate attributeName="height" values="10;50;20;40;10" dur="1.1s" repeatCount="indefinite"/><animate attributeName="y" values="230;190;220;200;230" dur="1.1s" repeatCount="indefinite"/></rect>
+    <rect x="90" y="200" width="14" height="40"><animate attributeName="height" values="40;15;55;25;40" dur=".9s" repeatCount="indefinite"/><animate attributeName="y" values="200;225;185;215;200" dur=".9s" repeatCount="indefinite"/></rect>
+    <rect x="110" y="200" width="14" height="40"><animate attributeName="height" values="25;60;10;45;25" dur="1.3s" repeatCount="indefinite"/><animate attributeName="y" values="215;180;230;195;215" dur="1.3s" repeatCount="indefinite"/></rect>
+    <rect x="130" y="200" width="14" height="40"><animate attributeName="height" values="50;20;35;60;50" dur="1s" repeatCount="indefinite"/><animate attributeName="y" values="190;220;205;180;190" dur="1s" repeatCount="indefinite"/></rect>
+    <rect x="776" y="200" width="14" height="40"><animate attributeName="height" values="30;55;15;45;30" dur="1.2s" repeatCount="indefinite"/><animate attributeName="y" values="210;185;225;195;210" dur="1.2s" repeatCount="indefinite"/></rect>
+    <rect x="796" y="200" width="14" height="40"><animate attributeName="height" values="55;20;45;10;55" dur=".8s" repeatCount="indefinite"/><animate attributeName="y" values="185;220;195;230;185" dur=".8s" repeatCount="indefinite"/></rect>
+    <rect x="816" y="200" width="14" height="40"><animate attributeName="height" values="15;45;60;25;15" dur="1.4s" repeatCount="indefinite"/><animate attributeName="y" values="225;195;180;215;225" dur="1.4s" repeatCount="indefinite"/></rect>
+  </g>
+  <!-- radio wave -->
+  <path d="M0 175 Q 56 145 112 175 T 225 175 T 337 175 T 450 175 T 562 175 T 675 175 T 787 175 T 900 175 T 1012 175" fill="none" stroke="#00f0ff" stroke-width="2" opacity=".6">
+    <animateTransform attributeName="transform" type="translate" values="0 0;-225 0" dur="3s" repeatCount="indefinite"/>
+  </path>
+  <text x="450" y="112" text-anchor="middle" font-family="Verdana, 'DejaVu Sans', sans-serif" font-size="64" font-weight="bold" letter-spacing="4" fill="url(#copper)" stroke="#000" stroke-width="2">BIGWAVE RADIO</text>
+  <text x="450" y="146" text-anchor="middle" font-family="'Courier New', monospace" font-size="18" fill="#cfe8ff" letter-spacing="3">INTERNET RADIO FOR WINDOWS · WRITTEN IN RUST · ~8 MB</text>
+  <!-- scroller -->
+  <text y="238" font-family="'Courier New', monospace" font-size="16" fill="#ffcc00" letter-spacing="2">
+    <animate attributeName="x" from="900" to="-1400" dur="22s" repeatCount="indefinite"/>
+    *** GREETINGS FROM BIGWAVE RADIO *** THOUSANDS OF STATIONS FROM RADIO-BROWSER.INFO *** RHAI PLUGINS *** BEAT STROBE WITH AMIGA INTERFERENCE RINGS *** ESC ALWAYS EXITS ***
+  </text>
+</svg>
