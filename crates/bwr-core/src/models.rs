@@ -79,4 +79,6 @@ pub struct Country {
     pub name: String,
     #[serde(rename = "stationcount")]
     pub station_count: u32,
+    #[serde(rename = "iso_3166_1", default)]
+    pub iso: Option<String>,
 }

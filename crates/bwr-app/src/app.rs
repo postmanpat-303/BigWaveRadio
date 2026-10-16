@@ -24,6 +24,7 @@ pub enum Page {
     Countries,
     Settings,
     Plugins,
+    About,
     /// A page added by a plugin (index into `plugins.pages`).
     PluginPage(usize),
     /// Mood chip results (index into `moods.moods`).
@@ -174,6 +175,7 @@ pub struct BigWaveApp {
     /// Square brand icon for the About page in light theme, where the full
     /// logo's silver "RADIO" text would wash out on the light card.
     pub about_logo_icon: egui::TextureHandle,
+    pub world_map: egui::TextureHandle,
     pub plugins: crate::plugin_bridge::PluginBridge,
 
     // Windows integration
@@ -232,6 +234,19 @@ impl BigWaveApp {
             let (w, h) = img.dimensions();
             cc.egui_ctx.load_texture(
                 "about-logo-icon",
+                egui::ColorImage::from_rgba_unmultiplied([w as usize, h as usize], &img),
+                egui::TextureOptions::LINEAR,
+            )
+        };
+        // Flat world landmask (equirectangular, white-on-transparent) tinted per theme.
+        let world_map = {
+            let png = include_bytes!("../../../assets/world-map.png");
+            let img = image::load_from_memory(png)
+                .expect("bundled world map decodes")
+                .into_rgba8();
+            let (w, h) = img.dimensions();
+            cc.egui_ctx.load_texture(
+                "world-map",
                 egui::ColorImage::from_rgba_unmultiplied([w as usize, h as usize], &img),
                 egui::TextureOptions::LINEAR,
             )
@@ -464,6 +479,7 @@ impl BigWaveApp {
             favicon_pending: std::collections::HashSet::new(),
             about_logo,
             about_logo_icon,
+            world_map,
             #[cfg(windows)]
             hotkey_rx,
             #[cfg(windows)]
@@ -766,7 +782,7 @@ impl BigWaveApp {
                 // results with Trending).
                 if matches!(
                     self.page,
-                    Page::Mood(_) | Page::Stars | Page::Library | Page::Plugins | Page::PluginPage(_) | Page::Settings
+                    Page::Mood(_) | Page::Stars | Page::Library | Page::Plugins | Page::PluginPage(_) | Page::Settings | Page::About
                 ) {
                     self.search_pending = false;
                     return;
@@ -1369,6 +1385,7 @@ impl eframe::App for BigWaveApp {
                         }
                         nav_button(ui, self, Page::Plugins, "🔌  Plugins");
                         nav_button(ui, self, Page::Settings, "⚙  Settings");
+                        nav_button(ui, self, Page::About, "ℹ  About");
                     });
 
                 ui.add_space(6.0);
@@ -1413,6 +1430,7 @@ impl eframe::App for BigWaveApp {
                 Page::Countries => pages::browse::countries_page(ui, self),
                 Page::Settings => pages::settings::ui(ui, self),
                 Page::Plugins => pages::plugins::ui(ui, self),
+                Page::About => pages::about::ui(ui, self),
                 Page::PluginPage(i) => pages::plugins::plugin_page(ui, self, i),
                 Page::Mood(i) => pages::moods::mood_page(ui, self, i),
                 Page::Stars => pages::moods::stars_page(ui, self),
@@ -1473,6 +1491,7 @@ fn nav_button(ui: &mut egui::Ui, app: &mut BigWaveApp, page: Page, label: &str) 
                     let _ = app.job_tx.send(NetJob::Countries);
                 }
             }
+            Page::About => app.stations.clear(),
         }
     }
 }

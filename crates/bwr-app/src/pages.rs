@@ -1,5 +1,6 @@
 //! One module per app page.
 
+pub mod about;
 pub mod browse;
 pub mod discover;
 pub mod library;

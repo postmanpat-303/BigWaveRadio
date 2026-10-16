@@ -2,6 +2,7 @@
 
 pub mod client;
 pub mod discovery;
+pub mod geo;
 pub mod library;
 pub mod models;
 pub mod ratings;
