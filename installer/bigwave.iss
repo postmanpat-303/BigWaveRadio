@@ -27,7 +27,8 @@ Compression=lzma2/ultra64
 SolidCompression=yes
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
-UninstallDisplayIcon={app}\bigwave.ico
+; Apps & features shows the exe's embedded (new) icon.
+UninstallDisplayIcon={app}\{#MyAppExeName}
 UninstallDisplayName={#MyAppName}
 
 [Languages]
@@ -39,7 +40,9 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 [Files]
 Source: "..\staging\BigWaveRadio.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\staging\libunwind.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "bigwave.ico"; DestDir: "{app}"; Flags: ignoreversion
+; installer\bigwave.ico is ONLY the setup program's own icon (SetupIconFile, pending
+; update - see docs/RELEASE_CHECKLIST.md). The app icon ships separately:
+Source: "..\assets\bigwave.ico"; DestDir: "{app}"; DestName: "bigwave.ico"; Flags: ignoreversion
 Source: "..\staging\README.txt"; DestDir: "{app}"; Flags: ignoreversion isreadme
 
 [Icons]
