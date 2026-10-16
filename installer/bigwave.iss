@@ -1,5 +1,5 @@
 #define MyAppName "BigWave Radio"
-#define MyAppVersion "0.5"
+#define MyAppVersion "0.6"
 #define MyAppPublisher "Derek Heasley"
 #define MyAppURL "https://paypal.me/derekh100"
 #define MyAppExeName "BigWaveRadio.exe"
@@ -18,7 +18,7 @@ DefaultDirName={localappdata}\Programs\BigWaveRadio
 DefaultGroupName={#MyAppName}
 DisableProgramGroupPage=yes
 OutputDir=..\pkg
-OutputBaseFilename=BigWaveRadio-Setup-0.5
+OutputBaseFilename=BigWaveRadio-Setup-0.6
 SetupIconFile=bigwave.ico
 WizardImageFile=wizard_image.bmp
 WizardSmallImageFile=wizard_small.bmp
