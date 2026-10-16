@@ -317,7 +317,7 @@ fn zip_import_installs_and_rejects_bad_archives() {
 #[test]
 fn install_bundled_never_overwrites() {
     let tmp = tempfile::tempdir().unwrap();
-    assert_eq!(install_bundled(tmp.path()), vec!["strobe".to_string()]);
+    assert_eq!(install_bundled(tmp.path()), vec!["strobe".to_string(), "visions".to_string()]);
     std::fs::write(tmp.path().join("strobe/main.rhai"), "// mine").unwrap();
     assert!(install_bundled(tmp.path()).is_empty());
     assert_eq!(std::fs::read_to_string(tmp.path().join("strobe/main.rhai")).unwrap(), "// mine");
@@ -458,7 +458,7 @@ fn install_bundled_upgrades_older_versions_with_backup() {
     assert_eq!(std::fs::read_to_string(&toml).unwrap(), src);
     assert!(tmp.path().join(".strobe-backup-1.0.0/plugin.toml").is_file());
     let host = PluginHost::new(tmp.path());
-    assert_eq!(host.plugins.len(), 1, "backups are not loaded");
+    assert_eq!(host.plugins.len(), BUNDLED.len(), "backups are not loaded");
 }
 
 fn start_strobe_with(tmp: &Path, settings: &[(&str, serde_json::Value)]) -> PluginHost {
@@ -710,4 +710,95 @@ fn strobe_fade_off_by_default_and_breaks_still_black() {
     a.features.quiet = true;
     host.frame(1.0 / 60.0, &a);
     assert_eq!(host.overlay_commands(), vec![DrawCmd::Fill(Rgba::BLACK)]);
+}
+
+fn visions_host(tmp: &Path) -> PluginHost {
+    install_bundled(tmp);
+    let mut host = PluginHost::new(tmp);
+    host.approve("visions");
+    host
+}
+
+fn visual_of(cmds: &[DrawCmd]) -> Option<VisualParams> {
+    cmds.iter().find_map(|c| match c {
+        DrawCmd::Visual(v) => Some((**v).clone()),
+        _ => None,
+    })
+}
+
+#[test]
+fn visions_hotkey_opens_scene_and_arrows_switch() {
+    let tmp = tempfile::tempdir().unwrap();
+    let mut host = visions_host(tmp.path());
+    assert!(host.hotkeys().iter().any(|(id, h)| id == "visions" && h.keys == "Ctrl+M,D"));
+    host.hotkey_key("M", CTRL);
+    host.hotkey_key("D", CTRL);
+    let s = host.overlay.clone().expect("open");
+    assert!(s.fullscreen);
+    assert_eq!(s.phase, OverlayPhase::Running);
+    let mut a = AudioFrame { playing: true, ..Default::default() };
+    a.features.level = 0.5;
+    a.features.bass = 0.9;
+    a.features.beat = true;
+    host.frame(1.0 / 60.0, &a);
+    let v = visual_of(&host.overlay_commands()).expect("draws a visual");
+    assert_eq!(v.scene, "tunnel");
+    assert!(v.pulse > 0.0, "beats become pulses");
+    assert!(SCENES.contains(&v.scene.as_str()));
+    host.key("ArrowRight");
+    host.frame(1.0 / 60.0, &AudioFrame::default());
+    let v = visual_of(&host.overlay_commands()).unwrap();
+    assert_eq!(v.scene_b, "kaleido", "right arrow crossfades to the next scene");
+    assert!(host.overlay.is_some());
+    host.key("ArrowLeft");
+    host.key("ArrowLeft");
+    host.frame(1.0 / 60.0, &AudioFrame::default());
+    assert_eq!(visual_of(&host.overlay_commands()).unwrap().scene_b, "mandala", "left wraps around");
+    host.key("Escape");
+    assert!(host.overlay.is_none());
+}
+
+#[test]
+fn visions_page_previews_every_scene() {
+    let tmp = tempfile::tempdir().unwrap();
+    let mut host = visions_host(tmp.path());
+    let w = host.page("visions", "visions");
+    let dbg = format!("{w:?}");
+    for s in SCENES {
+        assert!(dbg.contains(&format!("scene: \"{s}\"")), "preview for {s}");
+    }
+}
+
+#[test]
+fn non_flashing_plugins_skip_the_warning() {
+    let tmp = tempfile::tempdir().unwrap();
+    for (id, flag, want) in [("calm", "flashing = false\n", OverlayPhase::Running), ("flashy", "", OverlayPhase::Warning)] {
+        let dir = tmp.path().join(id);
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(dir.join("plugin.toml"), format!("id = \"{id}\"\nname = \"{id}\"\nversion = \"1.0.0\"\napi = 1\npermissions = [\"overlay\"]\n{flag}")).unwrap();
+        std::fs::write(dir.join("main.rhai"), "fn on_tick(ctx, dt) { if !ctx.overlay_active { ctx.open_overlay(false); } }\nfn on_overlay(ctx, draw) { draw.visual(#{ scene: \"plasma\" }); }").unwrap();
+    }
+    let mut host = PluginHost::new(tmp.path());
+    for (id, want) in [("calm", OverlayPhase::Running), ("flashy", OverlayPhase::Warning)] {
+        host.approve(id);
+        host.frame(0.016, &AudioFrame::default());
+        let _ = host.take_requests();
+        assert_eq!(host.overlay.as_ref().map(|s| s.phase), Some(want), "{id}");
+        host.end_overlay();
+        host.set_enabled(id, false);
+    }
+}
+
+#[test]
+fn visual_api_validates() {
+    let tmp = tempfile::tempdir().unwrap();
+    for (n, body, err) in [
+        ("v1", "draw.visual(#{ scene: \"nope\" });", "unknown scene"),
+        ("v2", "draw.visual(#{ scene: \"plasma\", wobble: 1 });", "unknown key"),
+    ] {
+        write_plugin(tmp.path(), n, "\"overlay\"", &format!("fn on_overlay(ctx, draw) {{ {body} }}"));
+        let r = check_plugin(&tmp.path().join(n));
+        let msg = format!("{r:?}");
+        assert!(msg.contains(err), "{n}: {msg}");
+    }
 }

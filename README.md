@@ -44,7 +44,7 @@
   <tr>
     <td valign="top"><h4>🎨 Themes</h4>Dark / light / system, plus 8 accent colours. Settings are compatible with the original C# app.</td>
     <td valign="top"><h4>🧩 Plugins</h4>Rhai scripts with permissions, hot reload, <code>.zip</code> import, panels, whole pages and overlays.</td>
-    <td valign="top"><h4>⚡ Beat Strobe</h4>Beat-synced strobe with AI-vs-humanity symbols and Amiga interference rings. Flash rate capped by the app.</td>
+    <td valign="top"><h4>⚡ Beat Strobe & 🌌 Visions</h4>Beat-synced strobe with AI-vs-humanity symbols and Amiga interference rings (flash rate capped by the app), plus a smooth MilkDrop-style visualiser with eight scenes.</td>
   </tr>
 </table>
 
@@ -75,6 +75,35 @@ Two black-and-white concentric-ring discs drift on Lissajous paths under the sym
 <br>
 
 The Beat Strobe shows flashing lights. The app, not the plugin, enforces the flash cap: 3 flashes per second by default (the WCAG guideline), opt-in up to 12 Hz under **Plugins → Flash safety**. The limiter is luminance-based, so moving rings count as motion while full-screen flashes stay capped. The **Start** button shows a warning screen first; **Ctrl+F, then U** starts straight away. **Esc always exits** (handled by the app), as do any other key and a click. Arrow keys change speed.
+</details>
+
+## 🌌 Visions — MilkDrop-style visualiser
+
+<p align="center"><img src="docs/media/visions.gif" alt="Visions cycling through its scenes" width="660"></p>
+
+A bundled, non-strobing visualiser in the spirit of Winamp MilkDrop / AVS. It reacts to the music (level, bass / mid / treble, beats and the 32-band spectrum) and glides between eight scenes with smooth crossfades:
+
+<table>
+  <tr>
+    <td>🌀 <b>Feedback Tunnel</b></td><td>🔷 <b>Kaleidoscope</b></td><td>🫧 <b>Plasma</b></td><td>🌿 <b>Flow Field</b></td>
+  </tr>
+  <tr>
+    <td>🌐 <b>Wire Sphere</b></td><td>⛰️ <b>Spectrum Terrain</b></td><td>✨ <b>Starfield</b></td><td>🌸 <b>Mandala</b></td>
+  </tr>
+</table>
+
+<p align="center"><img src="docs/media/visions-scenes.jpg" alt="The eight Visions scenes" width="880"></p>
+
+* **Ctrl+M, then D** starts it from anywhere (or use the **Visions** page, which shows live previews of every scene). In-window or fullscreen.
+* **Left / Right** switch scene; **Esc**, any other key or a click exits.
+* Scenes change every 10–60 s (or never), and optionally on strong beats. Quality and intensity are adjustable under Plugins → Visions → Settings.
+* Beats become gentle pulses and colour shifts, never flashes: the native engine limits how fast overall brightness can change.
+* Built on the new `draw.visual` plugin primitive: a fast native feedback renderer (zoom / rotate / warp / decay of the previous frame) that any plugin can drive from Rhai with its own palettes, motion and audio mapping. See the [plugin guide](docs/PLUGIN_GUIDE.md).
+
+<details>
+<summary><b>Visions page with live scene previews</b></summary>
+<br>
+<p align="center"><img src="docs/media/visions-page.jpg" alt="Visions page" width="880"></p>
 </details>
 
 ## 🧩 Plugins

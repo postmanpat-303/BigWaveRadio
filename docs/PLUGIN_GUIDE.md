@@ -52,6 +52,8 @@ entry = "main.rhai"         # optional, default main.rhai
 author = "You"              # optional
 description = "One line"    # optional
 permissions = ["audio", "overlay"]   # see the table below
+flashing = true             # optional; false = never flashes (e.g. a draw.visual
+                            # visualiser): the overlay opens without the warning
 
 [[pages]]                   # optional, needs the "page" permission
 id = "main"                 # passed to on_page as page_id
@@ -140,6 +142,9 @@ first hotkey next to your nav page in the side bar, e.g. `Strobe  Ctrl+F,U`.
 If `on_hotkey` opens your overlay, it starts **without** the warning screen
 (the user started it deliberately). The flash cap and Esc still apply.
 
+Don't use **C, V or X** with Ctrl in a chord: those are copy / paste / cut and
+never reach plugins.
+
 ### Keys (`on_key`)
 
 Names: `"ArrowUp"`, `"ArrowDown"`, `"ArrowLeft"`, `"ArrowRight"`, `"Enter"`,
@@ -188,6 +193,7 @@ build them from 0..255 ints. Numbers may be ints or floats.
 | `draw.text_center(x, y, text, size_px, color)` | text centred on (x, y) |
 | `draw.svg(path_d, cx, cy, size, width_px, color)` | SVG path line art |
 | `draw.shape(path_d, cx, cy, size, width, stroke, fill)` | bold SVG art: `width` is a fraction of the screen **height** (e.g. `0.025`), so strokes scale with the screen; `fill` (`""` for none) fills every closed (`Z`) subpath, later subpaths paint over earlier ones (use the background colour to cut holes) |
+| `draw.visual(#{ scene: "plasma", ... })` | a native, GPU-uploaded **visual scene** with MilkDrop-style feedback, rendered in Rust (see "Visual scenes" below). Fills the area, or `rect: [x, y, w, h]` |
 | `draw.rings(cx, cy, radius, ring_width, [colors])` | a disc of concentric rings centred on (cx, cy); `radius` and `ring_width` are fractions of the height; colours cycle from the outside in; `"#00000000"` (transparent) leaves a gap. One command however many rings (max 400 per call) |
 
 `draw.svg` takes SVG path data (the `d` attribute) in a **100x100 viewBox**,
@@ -203,6 +209,34 @@ the first with `[ink, "#00000000"]` and the second with
 `["#00000000", background]` on top. Where they overlap the ring gaps
 interfere (the classic Amiga demo effect; see the bundled strobe's
 `draw_rings`). Moving rings count as motion, not flashing (see section 9).
+
+**Visual scenes (`draw.visual`)**: for rich, smooth visualisers, don't
+draw thousands of shapes from Rhai. `draw.visual(map)` runs a native
+renderer: each frame the previous frame is zoomed / rotated / warped and
+faded (feedback, like MilkDrop), then a built-in scene is drawn on top,
+then the result is tone-mapped and shown (scaled up smoothly). Draw it
+first, then put text or shapes over it. Keys of `map` (all optional):
+
+| key | meaning |
+| --- | --- |
+| `scene` | `"tunnel"`, `"kaleido"`, `"plasma"`, `"flow"`, `"sphere"`, `"terrain"`, `"stars"`, `"mandala"` (default `"plasma"`) |
+| `scene_b`, `mix` | crossfade: a second scene and its weight 0..1 |
+| `time` | seconds; pass `ctx.now` (drives all motion) |
+| `palette` | up to 16 colours, blended smoothly and cycled |
+| `hue` | palette offset 0..1 (wraps); shift it on beats for colour changes |
+| `zoom`, `rotate`, `warp`, `decay` | feedback: zoom per frame (`1.02` = fly in, `< 1` = shrink), rotation in radians per frame, wobble 0..2, how much of the last frame stays (0..0.995) |
+| `speed`, `intensity`, `detail` | animation speed, brightness 0..2, scene detail (symmetry, density; 1 = default) |
+| `level`, `bass`, `mid`, `treble`, `pulse`, `bands` | audio values for the scene: pass smoothed `a.*` values, a decaying beat `pulse` 0..1 and `a.bands` |
+| `quality` | resolution scale 0.25..2 (1 = 240 px tall internal buffer) |
+| `id` | separate ids keep separate feedback buffers (e.g. several previews on one canvas) |
+| `rect` | `[x, y, w, h]` area fractions to draw into (default the whole area) |
+
+Visuals are **non-strobing by construction**: the engine limits how fast
+the mean brightness of its output may change (from black to its cap in
+about half a second) and caps the mean brightness, whatever you pass. Beat
+reactions therefore become pulses and colour shifts. The bundled
+**Visions** plugin (`plugins/visions/`) is a complete example: scene
+presets, crossfades, beat pulses, page previews and a hotkey.
 
 Max 5000 draw commands per frame.
 
@@ -257,8 +291,9 @@ return floats), `rgb(...)`, `rgba(...)`, plus Rhai's built-ins
 ## 9. Flashing and safety rules (mandatory)
 
 * The app shows a photosensitivity warning before any overlay; the user must
-  press Enter / click to continue. The only exception is an overlay opened
-  from `on_hotkey`, because the user pressed the plugin's hotkey on purpose.
+  press Enter / click to continue. The exceptions are an overlay opened
+  from `on_hotkey` (the user pressed the plugin's hotkey on purpose) and
+  plugins declaring `flashing = false`.
 * The app estimates each overlay frame's average brightness. A rise of 10 %
   or more over the darkest recent level is a flash, and flashes are limited
   to `ctx.flash_cap` per second (3 by default; the user can opt in up to 12).
@@ -266,6 +301,10 @@ return floats), `rgb(...)`, `rgba(...)`, plus Rhai's built-ins
   frame, if needed), so design for the cap: use `1.0 / ctx.flash_cap` as the
   minimum gap between flashes. Ring discs count with their average colour,
   so swinging rings are motion, not flashing.
+* `draw.visual` output guards its own brightness (slow changes only, capped
+  mean), so to the flash limiter it is a steady background; anything drawn
+  over it is still checked. Plugins built only on it can set
+  `flashing = false` in `plugin.toml` to skip the warning screen.
 * Esc, any unhandled key and clicks close the overlay. Don't try to trap the user.
 * Avoid saturated red full-screen flashes; prefer short white or dim colours.
 

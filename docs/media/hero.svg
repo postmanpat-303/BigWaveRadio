@@ -37,6 +37,6 @@
   <!-- scroller -->
   <text y="238" font-family="'Courier New', monospace" font-size="16" fill="#ffcc00" letter-spacing="2">
     <animate attributeName="x" from="900" to="-1400" dur="22s" repeatCount="indefinite"/>
-    *** GREETINGS FROM BIGWAVE RADIO *** THOUSANDS OF STATIONS FROM RADIO-BROWSER.INFO *** RHAI PLUGINS *** BEAT STROBE WITH AMIGA INTERFERENCE RINGS *** ESC ALWAYS EXITS ***
+    *** GREETINGS FROM BIGWAVE RADIO *** THOUSANDS OF STATIONS FROM RADIO-BROWSER.INFO *** RHAI PLUGINS *** MILKDROP-STYLE VISIONS *** BEAT STROBE WITH AMIGA INTERFERENCE RINGS *** ESC ALWAYS EXITS ***
   </text>
 </svg>

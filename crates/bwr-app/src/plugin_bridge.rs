@@ -109,8 +109,15 @@ pub fn pre_frame(app: &mut BigWaveApp, ctx: &Context) {
     let dt = b.last_frame.elapsed().as_secs_f64().min(0.25);
     b.last_frame = Instant::now();
     let (level, peak) = app.player.spectrum.level_peak();
-    let features = b.beat.update(b.host.now(), &app.bands, level, peak);
-    b.host.frame(dt, &AudioFrame { features, bands: app.bands, playing: app.is_playing });
+    if std::env::var_os("BWR_FAKE_AUDIO").is_some() && !app.is_playing {
+        // Developer aid: a synthetic 124 BPM groove for testing visualisers.
+        let t = b.host.now();
+        let (features, bands) = fake_audio(t);
+        b.host.frame(dt, &AudioFrame { features, bands, playing: true });
+    } else {
+        let features = b.beat.update(b.host.now(), &app.bands, level, peak);
+        b.host.frame(dt, &AudioFrame { features, bands: app.bands, playing: app.is_playing });
+    }
 
     // While an overlay is open, the host owns the keyboard. Esc is handled
     // by the host itself, so it always exits even if the plugin misbehaves.
@@ -120,7 +127,7 @@ pub fn pre_frame(app: &mut BigWaveApp, ctx: &Context) {
             i.events.retain(|e| match e {
                 egui::Event::Key { key, pressed, repeat, .. } => {
                     if *pressed && !*repeat {
-                        keys.push(key.name().to_string());
+                        keys.push(plugin_key_name(*key).to_string());
                     }
                     false
                 }
@@ -142,7 +149,7 @@ pub fn pre_frame(app: &mut BigWaveApp, ctx: &Context) {
                 i.events.retain(|e| match e {
                     egui::Event::Key { key, pressed: true, repeat: false, modifiers, .. } => {
                         let mods = bwr_plugins::Mods { ctrl: modifiers.command || modifiers.ctrl, shift: modifiers.shift, alt: modifiers.alt };
-                        !host.hotkey_key(key.name(), mods)
+                        !host.hotkey_key(plugin_key_name(*key), mods)
                     }
                     _ => true,
                 })
@@ -250,6 +257,7 @@ pub fn post_frame(app: &mut BigWaveApp, ctx: &Context) {
             b.host.key("MouseClick");
         }
         ctx.request_repaint();
+        fps_log();
     } else if !b.host.plugins.is_empty() {
         // Plugins animate (on_tick); keep frames coming at a modest rate.
         ctx.request_repaint_after(std::time::Duration::from_millis(33));
@@ -273,9 +281,102 @@ pub fn post_frame(app: &mut BigWaveApp, ctx: &Context) {
     }
 }
 
+/// Key names as documented for plugins (egui says "Right", plugins get
+/// "ArrowRight").
+fn plugin_key_name(key: egui::Key) -> &'static str {
+    match key {
+        egui::Key::ArrowUp => "ArrowUp",
+        egui::Key::ArrowDown => "ArrowDown",
+        egui::Key::ArrowLeft => "ArrowLeft",
+        egui::Key::ArrowRight => "ArrowRight",
+        k => k.name(),
+    }
+}
+
+/// Synthetic audio (BWR_FAKE_AUDIO=1): 124 BPM kick, moving mids/highs.
+fn fake_audio(t: f64) -> (bwr_spectrum::AudioFeatures, [f32; bwr_spectrum::BANDS]) {
+    let beat_len = 60.0 / 124.0;
+    let phase = (t % beat_len) / beat_len;
+    let kick = (-phase * 6.0).exp() as f32;
+    let mut bands = [0.0f32; bwr_spectrum::BANDS];
+    for (i, b) in bands.iter_mut().enumerate() {
+        let x = i as f32 / bwr_spectrum::BANDS as f32;
+        let wob = (0.5 + 0.5 * ((t as f32) * (1.3 + x * 3.0) + x * 9.0).sin()) * 0.6;
+        *b = ((1.0 - x).powi(2) * kick * 0.9 + wob * (0.4 + 0.6 * x) * 0.7).clamp(0.0, 1.0);
+    }
+    let bass = bands[..4].iter().sum::<f32>() / 4.0;
+    let mid = bands[8..20].iter().sum::<f32>() / 12.0;
+    let treble = bands[20..].iter().sum::<f32>() / 12.0;
+    let beat = {
+        thread_local! { static LAST: std::cell::Cell<i64> = const { std::cell::Cell::new(-1) }; }
+        let n = (t / beat_len) as i64;
+        LAST.with(|l| { let b = l.get() != n; l.set(n); b })
+    };
+    let f = bwr_spectrum::AudioFeatures { level: 0.3 + bass * 0.4, peak: 0.8, bass, mid, treble, beat, bpm: 124.0, quiet: false };
+    (f, bands)
+}
+
+/// With BWR_FPS=1 set, print overlay frames per second to stderr.
+fn fps_log() {
+    thread_local! { static FPS: std::cell::Cell<(u32, Option<Instant>)> = const { std::cell::Cell::new((0, None)) }; }
+    if std::env::var_os("BWR_FPS").is_none() {
+        return;
+    }
+    FPS.with(|c| {
+        let (n, t) = c.get();
+        let t = t.unwrap_or_else(Instant::now);
+        let el = t.elapsed().as_secs_f32();
+        if el >= 2.0 {
+            eprintln!("[fps] {:.1}", (n + 1) as f32 / el);
+            c.set((0, Some(Instant::now())));
+        } else {
+            c.set((n + 1, Some(t)));
+        }
+    });
+}
+
 fn c32(c: Rgba) -> Color32 {
     let [r, g, b, a] = c.0;
     Color32::from_rgba_unmultiplied(r, g, b, a)
+}
+
+thread_local! {
+    /// One engine + texture per `draw.visual` id (each keeps its own feedback).
+    static VISUALS: std::cell::RefCell<HashMap<String, (bwr_plugins::VisualEngine, Option<egui::TextureHandle>, Instant)>> =
+        std::cell::RefCell::new(HashMap::new());
+}
+
+fn paint_visual(painter: &egui::Painter, area: Rect, p: &bwr_plugins::VisualParams) {
+    let [rx, ry, rw, rh] = p.rect;
+    let rect = Rect::from_min_size(
+        area.min + egui::vec2(rx * area.width(), ry * area.height()),
+        egui::vec2(rw.max(0.0) * area.width(), rh.max(0.0) * area.height()),
+    );
+    if rect.width() < 2.0 || rect.height() < 2.0 {
+        return;
+    }
+    let aspect = rect.width() / rect.height().max(1.0);
+    let (w, h) = bwr_plugins::VisualEngine::size_for(aspect, p.quality);
+    VISUALS.with(|v| {
+        let mut map = v.borrow_mut();
+        // Forget engines nobody has drawn for a while.
+        map.retain(|_, e| e.2.elapsed().as_secs() < 10);
+        let e = map.entry(p.id.clone()).or_insert_with(|| (bwr_plugins::VisualEngine::new(w, h), None, Instant::now()));
+        if e.0.w != w || e.0.h != h {
+            e.0 = bwr_plugins::VisualEngine::new(w, h);
+        }
+        e.2 = Instant::now();
+        let px = e.0.render(p);
+        let img = egui::ColorImage::from_rgba_unmultiplied([w, h], px);
+        let opts = egui::TextureOptions::LINEAR;
+        match &mut e.1 {
+            Some(t) => t.set(img, opts),
+            None => e.1 = Some(painter.ctx().load_texture(format!("visual-{}", p.id), img, opts)),
+        }
+        if let Some(t) = &e.1 {
+            painter.image(t.id(), rect, Rect::from_min_max(Pos2::ZERO, Pos2::new(1.0, 1.0)), Color32::WHITE);
+        }
+    });
 }
 
 /// Paint plugin draw commands into `rect` (coordinates are 0..1 fractions).
@@ -326,6 +427,7 @@ pub fn paint(painter: &egui::Painter, rect: Rect, cmds: &[DrawCmd]) {
                     painter.add(egui::Shape::line(pts, Stroke::new(*width, c32(*color))));
                 }
             }
+                        DrawCmd::Visual(p) => paint_visual(&painter, rect, p),
             DrawCmd::Shape { cx, cy, paths, width, color, fill } => {
                 let centre = at(*cx, *cy);
                 let to = |(px, py): &(f32, f32)| centre + egui::vec2(px * h, py * h);

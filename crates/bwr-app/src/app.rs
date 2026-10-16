@@ -1046,14 +1046,14 @@ impl eframe::App for BigWaveApp {
                         nav_button(ui, self, Page::Discover, "🏠  Discover");
                         nav_button(ui, self, Page::Search, "🔎  Search");
                         nav_button(ui, self, Page::Library, "★  My Library");
-                        ui.add_space(10.0);
+                        ui.add_space(4.0);
                         ui.separator();
-                        ui.add_space(10.0);
+                        ui.add_space(4.0);
                         nav_button(ui, self, Page::Tags, "🏷  Tags");
                         nav_button(ui, self, Page::Countries, "🗺  Countries");
-                        ui.add_space(10.0);
+                        ui.add_space(4.0);
                         ui.separator();
-                        ui.add_space(10.0);
+                        ui.add_space(4.0);
                         for (i, (pid, pg)) in self.plugins.pages.clone().into_iter().enumerate() {
                             let icon = if pg.icon.is_empty() { "🔌".to_string() } else { pg.icon };
                             let hint = self.plugins.hotkey_hint(&pid).map(|k| format!("   {k}")).unwrap_or_default();

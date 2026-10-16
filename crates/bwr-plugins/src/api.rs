@@ -302,6 +302,62 @@ pub(crate) fn build_engine() -> Engine {
         },
     );
 
+    // draw.visual(#{ scene: "plasma", ... }): a native, non-strobing visual
+    // scene with MilkDrop-style feedback, filling the whole area.
+    e.register_fn("visual", |d: &mut Draw, m: Map| -> Res<()> {
+        let mut p = crate::visual::VisualParams::default();
+        for (k, v) in m.iter() {
+            let f = |what: &str| num(v, what);
+            match k.as_str() {
+                "id" => p.id = text_of(v),
+                "scene" => p.scene = text_of(v),
+                "scene_b" => p.scene_b = text_of(v),
+                "mix" => p.mix = f("mix")?,
+                "time" => p.time = f("time")?,
+                "zoom" => p.zoom = f("zoom")?,
+                "rotate" => p.rotate = f("rotate")?,
+                "warp" => p.warp = f("warp")?,
+                "decay" => p.decay = f("decay")?,
+                "hue" => p.hue = f("hue")?,
+                "speed" => p.speed = f("speed")?,
+                "intensity" => p.intensity = f("intensity")?,
+                "detail" => p.detail = f("detail")?,
+                "quality" => p.quality = f("quality")?,
+                "level" => p.level = f("level")?,
+                "bass" => p.bass = f("bass")?,
+                "mid" => p.mid = f("mid")?,
+                "treble" => p.treble = f("treble")?,
+                "pulse" => p.pulse = f("pulse")?,
+                "rect" => {
+                    let arr = v.clone().into_typed_array::<Dynamic>().map_err(|_| "draw.visual: rect must be [x, y, w, h]")?;
+                    if arr.len() != 4 {
+                        return Err("draw.visual: rect must be [x, y, w, h]".into());
+                    }
+                    for (i, x) in arr.iter().enumerate() {
+                        p.rect[i] = num(x, "rect")?;
+                    }
+                }
+                "palette" => {
+                    let arr = v.clone().into_typed_array::<Dynamic>().map_err(|_| "draw.visual: palette must be an array of colours")?;
+                    p.palette = arr.iter().map(color).collect::<Res<Vec<_>>>()?;
+                    p.palette.truncate(16);
+                }
+                "bands" => {
+                    let arr = v.clone().into_typed_array::<Dynamic>().map_err(|_| "draw.visual: bands must be an array of numbers")?;
+                    p.bands = arr.iter().map(|b| num(b, "bands")).collect::<Res<Vec<_>>>()?;
+                    p.bands.truncate(128);
+                }
+                other => return Err(format!("draw.visual: unknown key \"{other}\"").into()),
+            }
+        }
+        for s in [&p.scene, &p.scene_b] {
+            if !s.is_empty() && !crate::visual::SCENES.contains(&s.as_str()) {
+                return Err(format!("draw.visual: unknown scene \"{s}\" (have: {})", crate::visual::SCENES.join(", ")).into());
+            }
+        }
+        d.push(DrawCmd::Visual(Box::new(p)))
+    });
+
     // draw.shape(path_d, cx, cy, size, width, stroke, fill): bold SVG art.
     // `width` is a fraction of the area height; `fill` ("" for none) fills
     // every closed subpath (later subpaths paint over earlier ones).

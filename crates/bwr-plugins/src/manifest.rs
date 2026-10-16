@@ -141,6 +141,15 @@ pub struct Manifest {
     /// App-wide hotkeys (needs the "hotkeys" permission); fire `on_hotkey`.
     #[serde(default)]
     pub hotkeys: Vec<crate::HotkeySpec>,
+    /// `false` for plugins that never flash (e.g. visualisers built on
+    /// `draw.visual`): their overlay opens without the photosensitivity
+    /// warning. The host flash limiter still applies.
+    #[serde(default = "default_true")]
+    pub flashing: bool,
+}
+
+fn default_true() -> bool {
+    true
 }
 
 fn default_runtime() -> String {

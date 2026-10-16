@@ -65,6 +65,9 @@ pub enum DrawCmd {
     /// is a fraction of the area height (so it scales with the screen) and
     /// closed subpaths can be filled with `fill`.
     Shape { cx: f32, cy: f32, paths: Vec<Vec<(f32, f32)>>, width: f32, color: Rgba, fill: Option<Rgba> },
+    /// A native visual scene (from `draw.visual`) filling the whole area;
+    /// rendered by [`crate::visual::VisualEngine`].
+    Visual(Box<crate::visual::VisualParams>),
 }
 
 /// Area (height units squared) of a closed polyline, shoelace formula.
@@ -156,7 +159,7 @@ impl DrawCmd {
 
     pub fn color_mut(&mut self) -> Option<&mut Rgba> {
         Some(match self {
-            DrawCmd::Rings { .. } => return None,
+            DrawCmd::Rings { .. } | DrawCmd::Visual(_) => return None,
             DrawCmd::Fill(c) => c,
             DrawCmd::Rect { color, .. }
             | DrawCmd::Circle { color, .. }
@@ -195,6 +198,12 @@ impl DrawCmd {
                 }
                 let l: f32 = colors.iter().map(|c| c.luminance_opaque() * c.0[3] as f32 / 255.0).sum::<f32>() / n / a;
                 Some((l, a))
+            }
+            // The engine guards its own luminance (no fast changes), so to
+            // the limiter it is a steady, dim background.
+            DrawCmd::Visual(v) => {
+                let [rx, ry, rw, rh] = v.rect;
+                (x >= rx && x <= rx + rw && y >= ry && y <= ry + rh).then_some((crate::visual::MAX_MEAN_LUM * 0.5, 1.0))
             }
             DrawCmd::Shape { cx, cy, paths, fill: Some(f), .. } => {
                 let (px, py) = ((x - cx) * aspect, y - cy);

@@ -724,9 +724,10 @@ impl PluginHost {
                     let busy = self.overlay.as_ref().is_some_and(|s| s.plugin_id != id);
                     if !busy {
                         let from_hotkey = self.hotkey_plugin.as_deref() == Some(id.as_str());
+                        let calm = self.get(&id).and_then(|p| p.manifest.as_ref()).is_some_and(|m| !m.flashing);
                         let phase = match &self.overlay {
                             Some(s) if s.plugin_id == id => s.phase,
-                            _ if from_hotkey => OverlayPhase::Running,
+                            _ if from_hotkey || calm => OverlayPhase::Running,
                             _ => OverlayPhase::Warning,
                         };
                         self.overlay = Some(OverlaySession { plugin_id: id, fullscreen, phase });

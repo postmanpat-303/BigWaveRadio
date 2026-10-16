@@ -13,7 +13,11 @@ plugin API (v1) and starts with a one-shot prompt. In short:
 * Declare permissions in `plugin.toml`; there is no network or file access.
 * Draw by returning commands (`draw.fill/rect/circle/line/text/svg/rings`),
   never egui. `draw.rings` is the efficient way to do concentric-ring /
-  moiré effects (one command per disc).
+  moiré effects (one command per disc). For visualisers use
+  `draw.visual(#{ scene, palette, zoom, rotate, decay, bands, ... })`: a
+  native MilkDrop-style feedback renderer (scenes tunnel, kaleido, plasma,
+  flow, sphere, terrain, stars, mandala) that is fast and non-strobing.
+  `crates/bwr-plugins/src/visual.rs` holds the engine; see `plugins/visions/`.
 * Validate before handing over:
   `cargo run -p bwr-app -- --check-plugin path/to/plugin` (or
   `BigWaveRadio.exe --check-plugin <folder>`). It must print `OK`.

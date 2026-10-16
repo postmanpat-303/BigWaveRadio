@@ -1,0 +1,30 @@
+# Visions — bundled with BigWave Radio.
+id = "visions"
+name = "Visions"
+version = "1.0.0"
+api = 1
+runtime = "rhai"
+entry = "main.rhai"
+author = "BigWave Radio"
+description = "MilkDrop-style audio visualiser: feedback tunnel, kaleidoscope, plasma, flow field, wireframe sphere, spectrum terrain, starfield and mandala, with smooth crossfades. Non-strobing."
+permissions = ["audio", "overlay", "fullscreen", "hotkeys", "panel", "page"]
+# Never flashes: opens without the photosensitivity warning (the host
+# flash limiter and the visual engine's luminance guard still apply).
+flashing = false
+
+[[pages]]
+id = "visions"
+title = "Visions"
+icon = "🌀"
+
+[[hotkeys]]
+keys = "Ctrl+M,D"     # hold Ctrl, press M, then D: start Visions
+action = "start"
+
+[settings]
+display    = { type = "choice", default = "Fullscreen", options = ["Fullscreen", "In window"], label = "Display" }
+cycle      = { type = "choice", default = "20 s", options = ["Off", "10 s", "20 s", "30 s", "60 s"], label = "Change scene every" }
+beat_change = { type = "bool", default = false, label = "Also change scene on strong beats" }
+quality    = { type = "choice", default = "Medium", options = ["Low", "Medium", "High"], label = "Quality" }
+intensity  = { type = "float", default = 1.0, min = 0.3, max = 1.5, label = "Intensity" }
+names      = { type = "bool", default = true, label = "Show the scene name when it changes" }

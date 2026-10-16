@@ -3,13 +3,22 @@
 use std::path::Path;
 
 /// (folder, [(file name, contents)])
-pub const BUNDLED: &[(&str, &[(&str, &str)])] = &[(
-    "strobe",
-    &[
-        ("plugin.toml", include_str!("../../../plugins/strobe/plugin.toml")),
-        ("main.rhai", include_str!("../../../plugins/strobe/main.rhai")),
-    ],
-)];
+pub const BUNDLED: &[(&str, &[(&str, &str)])] = &[
+    (
+        "strobe",
+        &[
+            ("plugin.toml", include_str!("../../../plugins/strobe/plugin.toml")),
+            ("main.rhai", include_str!("../../../plugins/strobe/main.rhai")),
+        ],
+    ),
+    (
+        "visions",
+        &[
+            ("plugin.toml", include_str!("../../../plugins/visions/plugin.toml")),
+            ("main.rhai", include_str!("../../../plugins/visions/main.rhai")),
+        ],
+    ),
+];
 
 fn version_of(toml_src: &str) -> Vec<u64> {
     toml::from_str::<toml::Value>(toml_src)
