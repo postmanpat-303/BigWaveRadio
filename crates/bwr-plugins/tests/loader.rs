@@ -600,7 +600,7 @@ fn shape_api_and_triangulation() {
 fn strobe_symbols_are_bold_and_stay_up() {
     // The strobe uses the real clock, so this runs in real time (~5 s).
     let tmp = tempfile::tempdir().unwrap();
-    let mut host = start_strobe_with(tmp.path(), &[("mode", "Random beat".into())]);
+    let mut host = start_strobe_with(tmp.path(), &[("mode", "Random beat".into()), ("sym_time", "Random 1.5-3 s".into())]);
     let mut beat = AudioFrame { playing: true, ..Default::default() };
     beat.features.level = 0.5;
     beat.features.bass = 0.8;
@@ -628,4 +628,86 @@ fn strobe_symbols_are_bold_and_stay_up() {
     assert!(frames_with > 50, "{frames_with}");
     // Held 1.5-3 s each: at most 4 different symbols in 5 s.
     assert!(changes <= 4, "symbols change too often: {changes}");
+}
+
+/// Run the strobe in real time for `secs`, returning per-frame
+/// (time, frame luminance, symbol key, veil alpha).
+fn run_strobe(settings: &[(&str, serde_json::Value)], secs: f64) -> Vec<(f64, f32, String, u8)> {
+    let tmp = tempfile::tempdir().unwrap();
+    let mut host = start_strobe_with(tmp.path(), settings);
+    let mut beat = AudioFrame { playing: true, ..Default::default() };
+    beat.features.level = 0.5;
+    beat.features.bass = 0.8;
+    beat.features.quiet = false;
+    let start = std::time::Instant::now();
+    let mut next_beat = 0.0;
+    let mut out = Vec::new();
+    while start.elapsed().as_secs_f64() < secs {
+        let t = start.elapsed().as_secs_f64();
+        beat.features.beat = t >= next_beat;
+        if beat.features.beat { next_beat += 0.25; }
+        host.frame(1.0 / 60.0, &beat);
+        let cmds = host.overlay_commands();
+        let key = cmds.iter().filter_map(|c| match c {
+            DrawCmd::Shape { paths, .. } => Some(paths.len().to_string()),
+            DrawCmd::Text { text, size, .. } if *size > 40.0 => Some(text.clone()),
+            _ => None,
+        }).collect::<Vec<_>>().join("|");
+        let veil = cmds.iter().filter_map(|c| match c {
+            DrawCmd::Rect { x, y, w, h, color } if *x == 0.0 && *y == 0.0 && *w == 1.0 && *h == 1.0 && color.0[0] == 0 => Some(color.0[3]),
+            _ => None,
+        }).next().unwrap_or(0);
+        out.push((t, frame_luminance(&cmds, 16.0 / 9.0), key, veil));
+        std::thread::sleep(std::time::Duration::from_millis(8));
+    }
+    out
+}
+
+#[test]
+fn strobe_symbol_duration_default_half_second() {
+    let frames = run_strobe(&[], 4.0);
+    let mut changes = 0;
+    let mut last = String::new();
+    for (_, _, k, _) in &frames {
+        if !k.is_empty() && *k != last { changes += 1; last = k.clone(); }
+    }
+    // 0.5 s per symbol at the 3 Hz cap -> a new one every ~0.67 s.
+    assert!(changes >= 4, "symbols should change about every 0.5 s: {changes}");
+}
+
+#[test]
+fn strobe_fade_to_black_cycle() {
+    for mode in ["Fixed rate", "Random beat"] {
+        let frames = run_strobe(&[("mode", mode.into()), ("fade", "1 s".into()), ("on_time", "5 s".into())], 8.0);
+        // Before the on time ends: no veil.
+        assert!(frames.iter().filter(|f| f.0 < 4.8).all(|f| f.3 == 0), "{mode}: no fade during the on time");
+        // Smooth ramp: intermediate veil levels, small steps.
+        let partial = frames.iter().filter(|f| f.3 > 20 && f.3 < 235).count();
+        assert!(partial >= 20, "{mode}: fade is a ramp, not a cut ({partial} frames)");
+        let mut prev = 0i32;
+        // (Frames the host limiter blacked out entirely carry no veil.)
+        for f in frames.iter().filter(|f| f.3 > 0 || f.1 >= 0.05) {
+            assert!((f.3 as i32 - prev).abs() <= 40, "{mode}: veil jumps from {prev} to {}", f.3);
+            prev = f.3 as i32;
+        }
+        // Held fully black for about 1 s, with nothing flashing.
+        let black: Vec<_> = frames.iter().filter(|f| f.3 == 255).collect();
+        let span = black.last().unwrap().0 - black.first().unwrap().0;
+        assert!(span > 0.8 && span < 1.3, "{mode}: hold {span}");
+        assert!(black.iter().all(|f| f.1 < 0.05), "{mode}: black during the hold");
+        // Back in afterwards.
+        assert!(frames.iter().any(|f| f.0 > black.last().unwrap().0 + 0.9 && f.3 == 0), "{mode}: fades back in");
+    }
+}
+
+#[test]
+fn strobe_fade_off_by_default_and_breaks_still_black() {
+    let frames = run_strobe(&[], 1.5);
+    assert!(frames.iter().all(|f| f.3 == 0));
+    let tmp = tempfile::tempdir().unwrap();
+    let mut host = start_strobe_with(tmp.path(), &[("fade", "3 s".into())]);
+    let mut a = AudioFrame { playing: true, ..Default::default() };
+    a.features.quiet = true;
+    host.frame(1.0 / 60.0, &a);
+    assert_eq!(host.overlay_commands(), vec![DrawCmd::Fill(Rgba::BLACK)]);
 }

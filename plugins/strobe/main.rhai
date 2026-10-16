@@ -33,14 +33,52 @@ fn allowed_rates(cap) {
 
 fn rate_label(r) { `${r} Hz` }
 
+// Seconds from a "N s" label; "Off" -> 0.
+fn secs(label) {
+    if label == "Off" { return 0.0; }
+    parse_float(label.split(" ")[0])
+}
+
+// How long the next symbol stays up.
+fn sym_hold(label) {
+    if label.starts_with("Random") { 1.5 + rand() * 1.5 } else { secs(label) }
+}
+
+// Fade length (each way): a smooth luminance ramp, never a flash.
+fn fade_ramp() { 0.8 }
+
+// Darkness 0..1 of the fade-to-black cycle at time t since the strobe
+// opened: `on` s of strobe, ramp down, hold black `hold` s, ramp up.
+fn fade_level(t, on, hold) {
+    if hold <= 0.0 { return 0.0; }
+    let r = fade_ramp();
+    let cycle = on + r + hold + r;
+    let p = t % cycle;
+    if p < on { return 0.0; }
+    let p = p - on;
+    if p < r { return smooth(p / r); }
+    let p = p - r;
+    if p < hold { return 1.0; }
+    let p = p - hold;
+    1.0 - smooth(p / r)
+}
+
+fn smooth(x) { let x = fmax(0.0, fmin(1.0, x)); x * x * (3.0 - 2.0 * x) }
+
+fn alpha_hex(k) {
+    let v = to_int(fmax(0.0, fmin(1.0, k)) * 255.0);
+    let h = "0123456789abcdef";
+    `#000000${h.sub_string(v / 16, 1)}${h.sub_string(v % 16, 1)}`
+}
+
 // Called as s.trigger(...) so `this` is the state map.
 fn trigger(now, bass, gap, with_symbols) {
     this.last = now;
     this.flash = fmin(0.05 + bass * 0.05, gap * 0.45);
-    // A symbol stays up for 1.5-3 s (a few beats) before the next one.
-    if with_symbols && now >= this.sym_until && rand() < 0.6 {
+    // A symbol stays up for the chosen duration, then the next one.
+    if with_symbols && now >= this.sym_until {
         this.symbol = rand_int(0, symbols().len() - 1);
-        this.sym_until = now + 1.5 + rand() * 1.5;
+        this.sym_until = now + sym_hold(this.sym_time);
         this.caption = rand_pick(captions());
     }
 }
@@ -58,7 +96,12 @@ fn on_load(ctx) {
         playing: false,
         symbol: -1,
         sym_until: 0.0,
-        caption: ""
+        caption: "",
+        sym_time: ctx.settings.sym_time,
+        fade: ctx.settings.fade,
+        on_time: ctx.settings.on_time,
+        seen: [ctx.settings.sym_time, ctx.settings.fade, ctx.settings.on_time],
+        dark: 0.0
     };
 }
 
@@ -70,7 +113,7 @@ fn on_audio(ctx, a) {
     // A break: the host says it's quiet, or (beat mode) no beat for 2.5 s.
     let no_beat = s.mode != "Fixed rate" && ctx.now - s.last_beat > 2.5 && ctx.now - s.opened > 2.5;
     s.quiet = a.playing && (a.quiet || no_beat);
-    if s.mode != "Fixed rate" && a.beat && !s.quiet {
+    if s.mode != "Fixed rate" && a.beat && !s.quiet && s.dark < 0.999 {
         let gap = 1.0 / fmin(s.rate, ctx.flash_cap);
         if ctx.now - s.last >= gap && rand() < 0.7 {
             s.trigger(ctx.now, a.bass, gap, ctx.settings.symbols);
@@ -81,8 +124,16 @@ fn on_audio(ctx, a) {
 
 fn on_tick(ctx, dt) {
     let s = ctx.state;
+    // Follow edits made under Plugins -> Settings.
+    let now_cfg = [ctx.settings.sym_time, ctx.settings.fade, ctx.settings.on_time];
+    if now_cfg != s.seen {
+        s.sym_time = now_cfg[0]; s.fade = now_cfg[1]; s.on_time = now_cfg[2];
+        s.seen = now_cfg;
+    }
     s.flash = fmax(0.0, s.flash - dt);
-    if ctx.overlay_active && s.mode == "Fixed rate" && !s.quiet {
+    s.dark = fade_level(ctx.now - s.opened, secs(s.on_time), secs(s.fade));
+    if s.dark >= 0.999 { s.flash = 0.0; }    // fully faded: nothing flashes
+    if ctx.overlay_active && s.mode == "Fixed rate" && !s.quiet && s.dark < 0.999 {
         let gap = 1.0 / fmin(s.rate, ctx.flash_cap);
         if ctx.now - s.last >= gap {
             s.trigger(ctx.now, 0.5, gap, ctx.settings.symbols);
@@ -129,6 +180,10 @@ fn on_overlay(ctx, draw) {
         draw_bold(draw, sym, 0.5, 0.42, 0.58, 0.025, ink, back);
         draw.rect(0.1, 0.755, 0.8, 0.09, if on { "#ffffffc0" } else { "#000000c0" });
         draw.text_center(0.5, 0.8, s.caption, 44.0, ink);
+    }
+    if s.dark > 0.0 {
+        // Fade to black: a smooth ramp of a black veil over everything.
+        draw.rect(0.0, 0.0, 1.0, 1.0, alpha_hex(s.dark));
     }
     if !on {
         if rings_enabled(ctx, s.mode) {
@@ -185,6 +240,12 @@ fn controls(ctx, ui) {
     let picked = ui.choice("Speed", rate_label(fmin(s.rate, ctx.flash_cap)), labels);
     s.rate = parse_float(picked.split(" ")[0]);
     ui.small(`Flash cap: ${ctx.flash_cap} Hz. Raise it (up to 12 Hz) under Flash safety on the Plugins page.`);
+    s.sym_time = ui.choice("Symbol duration", s.sym_time, ["0.5 s", "1 s", "1.5 s", "2 s", "3 s", "Random 1.5-3 s"]);
+    s.fade = ui.choice("Fade to black", s.fade, ["Off", "1 s", "3 s", "5 s", "10 s", "15 s"]);
+    if s.fade != "Off" {
+        s.on_time = ui.choice("Strobe on time", s.on_time, ["5 s", "10 s", "15 s", "20 s", "30 s", "60 s"]);
+    }
+    ui.small("Fade to black: after the on time the strobe fades smoothly to black, holds, then fades back in.");
     ui.space(6);
     let start = ui.button("Start strobe");
     ui.small("Shortcut: Ctrl+F, then U (starts straight away). In the strobe: arrow keys change speed, Esc / any key / click exits.");
