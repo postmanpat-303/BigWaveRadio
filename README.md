@@ -52,9 +52,11 @@ access.
 * Authoring guide (for people and AI assistants): [docs/PLUGIN_GUIDE.md](docs/PLUGIN_GUIDE.md), plus [AGENTS.md](AGENTS.md)
 * Validate a plugin without opening the window:
   `BigWaveRadio.exe --check-plugin <folder>` (exit code 0 = OK)
-* **Beat Strobe** (bundled, `plugins/strobe/`): photosensitivity warning
-  first; in-window or fullscreen; *Random beat* or *Fixed rate* mode; speeds
-  1–12 Hz limited by the flash cap (3 Hz default, opt-in up to 12 Hz under
+* **Beat Strobe** (bundled, `plugins/strobe/`): **Ctrl+F, then U** starts it
+  straight away from anywhere in the app (no warning screen); the Start
+  button shows the photosensitivity warning first. In-window or fullscreen
+  (default); *Fixed rate* (default) or *Random beat* mode; speeds 1–12 Hz
+  (default 12) limited by the flash cap (3 Hz default, opt-in up to 12 Hz under
   Plugins → Flash safety, enforced by the app); arrow keys change speed;
   black screen during breaks; random AI-vs-humanity line-art symbols. Esc
   always exits (handled by the app), as does any other key or a click.

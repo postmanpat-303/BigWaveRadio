@@ -15,6 +15,9 @@ plugin API (v1) and starts with a one-shot prompt. In short:
 * Validate before handing over:
   `cargo run -p bwr-app -- --check-plugin path/to/plugin` (or
   `BigWaveRadio.exe --check-plugin <folder>`). It must print `OK`.
+* App-wide shortcuts: declare `[[hotkeys]] keys = "Ctrl+F,U" action = "start"`
+  (needs the `hotkeys` permission) and handle `on_hotkey(ctx, action)`. The
+  first step must use Ctrl or Alt; Esc is reserved for the host.
 * Flashing content must respect `ctx.flash_cap`; the host enforces it anyway.
 
 Working examples: `plugins/strobe/` (bundled) and `docs/plugin-examples/*`.

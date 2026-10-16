@@ -1,6 +1,7 @@
 use std::path::{Path, PathBuf};
 
 use bwr_plugins::*;
+use bwr_plugins::Manifest;
 
 fn write_plugin(root: &Path, id: &str, perms: &str, script: &str) -> PathBuf {
     let dir = root.join(id);
@@ -345,4 +346,116 @@ fn guide_inlines_the_example_files() {
             assert!(guide.contains(body.trim()), "PLUGIN_GUIDE.md is out of date for {}/{f}", e.path().display());
         }
     }
+}
+
+fn strobe_host(tmp: &Path) -> PluginHost {
+    install_bundled(tmp);
+    let mut host = PluginHost::new(tmp);
+    host.approve("strobe");
+    host
+}
+
+const CTRL: Mods = Mods { ctrl: true, shift: false, alt: false };
+
+#[test]
+fn strobe_hotkey_starts_immediately_without_warning() {
+    let tmp = tempfile::tempdir().unwrap();
+    let mut host = strobe_host(tmp.path());
+    assert_eq!(host.hotkeys().len(), 1);
+    assert_eq!(host.hotkeys()[0].1.keys, "Ctrl+F,U");
+
+    assert!(!host.hotkey_key("U", Mods::default()), "plain U is not swallowed");
+    assert!(host.hotkey_key("F", CTRL), "Ctrl+F is swallowed (chord pending)");
+    assert!(host.overlay.is_none());
+    assert!(host.hotkey_key("U", CTRL));
+    let s = host.overlay.clone().expect("strobe started");
+    assert_eq!(s.phase, OverlayPhase::Running, "hotkey skips the warning screen");
+    assert!(s.fullscreen, "default display is fullscreen");
+    assert!(!host.hotkey_key("F", CTRL), "no chords while the overlay is open");
+
+    host.key("Escape");
+    assert!(host.overlay.is_none(), "Esc always exits");
+
+    // Other keys and clicks still exit.
+    for k in ["Q", "MouseClick"] {
+        host.hotkey_key("F", CTRL);
+        host.hotkey_key("U", Mods::default());
+        assert!(host.overlay.is_some());
+        host.key(k);
+        assert!(host.overlay.is_none(), "{k}");
+    }
+}
+
+#[test]
+fn panel_start_still_shows_warning() {
+    let tmp = tempfile::tempdir().unwrap();
+    let mut host = strobe_host(tmp.path());
+    let w = host.panel("strobe");
+    let start = w.iter().position(|w| *w == Widget::Button("Start strobe".into())).unwrap();
+    host.set_ui_results("strobe", "panel", [(start, UiResult::Clicked)].into_iter().collect());
+    host.panel("strobe");
+    let _ = host.take_requests();
+    assert_eq!(host.overlay.as_ref().unwrap().phase, OverlayPhase::Warning);
+}
+
+#[test]
+fn strobe_defaults_fixed_12hz_but_clamped_to_cap() {
+    let count_onsets = |host: &mut PluginHost| {
+        let mut onsets = 0;
+        let mut prev = false;
+        let t0 = std::time::Instant::now();
+        while t0.elapsed() < std::time::Duration::from_secs(2) {
+            host.frame(1.0 / 120.0, &AudioFrame::default());
+            let bright = host.overlay_commands().iter().any(|c| matches!(c, DrawCmd::Fill(col) if col.luminance() > 0.5));
+            if bright && !prev {
+                onsets += 1;
+            }
+            prev = bright;
+            std::thread::sleep(std::time::Duration::from_millis(4));
+        }
+        onsets
+    };
+    let tmp = tempfile::tempdir().unwrap();
+    let mut host = strobe_host(tmp.path());
+    assert_eq!(host.setting("strobe", "mode").unwrap().into_string().unwrap(), "Fixed rate");
+    assert_eq!(host.setting("strobe", "rate").unwrap().as_float().unwrap(), 12.0);
+    assert_eq!(host.setting("strobe", "display").unwrap().into_string().unwrap(), "Fullscreen");
+    host.hotkey_key("F", CTRL);
+    host.hotkey_key("U", CTRL);
+    let n = count_onsets(&mut host);
+    assert!((3..=7).contains(&n), "without opt-in: ~3 Hz, got {n} flashes in 2 s");
+    host.key("Escape");
+
+    host.set_flash_safety(true, 12.0);
+    host.hotkey_key("F", CTRL);
+    host.hotkey_key("U", CTRL);
+    let n = count_onsets(&mut host);
+    assert!(n >= 12, "with opt-in: much faster, got {n} flashes in 2 s");
+    assert!(n <= 25, "never above 12 Hz, got {n}");
+}
+
+#[test]
+fn hotkeys_need_permission_and_valid_chords() {
+    let base = "id = \"h\"\nname = \"H\"\nversion = \"1\"\napi = 1\npermissions = [PERMS]\n[[hotkeys]]\nkeys = \"KEYS\"\naction = \"go\"\n";
+    let m = |p: &str, k: &str| Manifest::parse(&base.replace("PERMS", p).replace("KEYS", k));
+    assert!(m("\"hotkeys\"", "Ctrl+F,U").is_ok());
+    assert!(m("", "Ctrl+F,U").unwrap_err().join("").contains("hotkeys"));
+    assert!(m("\"hotkeys\"", "F").is_err());
+    assert!(m("\"hotkeys\"", "Ctrl+Escape").is_err());
+}
+
+#[test]
+fn install_bundled_upgrades_older_versions_with_backup() {
+    let tmp = tempfile::tempdir().unwrap();
+    install_bundled(tmp.path());
+    let toml = tmp.path().join("strobe/plugin.toml");
+    let src = std::fs::read_to_string(&toml).unwrap();
+    let old = src.replace("version = \"1.1.0\"", "version = \"1.0.0\"");
+    assert_ne!(src, old);
+    std::fs::write(&toml, &old).unwrap();
+    assert_eq!(install_bundled(tmp.path()), vec!["strobe".to_string()]);
+    assert_eq!(std::fs::read_to_string(&toml).unwrap(), src);
+    assert!(tmp.path().join(".strobe-backup-1.0.0/plugin.toml").is_file());
+    let host = PluginHost::new(tmp.path());
+    assert_eq!(host.plugins.len(), 1, "backups are not loaded");
 }

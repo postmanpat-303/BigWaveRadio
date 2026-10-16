@@ -35,6 +35,7 @@ pub(crate) const HOOKS: &[(&str, usize, Option<Permission>)] = &[
     ("on_panel", 2, Some(Permission::Panel)),
     ("on_page", 3, Some(Permission::Page)),
     ("on_key", 2, Some(Permission::Hotkeys)),
+    ("on_hotkey", 2, Some(Permission::Hotkeys)),
 ];
 
 #[derive(Debug, Clone, Default, PartialEq)]
@@ -168,6 +169,10 @@ pub struct PluginHost {
     last_store_flush: Instant,
     /// Never write to disk (used by `--check-plugin`).
     readonly: bool,
+    /// Set while `on_hotkey` runs: an overlay the plugin opens in response
+    /// to the user's own key chord starts without the warning screen.
+    hotkey_plugin: Option<String>,
+    chords: crate::ChordMatcher,
 }
 
 fn fingerprint(dir: &Path) -> u64 {
@@ -224,6 +229,8 @@ impl PluginHost {
             last_poll: Instant::now(),
             last_store_flush: Instant::now(),
             readonly: false,
+            hotkey_plugin: None,
+            chords: Default::default(),
         };
         host.limiter.set_cap(host.flash_cap());
         host.scan();
@@ -263,6 +270,8 @@ impl PluginHost {
             last_poll: Instant::now(),
             last_store_flush: Instant::now(),
             readonly: true,
+            hotkey_plugin: None,
+            chords: Default::default(),
         };
         let p = host.load_dir(plugin_dir);
         if let Some(m) = &p.manifest {
@@ -692,8 +701,10 @@ impl PluginHost {
                 Request::OpenOverlay { fullscreen } => {
                     let busy = self.overlay.as_ref().is_some_and(|s| s.plugin_id != id);
                     if !busy {
+                        let from_hotkey = self.hotkey_plugin.as_deref() == Some(id.as_str());
                         let phase = match &self.overlay {
                             Some(s) if s.plugin_id == id => s.phase,
+                            _ if from_hotkey => OverlayPhase::Running,
                             _ => OverlayPhase::Warning,
                         };
                         self.overlay = Some(OverlaySession { plugin_id: id, fullscreen, phase });
@@ -778,6 +789,45 @@ impl PluginHost {
         cmds
     }
 
+    /// Hotkeys of running plugins: (plugin id, spec), in a stable order.
+    pub fn hotkeys(&self) -> Vec<(String, crate::HotkeySpec)> {
+        self.plugins
+            .iter()
+            .filter(|p| p.status == PluginStatus::Running && p.has_perm(Permission::Hotkeys))
+            .flat_map(|p| p.manifest.iter().flat_map(|m| m.hotkeys.iter().map(|h| (m.id.clone(), h.clone()))))
+            .collect()
+    }
+
+    /// Feed a key press (outside overlays). Returns true if it belongs to a
+    /// plugin hotkey and must not reach the rest of the app. A completed
+    /// chord calls `on_hotkey(ctx, action)` and its requests are applied
+    /// immediately; an overlay opened there skips the warning screen
+    /// because the user started it on purpose.
+    pub fn hotkey_key(&mut self, key: &str, mods: crate::Mods) -> bool {
+        if self.overlay.is_some() {
+            return false;
+        }
+        let list = self.hotkeys();
+        let chords: Vec<Vec<crate::Step>> = list.iter().map(|(_, h)| crate::parse_chord(&h.keys).unwrap_or_default()).collect();
+        let now = self.now();
+        match self.chords.key(&chords, now, key, mods) {
+            crate::ChordResult::Ignored => false,
+            crate::ChordResult::Pending => true,
+            crate::ChordResult::Fired(i) => {
+                let (id, spec) = list[i].clone();
+                if let Some(idx) = self.index_of(&id) {
+                    self.hotkey_plugin = Some(id.clone());
+                    self.call(idx, "on_hotkey", vec![spec.action.into()]);
+                    // Apply the overlay request while the grant is active.
+                    let others = self.take_requests();
+                    self.hotkey_plugin = None;
+                    self.requests.extend(others);
+                }
+                true
+            }
+        }
+    }
+
     /// Pages contributed by running plugins: (plugin id, page).
     pub fn pages(&self) -> Vec<(String, PageSpec)> {
         self.plugins
@@ -851,6 +901,17 @@ impl PluginHost {
         }
         if self.overlay.is_some() {
             self.key("Escape");
+        }
+        if self.overlay.is_some() {
+            self.end_overlay();
+        }
+        if let Some(m) = self.plugins[i].manifest.clone() {
+            for h in &m.hotkeys {
+                self.call(i, "on_hotkey", vec![h.action.clone().into()]);
+                let _ = self.take_requests();
+                let _ = self.overlay_commands();
+                self.end_overlay();
+            }
         }
         self.unload_at(i);
         let mut errs: Vec<String> = Vec::new();

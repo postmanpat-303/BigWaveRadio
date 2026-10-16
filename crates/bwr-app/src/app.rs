@@ -1023,9 +1023,10 @@ impl eframe::App for BigWaveApp {
                         ui.add_space(10.0);
                         ui.separator();
                         ui.add_space(10.0);
-                        for (i, (_, pg)) in self.plugins.pages.clone().into_iter().enumerate() {
+                        for (i, (pid, pg)) in self.plugins.pages.clone().into_iter().enumerate() {
                             let icon = if pg.icon.is_empty() { "🔌".to_string() } else { pg.icon };
-                            nav_button(ui, self, Page::PluginPage(i), &format!("{icon}  {}", pg.title));
+                            let hint = self.plugins.hotkey_hint(&pid).map(|k| format!("   {k}")).unwrap_or_default();
+                            nav_button(ui, self, Page::PluginPage(i), &format!("{icon}  {}{hint}", pg.title));
                         }
                         nav_button(ui, self, Page::Plugins, "🔌  Plugins");
                         nav_button(ui, self, Page::Settings, "⚙  Settings");

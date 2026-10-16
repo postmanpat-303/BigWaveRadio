@@ -6,7 +6,8 @@
 // * Random AI-vs-humanity symbols drawn as SVG line art.
 // * Arrow keys change the speed. Any other key or a click exits, and Esc
 //   is always handled by the host, so it exits even if this script breaks.
-// * The host shows the photosensitivity warning first and enforces the
+// * The host shows the photosensitivity warning first (skipped when started
+//   with the Ctrl+F,U hotkey) and always enforces the
 //   flash cap (ctx.flash_cap: 3 Hz by default, opt-in up to 12 Hz).
 
 fn rates() { [1.0, 2.0, 3.0, 4.0, 6.0, 8.0, 10.0, 12.0] }
@@ -154,7 +155,7 @@ fn controls(ctx, ui) {
     ui.small(`Flash cap: ${ctx.flash_cap} Hz. Raise it (up to 12 Hz) under Flash safety on the Plugins page.`);
     ui.space(6);
     let start = ui.button("Start strobe");
-    ui.small("In the strobe: arrow keys change speed, Esc / any key / click exits.");
+    ui.small("Shortcut: Ctrl+F, then U (starts straight away). In the strobe: arrow keys change speed, Esc / any key / click exits.");
     if start {
         s.opened = ctx.now;
         s.last_beat = ctx.now;
@@ -166,6 +167,17 @@ fn controls(ctx, ui) {
 }
 
 fn on_panel(ctx, ui) { controls(ctx, ui); }
+
+// Ctrl+F,U (declared in plugin.toml): start immediately with the current
+// settings. The host skips its warning screen for a user-pressed hotkey.
+fn on_hotkey(ctx, action) {
+    if action != "start" { return; }
+    let s = ctx.state;
+    s.opened = ctx.now;
+    s.last_beat = ctx.now;
+    ctx.state = s;
+    ctx.open_overlay(s.display == "Fullscreen");
+}
 
 fn on_page(ctx, page_id, ui) {
     ui.heading("Beat Strobe");

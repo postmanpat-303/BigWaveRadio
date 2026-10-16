@@ -62,7 +62,7 @@ impl Permission {
             Permission::PlayerControl => "control playback and volume",
             Permission::Overlay => "draw over the app window",
             Permission::Fullscreen => "go fullscreen",
-            Permission::Hotkeys => "receive key presses while its overlay is open",
+            Permission::Hotkeys => "use keyboard shortcuts",
             Permission::Panel => "show a panel on the Plugins page",
             Permission::Page => "add pages to the side bar",
             Permission::Storage => "save small amounts of data",
@@ -138,6 +138,9 @@ pub struct Manifest {
     pub pages: Vec<PageSpec>,
     #[serde(default)]
     pub settings: BTreeMap<String, SettingSpec>,
+    /// App-wide hotkeys (needs the "hotkeys" permission); fire `on_hotkey`.
+    #[serde(default)]
+    pub hotkeys: Vec<crate::HotkeySpec>,
 }
 
 fn default_runtime() -> String {
@@ -193,6 +196,17 @@ impl Manifest {
         }
         if !self.pages.is_empty() && !perms.contains(&Permission::Page) {
             errs.push("[[pages]] are declared but the \"page\" permission is missing".into());
+        }
+        if !self.hotkeys.is_empty() && !perms.contains(&Permission::Hotkeys) {
+            errs.push("[[hotkeys]] are declared but the \"hotkeys\" permission is missing".into());
+        }
+        for h in &self.hotkeys {
+            if let Err(e) = crate::parse_chord(&h.keys) {
+                errs.push(e);
+            }
+            if h.action.trim().is_empty() {
+                errs.push(format!("hotkey \"{}\" needs an action", h.keys));
+            }
         }
         let mut seen = std::collections::HashSet::new();
         for p in &self.pages {

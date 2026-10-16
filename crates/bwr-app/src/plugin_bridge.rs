@@ -45,6 +45,11 @@ impl PluginBridge {
         }
     }
 
+    /// The first hotkey hint for a plugin, e.g. "Ctrl+F,U".
+    pub fn hotkey_hint(&self, plugin_id: &str) -> Option<String> {
+        self.host.hotkeys().into_iter().find(|(id, _)| id == plugin_id).map(|(_, h)| h.keys)
+    }
+
     pub fn note_player_event(&mut self, ev: &PlayerEvent) {
         match ev {
             PlayerEvent::Connecting => self.host.player("connecting"),
@@ -126,6 +131,22 @@ pub fn pre_frame(app: &mut BigWaveApp, ctx: &Context) {
         });
         for k in keys {
             b.host.key(&k);
+        }
+
+    } else {
+        // App-wide plugin hotkeys (e.g. Ctrl+F,U). Matching keys are
+        // swallowed so they never reach text fields or other shortcuts.
+        let host = &mut b.host;
+        if !host.hotkeys().is_empty() {
+            ctx.input_mut(|i| {
+                i.events.retain(|e| match e {
+                    egui::Event::Key { key, pressed: true, repeat: false, modifiers, .. } => {
+                        let mods = bwr_plugins::Mods { ctrl: modifiers.command || modifiers.ctrl, shift: modifiers.shift, alt: modifiers.alt };
+                        !host.hotkey_key(key.name(), mods)
+                    }
+                    _ => true,
+                })
+            });
         }
     }
 

@@ -58,6 +58,10 @@ id = "main"                 # passed to on_page as page_id
 title = "My Page"           # shown in the side bar
 icon = "🎵"                 # optional single emoji
 
+[[hotkeys]]                 # optional, needs the "hotkeys" permission
+keys = "Ctrl+F,U"           # chord: hold Ctrl, press F, then U within ~1 s
+action = "start"            # passed to on_hotkey(ctx, action)
+
 [settings]                  # optional: the app builds a settings UI
 speed = { type = "float",  default = 2.0, min = 0.5, max = 4.0, label = "Speed" }
 count = { type = "int",    default = 3,   min = 1,   max = 10 }
@@ -78,7 +82,7 @@ Settings are read with `ctx.settings.<key>`. They are read-only for the script.
 | `player_control` | `ctx.player_stop/toggle/next/previous`, `ctx.set_volume` |
 | `overlay` | `ctx.open_overlay(false)`, `on_overlay`, `on_overlay_closed` |
 | `fullscreen` | `ctx.open_overlay(true)` (also needs `overlay`) |
-| `hotkeys` | `on_key` while your overlay is open |
+| `hotkeys` | `[[hotkeys]]` + `on_hotkey` (app-wide shortcuts), and `on_key` while your overlay is open |
 | `panel` | `on_panel` (a panel on your card on the Plugins page) |
 | `page` | `[[pages]]` + `on_page` (whole pages in the side bar), `ctx.open_page` |
 | `storage` | `ctx.store_get/store_set` (saved to `store.json`) |
@@ -102,6 +106,7 @@ A hook whose permission is missing is never called.
 | `on_overlay(ctx, draw)` | every frame while your overlay is open | draw with `draw` |
 | `on_overlay_closed(ctx)` | your overlay was closed (any reason) | reset state |
 | `on_key(ctx, key)` | key press / click while your overlay is open | return `true` if handled |
+| `on_hotkey(ctx, action)` | one of your `[[hotkeys]]` was pressed anywhere in the app | `action` from plugin.toml |
 | `on_panel(ctx, ui)` | each frame your card is visible on the Plugins page | widgets with `ui` |
 | `on_page(ctx, page_id, ui)` | each frame one of your pages is open | widgets with `ui` |
 
@@ -119,6 +124,21 @@ A hook whose permission is missing is never called.
 | `a.playing` | bool | a station is playing |
 
 The analysis is delayed to match what is coming out of the speakers.
+
+### Hotkeys (`[[hotkeys]]`)
+
+`keys` is one to three steps separated by commas; each step is
+`Mod+Mod+Key` with `Ctrl`, `Shift`, `Alt` and an egui key name (`A`..`Z`,
+`0`..`9`, `F1`.., `ArrowUp`, ...). The **first step must use Ctrl or Alt**
+and `Esc` cannot be used. Later steps may be pressed with the first step's
+modifiers still held (`Ctrl+F,U` fires for Ctrl+F then U, or Ctrl+F then
+Ctrl+U). Each step must follow within about 1 second. Keys that are part of
+a chord are swallowed, so they never reach the rest of the app. Hotkeys work
+anywhere in the app window while no overlay is open. The app shows the
+first hotkey next to your nav page in the side bar, e.g. `Strobe  Ctrl+F,U`.
+
+If `on_hotkey` opens your overlay, it starts **without** the warning screen
+(the user started it deliberately). The flash cap and Esc still apply.
 
 ### Keys (`on_key`)
 
@@ -229,7 +249,8 @@ return floats), `rgb(...)`, `rgba(...)`, plus Rhai's built-ins
 ## 9. Flashing and safety rules (mandatory)
 
 * The app shows a photosensitivity warning before any overlay; the user must
-  press Enter / click to continue.
+  press Enter / click to continue. The only exception is an overlay opened
+  from `on_hotkey`, because the user pressed the plugin's hotkey on purpose.
 * The app limits dark-to-bright transitions of large areas (>= 25 % of the
   overlay) to `ctx.flash_cap` per second (3 by default; the user can opt in
   up to 12). Extra flashes are painted black, so design for the cap: use
