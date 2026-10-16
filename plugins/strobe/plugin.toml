@@ -1,7 +1,7 @@
 # Beat Strobe — bundled with BigWave Radio.
 id = "strobe"
 name = "Beat Strobe"
-version = "1.2.0"
+version = "1.3.0"
 api = 1
 runtime = "rhai"
 entry = "main.rhai"
@@ -23,6 +23,5 @@ rate    = { type = "float",  default = 12.0, min = 1.0, max = 12.0, label = "Sta
 mode    = { type = "choice", default = "Fixed rate", options = ["Random beat", "Fixed rate"], label = "Mode" }
 display = { type = "choice", default = "Fullscreen", options = ["Fullscreen", "In window"], label = "Display" }
 symbols = { type = "bool",   default = true, label = "Show symbols" }
-rings       = { type = "bool", default = true,  label = "Interference rings in Random beat mode" }
-rings_fixed = { type = "bool", default = false, label = "Interference rings in Fixed rate mode too" }
+rings   = { type = "bool",   default = true, label = "Amiga interference rings (all modes)" }
 color   = { type = "color",  default = "#ffffff", label = "Flash colour" }

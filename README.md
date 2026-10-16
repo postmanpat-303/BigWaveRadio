@@ -66,7 +66,7 @@
 <br>
 <p align="center"><img src="docs/media/strobe-rings.png" alt="Interference rings in the Beat Strobe" width="880"></p>
 
-Two black-and-white concentric-ring discs drift on Lissajous paths under the symbols, creating a classic moiré. They are on by default in *Random beat* mode, and you can turn them on for *Fixed rate* with the `rings_fixed` setting. The screen goes black during breaks in the track.
+Two black-and-white concentric-ring discs drift on Lissajous paths under the symbols, creating a classic moiré. They are on by default in every mode (Fixed rate and Random beat, fullscreen or in-window, including the Ctrl+F, U hotkey launch); switch them off with the strobe's `rings` setting. The screen goes black during breaks in the track.
 </details>
 
 <details>

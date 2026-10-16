@@ -89,7 +89,7 @@ fn on_tick(ctx, dt) {
 }
 
 fn rings_enabled(ctx, mode) {
-    if mode == "Fixed rate" { ctx.settings.rings_fixed } else { ctx.settings.rings }
+    ctx.settings.rings   // on in every mode (1.3.0+)
 }
 
 // Amiga-style interference rings: two discs of concentric rings swing on

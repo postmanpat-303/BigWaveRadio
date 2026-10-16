@@ -22,7 +22,7 @@ pub use api::Request;
 pub use bundled::{install_bundled, BUNDLED};
 pub use check::{check_plugin, CheckReport};
 pub use draw::{parse_svg_path, DrawCmd, Rgba, MAX_RINGS};
-pub use host::{AudioFrame, HostState, OverlayPhase, OverlaySession, Plugin, PluginHost, PluginStatus, StationInfo};
+pub use host::{migrate_state, AudioFrame, HostState, OverlayPhase, OverlaySession, Plugin, PluginHost, PluginStatus, StationInfo};
 pub use hotkeys::{parse_chord, ChordMatcher, ChordResult, HotkeySpec, Mods, Step, CHORD_TIMEOUT};
 pub use manifest::{Manifest, PageSpec, Permission, SettingKind, SettingSpec};
 pub use safety::{frame_luminance, FlashLimiter, FLASH_DELTA};

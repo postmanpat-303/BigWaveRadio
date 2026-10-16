@@ -521,21 +521,43 @@ fn strobe_rings_in_random_beat_mode_under_symbols() {
 
 #[test]
 fn strobe_rings_settings() {
+    // Rings are on by default in every mode and display, from the hotkey.
+    for display in ["Fullscreen", "In window"] {
+        for mode in ["Fixed rate", "Random beat"] {
+            let tmp = tempfile::tempdir().unwrap();
+            let mut host = start_strobe_with(tmp.path(), &[("mode", mode.into()), ("display", display.into())]);
+            assert_eq!(host.overlay.as_ref().unwrap().fullscreen, display == "Fullscreen");
+            host.frame(0.016, &AudioFrame::default());
+            assert!(has_rings(&host.overlay_commands()), "{mode} / {display}");
+        }
+    }
     let tmp = tempfile::tempdir().unwrap();
-    // Default Fixed rate: rings off unless rings_fixed.
-    let mut host = start_strobe_with(tmp.path(), &[]);
+    let mut host = start_strobe_with(tmp.path(), &[("rings", false.into())]);
     host.frame(0.016, &AudioFrame::default());
     assert!(!has_rings(&host.overlay_commands()));
+}
 
+#[test]
+fn strobe_rings_settings_migrate_from_1_2() {
+    let mut st: HostState = serde_json::from_str(
+        r#"{"settings":{"strobe":{"mode":"Fixed rate","rings":false,"rings_fixed":false}}}"#).unwrap();
+    assert!(bwr_plugins::migrate_state(&mut st));
+    assert!(!st.settings["strobe"].contains_key("rings"));
+    assert!(!st.settings["strobe"].contains_key("rings_fixed"));
+    // Random beat + rings off was a deliberate choice: kept.
+    let mut st: HostState = serde_json::from_str(
+        r#"{"settings":{"strobe":{"mode":"Random beat","rings":false,"rings_fixed":true}}}"#).unwrap();
+    assert!(bwr_plugins::migrate_state(&mut st));
+    assert_eq!(st.settings["strobe"]["rings"], serde_json::json!(false));
+    // Already migrated: no-op.
+    assert!(!bwr_plugins::migrate_state(&mut st));
+    // Written to disk when the host starts.
     let tmp = tempfile::tempdir().unwrap();
-    let mut host = start_strobe_with(tmp.path(), &[("rings_fixed", true.into())]);
-    host.frame(0.016, &AudioFrame::default());
-    assert!(has_rings(&host.overlay_commands()));
-
-    let tmp = tempfile::tempdir().unwrap();
-    let mut host = start_strobe_with(tmp.path(), &[("mode", "Random beat".into()), ("rings", false.into())]);
-    host.frame(0.016, &AudioFrame::default());
-    assert!(!has_rings(&host.overlay_commands()));
+    std::fs::write(tmp.path().join("plugins-state.json"),
+        r#"{"settings":{"strobe":{"rings_fixed":false}}}"#).unwrap();
+    let _h = PluginHost::new(tmp.path());
+    let saved = std::fs::read_to_string(tmp.path().join("plugins-state.json")).unwrap();
+    assert!(!saved.contains("rings_fixed"), "{saved}");
 }
 
 #[test]

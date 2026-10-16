@@ -208,6 +208,23 @@ fn json_to_dynamic(v: &serde_json::Value) -> Dynamic {
     rhai::serde::to_dynamic(v).unwrap_or(Dynamic::UNIT)
 }
 
+/// One-off fixes to saved settings. Strobe 1.2 had `rings_fixed` (default
+/// off), so rings never showed in the default Fixed rate mode; 1.3 uses one
+/// `rings` switch for every mode. A saved `rings_fixed` is dropped, and a
+/// saved `rings = false` from those versions is dropped too unless the user
+/// also had Random beat mode selected (where it was a deliberate choice).
+pub fn migrate_state(state: &mut HostState) -> bool {
+    let Some(s) = state.settings.get_mut("strobe") else { return false };
+    if s.remove("rings_fixed").is_none() {
+        return false;
+    }
+    let random = s.get("mode").and_then(|m| m.as_str()) == Some("Random beat");
+    if !random && s.get("rings") == Some(&serde_json::Value::Bool(false)) {
+        s.remove("rings");
+    }
+    true
+}
+
 impl PluginHost {
     /// Create a host for `dir` (created if missing) and load every plugin.
     pub fn new(dir: impl Into<PathBuf>) -> Self {
@@ -217,6 +234,8 @@ impl PluginHost {
             .ok()
             .and_then(|s| serde_json::from_str(&s).ok())
             .unwrap_or_default();
+        let mut state: HostState = state;
+        let migrated = migrate_state(&mut state);
         let mut host = Self {
             dir,
             plugins: Vec::new(),
@@ -233,6 +252,9 @@ impl PluginHost {
             chords: Default::default(),
         };
         host.limiter.set_cap(host.flash_cap());
+        if migrated {
+            host.save_state();
+        }
         host.scan();
         host
     }
