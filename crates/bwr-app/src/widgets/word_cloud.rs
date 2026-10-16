@@ -1,10 +1,13 @@
-//! Weighted word cloud in the shape of a cloud.
+//! Weighted word cloud in the shape of a filled disc — a "tag ball".
 //!
-//! Tags from radio-browser, sized by station count and placed along a
-//! squashed Archimedean spiral so the whole cluster reads as a cloud. Words
-//! float slowly, glitch letter-by-letter on hover (the hit rect is inflated
-//! so the word stays clickable while it glitches), and faint musical
-//! notation drifts upward behind them. Clicking a word searches that tag.
+//! Tags from radio-browser, sized by station count and packed largest-first
+//! along an Archimedean spiral so the cluster fills a circle edge to edge,
+//! the biggest words near the middle and tiny words plugging the rim (the
+//! wellness-sphere look). Words fade slightly toward the rim for a hint of
+//! ball shading. They float slowly, glitch letter-by-letter on hover (the
+//! hit rect is inflated so the word stays clickable while it glitches), and
+//! faint musical notation drifts upward behind them. Clicking a word searches
+//! that tag.
 
 use bwr_core::Tag;
 use eframe::egui::{self, Align2, Color32, FontId, Pos2, Rect, Sense, Ui, Vec2};
@@ -12,11 +15,14 @@ use eframe::egui::{self, Align2, Color32, FontId, Pos2, Rect, Sense, Ui, Vec2};
 use crate::app::BigWaveApp;
 use crate::theme;
 
-const MAX_WORDS: usize = 44;
+const MAX_WORDS: usize = 90;
 const NOTES: &[&str] = &["♪", "♫", "♩", "♬", "𝄞"];
 const NOTE_COUNT: usize = 16;
 /// Whitespace inside each word's box; also the glitch amplitude budget.
 const PAD: f32 = 8.0;
+/// Tighter padding used for placement overlap tests, so words pack densely
+/// while their interactive boxes keep the full PAD breathing room.
+const PACK: f32 = 3.0;
 
 #[derive(Clone)]
 struct Placed {
@@ -89,7 +95,8 @@ pub fn cloud(ui: &mut Ui, app: &mut BigWaveApp) {
     }
     let words = app.word_cloud.words.clone();
 
-    // --- words: float + hover glitch + click --------------------------------
+    // --- words: float + rim fade + hover glitch + click ----------------------
+    let (disc_center, disc_r) = disc(area);
     let mut picked: Option<String> = None;
     for (wi, w) in words.iter().enumerate() {
         let float = Vec2::new(
@@ -99,12 +106,16 @@ pub fn cloud(ui: &mut Ui, app: &mut BigWaveApp) {
         let base = w.rect.translate(float);
         let response = ui.interact(base, ui.id().with(("cloud_word", wi)), Sense::click());
 
+        let radial = (base.center() - disc_center).length() / disc_r;
         let color = if response.hovered() {
             accent
         } else {
-            // Weighted grey→strong ramp; the cloud darkens toward its base.
+            // Weighted grey→strong ramp, then a soft fade toward the rim so
+            // the cluster reads as a shaded ball rather than a flat disc.
             let base_col = Color32::from_gray(if dark { 150 } else { 96 });
-            base_col.lerp_to_gamma(strong, w.norm * 0.75)
+            base_col
+                .lerp_to_gamma(strong, w.norm * 0.75)
+                .linear_multiply(1.0 - 0.4 * radial.powi(2))
         };
 
         let text_left = base.left() + PAD;
@@ -192,7 +203,7 @@ fn jitter(tick: i64, salt: i64) -> f32 {
 /// Content signature so the layout refreshes when the tag list changes.
 fn signature(tags: &[Tag]) -> u64 {
     let mut h = 0xcbf2_9ce4_8422_2325u64;
-    for t in tags.iter().take(64) {
+    for t in tags.iter().take(128) {
         for b in t.name.bytes() {
             h ^= b as u64;
             h = h.wrapping_mul(0x1000_0000_01b3);
@@ -203,8 +214,17 @@ fn signature(tags: &[Tag]) -> u64 {
     h
 }
 
-/// Largest-first placement along a vertically-squashed Archimedean spiral:
-/// big words land near the middle and the silhouette reads as a cloud.
+/// The disc the words pack into: centred in `area`, 6px shy of the shorter
+/// edge. Shared by layout and the rim-shading fade.
+fn disc(area: Rect) -> (Pos2, f32) {
+    (area.center(), (area.width().min(area.height()) / 2.0 - 6.0).max(40.0))
+}
+
+/// Largest-first packing along an Archimedean spiral inside a disc: big
+/// words land near the middle, tiny words fill out to the rim, and the
+/// silhouette reads as a filled circle (the wellness-sphere look). Overlap
+/// tests use `PACK`-padded boxes so words sit close, while the stored rect
+/// keeps the full `PAD` margin for hovering and glitch jitter.
 fn layout(tags: &[Tag], width: f32, height: f32, fonts: &egui::text::Fonts) -> Vec<Placed> {
     let mut tags: Vec<&Tag> = tags
         .iter()
@@ -221,9 +241,24 @@ fn layout(tags: &[Tag], width: f32, height: f32, fonts: &egui::text::Fonts) -> V
         .max(1) as f32;
     let min_c = tags.iter().map(|t| t.station_count).min().unwrap_or(0) as f32;
 
+    let area = Rect::from_min_size(Pos2::ZERO, Vec2::new(width, height));
+    let (center, radius) = disc(area);
+    let fits_disc = |r: Rect| {
+        let corners = [
+            r.min,
+            Pos2::new(r.max.x, r.min.y),
+            Pos2::new(r.min.x, r.max.y),
+            r.max,
+        ];
+        corners.iter().all(|c| (*c - center).length() <= radius)
+    };
+    let clear = |placed: &[Placed], cand: Rect| {
+        let c = cand.shrink(PAD - PACK);
+        !placed.iter().any(|p| p.rect.shrink(PAD - PACK).intersects(c))
+    };
+
     let mut placed: Vec<Placed> = Vec::new();
     let mut theta = 0.0f32;
-    let center = Pos2::new(width / 2.0, height / 2.0);
 
     for (i, tag) in tags.iter().enumerate() {
         let norm = if max_c > min_c {
@@ -231,7 +266,7 @@ fn layout(tags: &[Tag], width: f32, height: f32, fonts: &egui::text::Fonts) -> V
         } else {
             0.5
         };
-        let size = 12.0 + 20.0 * norm.powf(0.6);
+        let size = 9.0 + 17.0 * norm.powf(0.5);
         let font = FontId::proportional(size);
         let name = tag.name.trim().to_string();
         let text_size = fonts
@@ -240,27 +275,20 @@ fn layout(tags: &[Tag], width: f32, height: f32, fonts: &egui::text::Fonts) -> V
         let box_size = text_size + Vec2::splat(PAD * 2.0);
 
         let mut rect = None;
-        for _ in 0..1200 {
-            let r = 10.0 + 8.5 * theta;
-            let pos = Pos2::new(
-                center.x + r * theta.cos(),
-                center.y + 0.58 * r * theta.sin(),
-            );
+        for _ in 0..8000 {
+            let r = 2.0 + 2.7 * theta;
+            let pos = Pos2::new(center.x + r * theta.cos(), center.y + r * theta.sin());
             let candidate = Rect::from_center_size(pos, box_size);
-            let inside = candidate.min.x > 2.0
-                && candidate.min.y > 2.0
-                && candidate.max.x < width - 2.0
-                && candidate.max.y < height - 2.0;
-            if inside && !placed.iter().any(|p: &Placed| p.rect.intersects(candidate)) {
+            if fits_disc(candidate.shrink(PAD - PACK)) && clear(&placed, candidate) {
                 rect = Some(candidate);
                 break;
             }
-            theta += 0.36;
+            theta += 0.2;
         }
         let rect = rect.unwrap_or_else(|| {
-            let r = 10.0 + 8.5 * theta;
+            let r = 2.0 + 2.7 * theta;
             Rect::from_center_size(
-                Pos2::new(center.x + r * theta.cos(), center.y + 0.58 * r * theta.sin()),
+                Pos2::new(center.x + r * theta.cos(), center.y + r * theta.sin()),
                 box_size,
             )
         });
@@ -273,4 +301,65 @@ fn layout(tags: &[Tag], width: f32, height: f32, fonts: &egui::text::Fonts) -> V
         });
     }
     placed
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn tags(n: usize) -> Vec<Tag> {
+        (0..n)
+            .map(|i| Tag {
+                name: format!("tag{i:02}x"),
+                station_count: (9000.0 / (i as f64 + 2.0).powf(1.15)) as u32,
+            })
+            .collect()
+    }
+
+    /// Fonts only exist inside `Context::run`, so drive a trivial frame.
+    fn with_layout(width: f32, height: f32, n: usize) -> Vec<Placed> {
+        let ctx = egui::Context::default();
+        let out = std::cell::RefCell::new(Vec::new());
+        ctx.run(egui::RawInput::default(), |ctx| {
+            *out.borrow_mut() = ctx.fonts(|fonts| layout(&tags(n), width, height, fonts));
+        });
+        out.into_inner()
+    }
+
+    #[test]
+    fn disc_packing_is_dense_and_contained() {
+        let words = with_layout(620.0, 560.0, 90);
+        assert_eq!(words.len(), 90, "every word should find a spot");
+
+        let area = Rect::from_min_size(Pos2::ZERO, Vec2::new(620.0, 560.0));
+        let (center, radius) = disc(area);
+        for w in &words {
+            let visual = w.rect.shrink(PAD - PACK);
+            for c in [visual.min, Pos2::new(visual.max.x, visual.min.y), Pos2::new(visual.min.x, visual.max.y), visual.max] {
+                assert!(
+                    (c - center).length() <= radius + 0.5,
+                    "'{}' pokes outside the disc",
+                    w.name
+                );
+            }
+        }
+        for (i, a) in words.iter().enumerate() {
+            for b in &words[i + 1..] {
+                assert!(
+                    !a.rect.shrink(PAD - PACK).intersects(b.rect.shrink(PAD - PACK)),
+                    "'{}' overlaps '{}'",
+                    a.name,
+                    b.name
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn disc_packing_survives_narrow_widths() {
+        for w in [360.0f32, 620.0] {
+            let words = with_layout(w, 520.0, 90);
+            assert!(words.len() >= 60, "only {} placed at width {w}", words.len());
+        }
+    }
 }
