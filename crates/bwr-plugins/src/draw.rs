@@ -61,6 +61,82 @@ pub enum DrawCmd {
     /// coloured by cycling through `colors` from the outside in. Fully
     /// transparent colours leave gaps, so stacked discs make moiré.
     Rings { cx: f32, cy: f32, radius: f32, width: f32, colors: Vec<Rgba> },
+    /// Bold shapes from `draw.shape`: like `Paths`, but the stroke `width`
+    /// is a fraction of the area height (so it scales with the screen) and
+    /// closed subpaths can be filled with `fill`.
+    Shape { cx: f32, cy: f32, paths: Vec<Vec<(f32, f32)>>, width: f32, color: Rgba, fill: Option<Rgba> },
+}
+
+/// Area (height units squared) of a closed polyline, shoelace formula.
+pub fn poly_area(p: &[(f32, f32)]) -> f32 {
+    let n = p.len();
+    if n < 3 {
+        return 0.0;
+    }
+    (0..n).map(|i| { let (a, b) = (p[i], p[(i + 1) % n]); a.0 * b.1 - b.0 * a.1 }).sum::<f32>().abs() / 2.0
+}
+
+/// True if a polyline ends where it starts (a `Z`-closed subpath).
+pub fn is_closed(p: &[(f32, f32)]) -> bool {
+    p.len() > 3 && { let (a, b) = (p[0], p[p.len() - 1]); (a.0 - b.0).abs() < 1e-4 && (a.1 - b.1).abs() < 1e-4 }
+}
+
+fn inside_poly(p: &[(f32, f32)], x: f32, y: f32) -> bool {
+    let mut inside = false;
+    let n = p.len();
+    let mut j = n - 1;
+    for i in 0..n {
+        let (a, b) = (p[i], p[j]);
+        if (a.1 > y) != (b.1 > y) && x < (b.0 - a.0) * (y - a.1) / (b.1 - a.1) + a.0 {
+            inside = !inside;
+        }
+        j = i;
+    }
+    inside
+}
+
+/// Triangulate a simple polygon (ear clipping). Returns index triples.
+pub fn triangulate(poly: &[(f32, f32)]) -> Vec<[usize; 3]> {
+    let mut pts: Vec<usize> = (0..poly.len()).collect();
+    if is_closed(poly) {
+        pts.pop();
+    }
+    // Drop consecutive duplicates.
+    pts.dedup_by(|a, b| { let (p, q) = (poly[*a], poly[*b]); (p.0 - q.0).abs() < 1e-6 && (p.1 - q.1).abs() < 1e-6 });
+    let signed: f32 = (0..pts.len()).map(|i| { let (a, b) = (poly[pts[i]], poly[pts[(i + 1) % pts.len()]]); a.0 * b.1 - b.0 * a.1 }).sum();
+    let ccw = signed > 0.0;
+    let cross = |a: (f32, f32), b: (f32, f32), c: (f32, f32)| (b.0 - a.0) * (c.1 - a.1) - (b.1 - a.1) * (c.0 - a.0);
+    let mut out = Vec::new();
+    let mut guard = 0;
+    while pts.len() > 3 && guard < 10_000 {
+        guard += 1;
+        let n = pts.len();
+        let mut clipped = false;
+        for i in 0..n {
+            let (ia, ib, ic) = (pts[(i + n - 1) % n], pts[i], pts[(i + 1) % n]);
+            let (a, b, c) = (poly[ia], poly[ib], poly[ic]);
+            let cr = cross(a, b, c);
+            if (ccw && cr <= 0.0) || (!ccw && cr >= 0.0) {
+                continue;
+            }
+            let tri = [a, b, c];
+            let blocked = pts.iter().any(|&k| k != ia && k != ib && k != ic && inside_poly(&tri, poly[k].0, poly[k].1));
+            if blocked {
+                continue;
+            }
+            out.push([ia, ib, ic]);
+            pts.remove(i);
+            clipped = true;
+            break;
+        }
+        if !clipped {
+            break; // self-intersecting: fill what we have
+        }
+    }
+    if pts.len() == 3 {
+        out.push([pts[0], pts[1], pts[2]]);
+    }
+    out
 }
 
 /// Max rings in one `draw.rings` call.
@@ -73,6 +149,7 @@ impl DrawCmd {
             DrawCmd::Fill(_) => 1.0,
             DrawCmd::Rect { w, h, .. } => (w.clamp(0.0, 1.0) * h.clamp(0.0, 1.0)).max(0.0),
             DrawCmd::Circle { r, stroke: None, .. } => std::f32::consts::PI * r * r,
+            DrawCmd::Shape { paths, fill: Some(_), .. } => paths.iter().filter(|p| is_closed(p)).map(|p| poly_area(p)).sum(),
             _ => 0.0,
         }
     }
@@ -85,7 +162,8 @@ impl DrawCmd {
             | DrawCmd::Circle { color, .. }
             | DrawCmd::Line { color, .. }
             | DrawCmd::Text { color, .. }
-            | DrawCmd::Paths { color, .. } => color,
+            | DrawCmd::Paths { color, .. }
+            | DrawCmd::Shape { color, .. } => color,
         })
     }
 
@@ -117,6 +195,10 @@ impl DrawCmd {
                 }
                 let l: f32 = colors.iter().map(|c| c.luminance_opaque() * c.0[3] as f32 / 255.0).sum::<f32>() / n / a;
                 Some((l, a))
+            }
+            DrawCmd::Shape { cx, cy, paths, fill: Some(f), .. } => {
+                let (px, py) = ((x - cx) * aspect, y - cy);
+                paths.iter().filter(|p| is_closed(p)).any(|p| inside_poly(p, px, py)).then(|| lum_a(f))
             }
             _ => None,
         }

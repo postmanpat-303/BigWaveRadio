@@ -326,6 +326,34 @@ pub fn paint(painter: &egui::Painter, rect: Rect, cmds: &[DrawCmd]) {
                     painter.add(egui::Shape::line(pts, Stroke::new(*width, c32(*color))));
                 }
             }
+            DrawCmd::Shape { cx, cy, paths, width, color, fill } => {
+                let centre = at(*cx, *cy);
+                let to = |(px, py): &(f32, f32)| centre + egui::vec2(px * h, py * h);
+                if let Some(f) = fill.filter(|f| f.0[3] > 0) {
+                    for p in paths.iter().filter(|p| bwr_plugins::is_closed(p)) {
+                        let mut mesh = egui::Mesh::default();
+                        for v in p {
+                            mesh.colored_vertex(to(v), c32(f));
+                        }
+                        for [a, b, c] in bwr_plugins::triangulate(p) {
+                            mesh.add_triangle(a as u32, b as u32, c as u32);
+                        }
+                        painter.add(egui::Shape::mesh(mesh));
+                    }
+                }
+                let w = width * h;
+                if w > 0.0 && color.0[3] > 0 {
+                    let col = c32(*color);
+                    for p in paths {
+                        let pts: Vec<Pos2> = p.iter().map(to).collect();
+                        // Round joins and caps so thick strokes look solid.
+                        for q in &pts {
+                            painter.circle_filled(*q, w / 2.0, col);
+                        }
+                        painter.add(egui::Shape::line(pts, Stroke::new(w, col)));
+                    }
+                }
+            }
         }
     }
 }

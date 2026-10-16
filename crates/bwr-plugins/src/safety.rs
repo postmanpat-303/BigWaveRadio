@@ -75,6 +75,11 @@ impl FlashLimiter {
     fn darken(cmds: &mut [DrawCmd]) {
         for c in cmds.iter_mut() {
             let large = c.solid_area() >= LARGE_AREA;
+            if let DrawCmd::Shape { fill: Some(f), .. } = c {
+                if large && f.luminance() > 0.02 {
+                    *f = Rgba::BLACK;
+                }
+            }
             if let Some(col) = c.color_mut() {
                 if large && col.luminance() > 0.02 {
                     *col = Rgba::BLACK;

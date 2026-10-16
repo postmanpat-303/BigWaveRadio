@@ -64,9 +64,10 @@
 <details>
 <summary><b>🌀 Amiga interference rings (Beat Strobe)</b></summary>
 <br>
+<p align="center"><img src="docs/media/strobe-thick-symbol.png" alt="Bold symbol over the interference rings" width="880"></p>
 <p align="center"><img src="docs/media/strobe-rings.png" alt="Interference rings in the Beat Strobe" width="880"></p>
 
-Two black-and-white concentric-ring discs drift on Lissajous paths under the symbols, creating a classic moiré. They are on by default in every mode (Fixed rate and Random beat, fullscreen or in-window, including the Ctrl+F, U hotkey launch); switch them off with the strobe's `rings` setting. The screen goes black during breaks in the track.
+Two black-and-white concentric-ring discs drift on Lissajous paths under the symbols, creating a classic moiré. They are on by default in every mode (Fixed rate and Random beat, fullscreen or in-window, including the Ctrl+F, U hotkey launch); switch them off with the strobe's `rings` setting. Bold, filled symbols in a 90s rave-demo style (smileys, eyes, pyramids, hands, spirals, glitchy robots) stay up for 1.5–3 s with chunky slogans. The screen goes black during breaks in the track.
 </details>
 
 <details>

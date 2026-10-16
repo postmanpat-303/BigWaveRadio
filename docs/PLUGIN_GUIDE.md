@@ -187,6 +187,7 @@ build them from 0..255 ints. Numbers may be ints or floats.
 | `draw.text(x, y, text, color)` / `draw.text(x, y, text, size_px, color)` | text, top-left at (x, y) |
 | `draw.text_center(x, y, text, size_px, color)` | text centred on (x, y) |
 | `draw.svg(path_d, cx, cy, size, width_px, color)` | SVG path line art |
+| `draw.shape(path_d, cx, cy, size, width, stroke, fill)` | bold SVG art: `width` is a fraction of the screen **height** (e.g. `0.025`), so strokes scale with the screen; `fill` (`""` for none) fills every closed (`Z`) subpath, later subpaths paint over earlier ones (use the background colour to cut holes) |
 | `draw.rings(cx, cy, radius, ring_width, [colors])` | a disc of concentric rings centred on (cx, cy); `radius` and `ring_width` are fractions of the height; colours cycle from the outside in; `"#00000000"` (transparent) leaves a gap. One command however many rings (max 400 per call) |
 
 `draw.svg` takes SVG path data (the `d` attribute) in a **100x100 viewBox**,

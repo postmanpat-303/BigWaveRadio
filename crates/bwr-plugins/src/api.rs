@@ -302,6 +302,24 @@ pub(crate) fn build_engine() -> Engine {
         },
     );
 
+    // draw.shape(path_d, cx, cy, size, width, stroke, fill): bold SVG art.
+    // `width` is a fraction of the area height; `fill` ("" for none) fills
+    // every closed subpath (later subpaths paint over earlier ones).
+    e.register_fn(
+        "shape",
+        |d: &mut Draw, path: Dynamic, cx: Dynamic, cy: Dynamic, size: Dynamic, w: Dynamic, c: Dynamic, f: Dynamic| -> Res<()> {
+            let polys = parse_svg_path(&text_of(&path)).map_err(|e| format!("draw.shape: {e}"))?;
+            let (cx, cy, size) = (num(&cx, "shape")?, num(&cy, "shape")?, num(&size, "shape")?);
+            let paths = polys
+                .into_iter()
+                .map(|p| p.into_iter().map(|(x, y)| ((x - 50.0) / 100.0 * size, (y - 50.0) / 100.0 * size)).collect())
+                .collect();
+            let fs = text_of(&f);
+            let fill = if fs.trim().is_empty() { None } else { Some(color(&f)?) };
+            d.push(DrawCmd::Shape { cx, cy, paths, width: num(&w, "shape")?.clamp(0.0, 0.2), color: color(&c)?, fill })
+        },
+    );
+
     // draw.rings(cx, cy, radius, ring_width, [colours]): concentric rings,
     // one host command however many rings there are.
     e.register_fn(

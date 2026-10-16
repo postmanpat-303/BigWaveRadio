@@ -496,7 +496,7 @@ fn strobe_rings_in_random_beat_mode_under_symbols() {
         if has_rings(&cmds) {
             saw_rings += 1;
             let r = cmds.iter().rposition(|c| matches!(c, DrawCmd::Rings { .. })).unwrap();
-            if let Some(p) = cmds.iter().position(|c| matches!(c, DrawCmd::Paths { .. })) {
+            if let Some(p) = cmds.iter().position(|c| matches!(c, DrawCmd::Shape { .. })) {
                 symbol_above_rings |= p > r;
                 assert!(p > r, "symbols must be drawn over the rings");
             }
@@ -579,4 +579,53 @@ fn rings_api_validates() {
     assert!(r.to_string().contains("too many rings"), "{r}");
     let dir = write_plugin(tmp.path(), "rg3", "\"overlay\"", "fn on_overlay(ctx, draw) { draw.rings(0.5, 0.5, 0.9, 0.02, [\"#ffffff\", \"#00000000\"]); }");
     assert!(check_plugin(&dir).ok());
+}
+
+#[test]
+fn shape_api_and_triangulation() {
+    let tmp = tempfile::tempdir().unwrap();
+    let dir = write_plugin(tmp.path(), "sh1", "\"overlay\"",
+        "fn on_overlay(ctx, draw) { draw.shape(\"M10 10 H90 V90 H10 Z\", 0.5, 0.5, 0.5, 0.03, \"#ff0000\", \"#00ff00\"); draw.shape(\"M10 10 L90 90\", 0.5, 0.5, 0.5, 0.03, \"#ff0000\", \"\"); }");
+    let _ = dir;
+    // Concave L-shape: 6 vertices -> 4 triangles covering its area.
+    let l = vec![(0.0, 0.0), (2.0, 0.0), (2.0, 1.0), (1.0, 1.0), (1.0, 2.0), (0.0, 2.0), (0.0, 0.0)];
+    assert!(is_closed(&l));
+    let tris = triangulate(&l);
+    assert_eq!(tris.len(), 4);
+    let area: f32 = tris.iter().map(|t| poly_area(&[l[t[0]], l[t[1]], l[t[2]]])).sum();
+    assert!((area - poly_area(&l)).abs() < 1e-4, "{area}");
+}
+
+#[test]
+fn strobe_symbols_are_bold_and_stay_up() {
+    // The strobe uses the real clock, so this runs in real time (~5 s).
+    let tmp = tempfile::tempdir().unwrap();
+    let mut host = start_strobe_with(tmp.path(), &[("mode", "Random beat".into())]);
+    let mut beat = AudioFrame { playing: true, ..Default::default() };
+    beat.features.level = 0.5;
+    beat.features.bass = 0.8;
+    beat.features.quiet = false;
+    let (mut changes, mut last, mut frames_with) = (0, String::new(), 0);
+    let start = std::time::Instant::now();
+    let mut next_beat = 0.0;
+    while start.elapsed().as_secs_f64() < 5.0 {
+        let t = start.elapsed().as_secs_f64();
+        beat.features.beat = t >= next_beat;
+        if beat.features.beat { next_beat += 0.25; }
+        host.frame(1.0 / 60.0, &beat);
+        let cmds = host.overlay_commands();
+        let shapes: Vec<_> = cmds.iter().filter_map(|c| match c {
+            DrawCmd::Shape { width, paths, .. } => Some((*width, paths.len())),
+            _ => None,
+        }).collect();
+        std::thread::sleep(std::time::Duration::from_millis(10));
+        if shapes.is_empty() { continue; }
+        frames_with += 1;
+        assert!(shapes.iter().any(|(w, _)| *w >= 0.02), "strokes scale with the screen height");
+        let key = format!("{shapes:?}");
+        if key != last { changes += 1; last = key; }
+    }
+    assert!(frames_with > 50, "{frames_with}");
+    // Held 1.5-3 s each: at most 4 different symbols in 5 s.
+    assert!(changes <= 4, "symbols change too often: {changes}");
 }
