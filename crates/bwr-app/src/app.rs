@@ -171,6 +171,9 @@ pub struct BigWaveApp {
     pub favicons: std::collections::HashMap<String, egui::TextureHandle>,
     favicon_pending: std::collections::HashSet<String>,
     pub about_logo: egui::TextureHandle,
+    /// Square brand icon for the About page in light theme, where the full
+    /// logo's silver "RADIO" text would wash out on the light card.
+    pub about_logo_icon: egui::TextureHandle,
     pub plugins: crate::plugin_bridge::PluginBridge,
 
     // Windows integration
@@ -217,6 +220,18 @@ impl BigWaveApp {
             let (w, h) = img.dimensions();
             cc.egui_ctx.load_texture(
                 "about-logo",
+                egui::ColorImage::from_rgba_unmultiplied([w as usize, h as usize], &img),
+                egui::TextureOptions::LINEAR,
+            )
+        };
+        let about_logo_icon = {
+            let png = include_bytes!("../../../assets/bigwave-icon.png");
+            let img = image::load_from_memory(png)
+                .expect("bundled icon decodes")
+                .into_rgba8();
+            let (w, h) = img.dimensions();
+            cc.egui_ctx.load_texture(
+                "about-logo-icon",
                 egui::ColorImage::from_rgba_unmultiplied([w as usize, h as usize], &img),
                 egui::TextureOptions::LINEAR,
             )
@@ -448,6 +463,7 @@ impl BigWaveApp {
             favicons: std::collections::HashMap::new(),
             favicon_pending: std::collections::HashSet::new(),
             about_logo,
+            about_logo_icon,
             #[cfg(windows)]
             hotkey_rx,
             #[cfg(windows)]

@@ -1,5 +1,7 @@
 fn main() {
     if std::env::var("CARGO_CFG_TARGET_OS").as_deref() == Ok("windows") {
+        // Re-embed the icon whenever the asset file changes.
+        println!("cargo:rerun-if-changed=../../assets/bigwave.ico");
         // Point winresource at the llvm-mingw windres so no PATH setup is needed.
         let windres = "C:/Users/DMAN/tools/llvm-mingw-20261006-ucrt-x86_64/bin/x86_64-w64-mingw32-windres.exe";
         if std::path::Path::new(windres).exists() {

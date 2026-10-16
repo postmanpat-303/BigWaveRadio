@@ -49,7 +49,7 @@ fn make_options() -> eframe::NativeOptions {
 }
 
 fn window_icon() -> egui::IconData {
-    let png = include_bytes!("../../../assets/bigwave-logo.png");
+    let png = include_bytes!("../../../assets/bigwave-icon.png");
     let image = image::load_from_memory(png)
         .expect("bundled logo decodes")
         .into_rgba8();

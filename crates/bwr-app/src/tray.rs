@@ -209,7 +209,7 @@ unsafe extern "system" fn tray_wndproc(
 }
 
 fn load_tray_icon() -> Option<HICON> {
-    let png = include_bytes!("../../../assets/bigwave-logo.png");
+    let png = include_bytes!("../../../assets/bigwave-icon-64.png");
     let img = image::load_from_memory(png).ok()?.into_rgba8();
     let (w, h) = img.dimensions();
     let mut px = img.into_raw();

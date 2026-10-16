@@ -254,10 +254,17 @@ pub fn ui(ui: &mut Ui, app: &mut BigWaveApp) {
         // --- About -------------------------------------------------------------
         card(ui, dark, accent, "About", |ui| {
             ui.horizontal(|ui| {
-                let logo = app.about_logo.clone();
+                // Full logo in dark theme; the square icon in light, where the
+                // logo's silver "RADIO" text would wash out on the light card.
+                let logo = if dark {
+                    app.about_logo.clone()
+                } else {
+                    app.about_logo_icon.clone()
+                };
                 let logo_w = logo.size()[0] as f32;
                 let logo_h = logo.size()[1] as f32;
-                let w = 120.0_f32.min(ui.available_width());
+                // The square icon needs less width to read at the same height.
+                let w = (if dark { 130.0f32 } else { 110.0 }).min(ui.available_width());
                 let h = w * logo_h / logo_w;
                 ui.add(egui::Image::new((logo.id(), egui::vec2(w, h))).corner_radius(8));
                 ui.add_space(12.0);
