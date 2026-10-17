@@ -3,6 +3,10 @@
 use eframe::egui::{self, CornerRadius, Stroke, Ui};
 
 use crate::app::BigWaveApp;
+use crate::pages::plugins::Btn;
+
+/// Donation link (PayPal.me).
+pub const DONATE_URL: &str = "https://paypal.me/derekh100";
 use crate::theme;
 
 /// Card styled like the transport buttons: rounded corners, base fill and a
@@ -86,14 +90,17 @@ pub fn ui(ui: &mut Ui, app: &mut BigWaveApp) {
                     );
                     ui.add_space(2.0);
                     ui.label("Inspired by ShortWave on Linux, I wanted a nice clean version for Windows.");
-                    ui.add_space(12.0);
-                    ui.horizontal(|ui| {
-                        ui.label("If you find this app useful, you can donate to");
-                        ui.add(egui::Hyperlink::from_label_and_url(
-                            "paypal.me/derekh100",
-                            "https://paypal.me/derekh100",
-                        ));
-                    });
+                    ui.add_space(16.0);
+                    ui.label("If you find this app useful, you can buy me a coffee:");
+                    ui.add_space(8.0);
+                    if crate::pages::plugins::action_button(ui, "☕", "Buy me a coffee", Btn::Large)
+                        .on_hover_text(DONATE_URL)
+                        .clicked()
+                    {
+                        ui.ctx().open_url(egui::OpenUrl::new_tab(DONATE_URL));
+                    }
+                    ui.add_space(6.0);
+                    ui.add(egui::Hyperlink::from_label_and_url("paypal.me/derekh100", DONATE_URL));
                     ui.add_space(4.0);
                     ui.label(egui::RichText::new("Thank you. :)").weak());
                 });

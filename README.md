@@ -13,6 +13,7 @@
   <img src="https://img.shields.io/badge/Rust-egui-B7410E?style=for-the-badge&logo=rust&logoColor=white" alt="Rust + egui">
   <img src="https://img.shields.io/badge/plugins-Rhai-784ba0?style=for-the-badge" alt="Rhai plugins">
   <img src="https://img.shields.io/badge/license-MIT-ffcc00?style=for-the-badge" alt="MIT">
+  <a href="https://paypal.me/derekh100"><img src="https://img.shields.io/badge/%E2%98%95%20Buy%20me%20a%20coffee-PayPal-00457C?style=for-the-badge&logo=paypal&logoColor=white" alt="Buy me a coffee"></a>
 </p>
 
 <h3 align="center">A tiny, native internet radio player for Windows — with a demo-scene heart.</h3>
@@ -233,5 +234,7 @@ when distributing, or run with the toolchain's `bin` directory on `PATH`.
 ## 💜 Credits
 
 Created by Derek Heasley. Inspired by ShortWave on Linux — I wanted a nice clean version for Windows. If you find this app useful, you can donate at [paypal.me/derekh100](https://paypal.me/derekh100). Thank you. :)
+
+<a href="https://paypal.me/derekh100"><img src="https://img.shields.io/badge/%E2%98%95%20Buy%20me%20a%20coffee-PayPal-00457C?style=for-the-badge&logo=paypal&logoColor=white" alt="Buy me a coffee" height="36"></a>
 
 Station data from [radio-browser.info](https://www.radio-browser.info). Released under the **MIT** license.

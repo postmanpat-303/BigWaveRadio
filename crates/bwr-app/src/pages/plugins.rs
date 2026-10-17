@@ -258,6 +258,8 @@ pub(crate) enum Btn {
     Link,
     Small,
     SmallPrimary,
+    /// Big accent-filled call-to-action (About page donate button).
+    Large,
 }
 
 /// A framed button with padding, an icon and a hover state.
@@ -265,10 +267,17 @@ pub(crate) fn action_button(ui: &mut Ui, icon: &str, label: &str, kind: Btn) -> 
     use egui::{Align2, CornerRadius, FontId, Sense, Stroke, StrokeKind, Vec2};
     let accent = ui.visuals().selection.bg_fill;
     let small = matches!(kind, Btn::Small | Btn::SmallPrimary);
-    let font = FontId::proportional(if small { 13.0 } else { 14.0 });
+    let large = kind == Btn::Large;
+    let font = FontId::proportional(if small { 13.0 } else if large { 18.0 } else { 14.0 });
     let text = format!("{icon}  {label}");
     let galley = ui.fonts(|f| f.layout_no_wrap(text, font, Color32::WHITE));
-    let pad = if small { Vec2::new(10.0, 4.0) } else { Vec2::new(14.0, 7.0) };
+    let pad = if small {
+        Vec2::new(10.0, 4.0)
+    } else if large {
+        Vec2::new(24.0, 11.0)
+    } else {
+        Vec2::new(14.0, 7.0)
+    };
     let size = galley.size() + pad * 2.0;
     let (rect, resp) = ui.allocate_exact_size(size, Sense::click());
     let hovered = resp.hovered();
@@ -277,7 +286,7 @@ pub(crate) fn action_button(ui: &mut Ui, icon: &str, label: &str, kind: Btn) -> 
     let neutral = if dark { Color32::from_gray(52) } else { Color32::from_gray(228) };
     let neutral_hover = if dark { Color32::from_gray(66) } else { Color32::from_gray(212) };
     let (fill, stroke, text_col) = match kind {
-        Btn::Primary | Btn::SmallPrimary => (
+        Btn::Primary | Btn::SmallPrimary | Btn::Large => (
             if pressed { accent.gamma_multiply(0.8) } else if hovered { accent.gamma_multiply(1.15) } else { accent },
             Stroke::new(1.0_f32, accent),
             Color32::WHITE,
@@ -293,7 +302,7 @@ pub(crate) fn action_button(ui: &mut Ui, icon: &str, label: &str, kind: Btn) -> 
             if dark { accent.gamma_multiply(1.4) } else { accent },
         ),
     };
-    let r = CornerRadius::same(if small { 6 } else { 8 });
+    let r = CornerRadius::same(if small { 6 } else if large { 12 } else { 8 });
     ui.painter().rect(rect, r, fill, stroke, StrokeKind::Inside);
     ui.painter().galley_with_override_text_color(
         Align2::CENTER_CENTER.align_size_within_rect(galley.size(), rect).min,
