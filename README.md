@@ -35,6 +35,13 @@
 
 <p align="center"><img src="docs/media/station-grid.png" alt="Discover page with the station grid" width="880"></p>
 
+## 📺 Watch the promo
+
+<p align="center">
+  <video src="docs/media/promo.mp4" width="880" controls muted playsinline></video><br>
+  <sub>45-second tour: Discover, mood chips, Your Stars, Visions, Beat Strobe and plugins — with narration. <a href="docs/media/promo.mp4">Open the video file</a>.</sub>
+</p>
+
 ---
 
 ## ✨ Features
