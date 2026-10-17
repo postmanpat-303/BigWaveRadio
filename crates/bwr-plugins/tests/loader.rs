@@ -426,8 +426,13 @@ fn strobe_defaults_fixed_12hz_but_clamped_to_cap() {
         let mut onsets = 0;
         let mut prev = false;
         let t0 = std::time::Instant::now();
+        let mut last = t0;
         while t0.elapsed() < std::time::Duration::from_secs(2) {
-            host.frame(1.0 / 120.0, &AudioFrame::default());
+            // Real frame time, like the app: the flash limiter runs on the wall
+            // clock, so a fixed dt drifts against it when sleep() overshoots (macOS).
+            let now = std::time::Instant::now();
+            host.frame(now.duration_since(last).as_secs_f64().max(1e-4) as _, &AudioFrame::default());
+            last = now;
             let bright = host.overlay_commands().iter().any(|c| matches!(c, DrawCmd::Fill(col) if col.luminance() > 0.5));
             if bright && !prev {
                 onsets += 1;
