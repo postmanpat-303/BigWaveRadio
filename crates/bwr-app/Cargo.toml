@@ -1,6 +1,6 @@
 [package]
 name = "bwr-app"
-version = "0.9.4"
+version.workspace = true
 edition = "2021"
 description = "BigWave Radio — native Windows internet radio player (egui shell)"
 

@@ -269,7 +269,7 @@ pub(crate) fn action_button(ui: &mut Ui, icon: &str, label: &str, kind: Btn) -> 
     let small = matches!(kind, Btn::Small | Btn::SmallPrimary);
     let large = kind == Btn::Large;
     let font = FontId::proportional(if small { 13.0 } else if large { 18.0 } else { 14.0 });
-    let text = format!("{icon}  {label}");
+    let text = if icon.is_empty() { label.to_string() } else { format!("{icon}  {label}") };
     let galley = ui.fonts(|f| f.layout_no_wrap(text, font, Color32::WHITE));
     let pad = if small {
         Vec2::new(10.0, 4.0)

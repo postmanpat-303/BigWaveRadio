@@ -12,7 +12,7 @@ Windows nor Wine; Wine is only used to smoke-test the setup.
 
 ```bash
 # needs: rustup target x86_64-pc-windows-gnullvm, llvm-mingw (LLVM_MINGW=...), makensis (NSIS 3), zip
-scripts/package-windows.sh 0.9.4      # version must match crates/bwr-app/Cargo.toml
+scripts/package-windows.sh 0.9.5      # version must match [workspace.package] in Cargo.toml
 ```
 
 Output (`dist/` is git-ignored apart from `dist/README.txt`):

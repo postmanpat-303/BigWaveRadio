@@ -124,6 +124,8 @@ pub struct BigWaveApp {
     /// Show-talk toggle + Recently played (discovery.json; settings.json is
     /// left exactly as the C# app wrote it).
     pub discovery: bwr_core::DiscoveryState,
+    /// Update checker (update.json, dialog, startup banner).
+    pub updater: crate::update_ui::Updater,
     /// Your Stars level filter: 0 = all rated, sorted by stars.
     pub stars_level: u8,
     /// The rail's Advanced (format / bitrate) section is expanded.
@@ -449,6 +451,7 @@ impl BigWaveApp {
             ratings: bwr_core::Ratings::load(),
             moods: bwr_core::MoodConfig::load(),
             discovery: bwr_core::DiscoveryState::load(),
+            updater: crate::update_ui::Updater::new(),
             stars_level: 0,
             advanced_open: false,
             rated_inflight: std::collections::HashSet::new(),
@@ -1451,6 +1454,8 @@ impl eframe::App for BigWaveApp {
                 Page::Stars => pages::moods::stars_page(ui, self),
             }
         });
+        self.updater.poll(ctx);
+        crate::update_ui::show(ctx, &mut self.updater, theme::accent_color(self.settings.accent));
         crate::plugin_bridge::post_frame(self, ctx);
 
         // Repaint scheduling MUST come after the layout: pages and widgets set

@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::models::Station;
 
-fn data_dir() -> PathBuf {
+pub(crate) fn data_dir() -> PathBuf {
     let base = std::env::var("LOCALAPPDATA")
         .map(PathBuf::from)
         .unwrap_or_else(|_| PathBuf::from("."));

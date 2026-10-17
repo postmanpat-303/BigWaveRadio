@@ -1,0 +1,39 @@
+{
+  "url": "https://api.github.com/repos/postmanpat-303/BigWaveRadio/releases/415961053",
+  "html_url": "https://github.com/postmanpat-303/BigWaveRadio/releases/tag/v0.9.6",
+  "id": 415961053,
+  "tag_name": "v0.9.6",
+  "target_commitish": "6731cb1bc404a4d9591574f1a9e665a77a03de56",
+  "name": "BigWave Radio 0.9.6 (fixture)",
+  "draft": false,
+  "prerelease": false,
+  "created_at": "2026-10-17T17:30:35Z",
+  "published_at": "2026-10-17T17:32:30Z",
+  "body": "BigWave Radio 0.9.6 (test fixture).\r\n\r\n**Download:** `BigWaveRadio-0.9.6-setup-x64.exe` (installer) or the portable zip.\r\n\r\nNew in 0.9.6:\r\n- Sleep timer\r\n- Faster mood pages\r\n- Fix: tray icon tooltip shows the station\r\n\r\n```\r\nabc  BigWaveRadio-0.9.6-setup-x64.exe\r\n```",
+  "assets": [
+    {
+      "url": "https://api.github.com/repos/postmanpat-303/BigWaveRadio/releases/assets/651112362",
+      "id": 651112362,
+      "name": "BigWaveRadio-0.9.6-windows-x64.zip",
+      "content_type": "application/zip",
+      "size": 5436231,
+      "browser_download_url": "https://github.com/postmanpat-303/BigWaveRadio/releases/download/v0.9.6/BigWaveRadio-0.9.6-windows-x64.zip"
+    },
+    {
+      "url": "https://api.github.com/repos/postmanpat-303/BigWaveRadio/releases/assets/651112365",
+      "id": 651112365,
+      "name": "bwr-plugin-check-linux-x64",
+      "content_type": "application/octet-stream",
+      "size": 3059504,
+      "browser_download_url": "https://github.com/postmanpat-303/BigWaveRadio/releases/download/v0.9.6/bwr-plugin-check-linux-x64"
+    },
+    {
+      "url": "https://api.github.com/repos/postmanpat-303/BigWaveRadio/releases/assets/651112361",
+      "id": 651112361,
+      "name": "BigWaveRadio-0.9.6-setup-x64.exe",
+      "content_type": "application/octet-stream",
+      "size": 4496685,
+      "browser_download_url": "https://github.com/postmanpat-303/BigWaveRadio/releases/download/v0.9.6/BigWaveRadio-0.9.6-setup-x64.exe"
+    }
+  ]
+}

@@ -603,7 +603,7 @@ checksum = "72f5acc6cb2ba439de613abc23857ec3d78374d8ed5ac84e9d11336e87da8649"
 
 [[package]]
 name = "bwr-app"
-version = "0.9.4"
+version = "0.9.5"
 dependencies = [
  "bwr-core",
  "bwr-player",
@@ -624,17 +624,19 @@ dependencies = [
 
 [[package]]
 name = "bwr-core"
-version = "0.1.0"
+version = "0.9.5"
 dependencies = [
  "reqwest",
+ "semver",
  "serde",
  "serde_json",
+ "tempfile",
  "thiserror 2.0.21",
 ]
 
 [[package]]
 name = "bwr-player"
-version = "0.1.0"
+version = "0.9.5"
 dependencies = [
  "bwr-core",
  "bwr-spectrum",
@@ -645,7 +647,7 @@ dependencies = [
 
 [[package]]
 name = "bwr-plugins"
-version = "0.1.0"
+version = "0.9.5"
 dependencies = [
  "bwr-spectrum",
  "rhai",
@@ -658,7 +660,7 @@ dependencies = [
 
 [[package]]
 name = "bwr-spectrum"
-version = "0.1.0"
+version = "0.9.5"
 dependencies = [
  "rustfft",
 ]

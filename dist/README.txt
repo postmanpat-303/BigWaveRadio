@@ -20,6 +20,8 @@ radio-browser.info directory.
   Plugins             Visions, Strobe and more; community hub:
                       https://github.com/postmanpat-303/BigWaveRadio-Plugins
   Ctrl+Alt+B          show / hide the window (it lives in the tray)
+  Check for updates   on the About page; a quiet daily check runs at startup
+                      (Settings > Behaviour). Nothing is installed automatically.
 
 Your library, ratings and settings are stored in
 %LOCALAPPDATA%\BigWaveRadio\ and are kept when you uninstall or upgrade.

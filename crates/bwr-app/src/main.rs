@@ -17,6 +17,7 @@ mod smtc;
 mod theme;
 #[cfg(windows)]
 mod tray;
+mod update_ui;
 mod widgets;
 
 use app::BigWaveApp;

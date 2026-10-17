@@ -60,12 +60,17 @@
   <tr>
     <td valign="top"><h4>ℹ️ Now-playing panel</h4>Station art, format, bitrate, votes, clicks, tags, website and copy-stream-URL.</td>
     <td valign="top"><h4>🎚️ Transport & Advanced</h4>Previous / play / pause / stop / next and volume. Format and minimum-bitrate filters sit under <b>Advanced</b> in the left rail.</td>
-    <td valign="top"><h4>💾 Your data</h4><code>settings.json</code> stays compatible with the original C# app. New state goes in <code>discovery.json</code> and <code>moods.json</code>.</td>
+    <td valign="top"><h4>💾 Your data</h4><code>settings.json</code> stays compatible with the original C# app. New state goes in <code>discovery.json</code>, <code>moods.json</code> and <code>update.json</code>.</td>
   </tr>
   <tr>
     <td valign="top"><h4>🎨 Themes</h4>Dark / light / system, plus 8 accent colours.</td>
     <td valign="top"><h4>🧩 Plugins</h4>Rhai scripts with permissions, hot reload, <code>.zip</code> import, panels, whole pages and overlays. <b>Double-click</b> a plugin in the side menu to start it. Find more in the <a href="https://github.com/postmanpat-303/BigWaveRadio-Plugins">community plugin hub</a>.</td>
     <td valign="top"><h4>⚡ Beat Strobe & 🌌 Visions</h4>Beat-synced strobe with AI-vs-humanity symbols and Amiga interference rings (flash rate capped by the app), plus a smooth MilkDrop-style visualiser with eight scenes, now rendered sharper (360p engine, adjustable quality).</td>
+  </tr>
+  <tr>
+    <td valign="top"><h4>🔄 Update checker</h4><b>Check for updates</b> on the About page shows what's new and links straight to the new installer. A quiet check at startup (at most once a day, switch it off in Settings) shows a small notice when a new version is out. Nothing installs by itself.</td>
+    <td valign="top"></td>
+    <td valign="top"></td>
   </tr>
 </table>
 
@@ -233,7 +238,7 @@ when distributing, or run with the toolchain's `bin` directory on `PATH`.
 on Linux with llvm-mingw and NSIS (`makensis`) installed, run
 
 ```bash
-scripts/package-windows.sh 0.9.4
+scripts/package-windows.sh 0.9.5
 ```
 
 It writes `dist/BigWaveRadio-<ver>-windows-x64.zip` (portable) and

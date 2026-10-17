@@ -193,6 +193,13 @@ pub fn ui(ui: &mut Ui, app: &mut BigWaveApp) {
         // --- Behaviour ---------------------------------------------------------
         card(ui, dark, accent, "Behaviour", |ui| {
             if ui
+                .checkbox(&mut app.updater.state.check_at_startup, "Check for updates at startup")
+                .on_hover_text("Quietly, at most once a day. Shows a small notice if a new version is out.")
+                .changed()
+            {
+                app.updater.state.save();
+            }
+            if ui
                 .checkbox(&mut app.settings.minimize_to_tray, "Keep playing in the tray when I close the window")
                 .changed()
             {

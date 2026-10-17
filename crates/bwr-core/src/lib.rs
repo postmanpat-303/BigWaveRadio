@@ -7,6 +7,7 @@ pub mod library;
 pub mod models;
 pub mod ratings;
 pub mod settings;
+pub mod update;
 
 pub use client::RadioBrowserClient;
 pub use client::Ipv4OnlyResolver;

@@ -78,6 +78,18 @@ pub fn ui(ui: &mut Ui, app: &mut BigWaveApp) {
                                 );
                             });
                     });
+                    ui.add_space(6.0);
+                    let checking = app.updater.checking();
+                    let label = if checking { "Checking for updates…" } else { "Check for updates" };
+                    if ui
+                        .add_enabled_ui(!checking, |ui| {
+                            crate::pages::plugins::action_button(ui, "🔄", label, Btn::Secondary)
+                        })
+                        .inner
+                        .clicked()
+                    {
+                        app.updater.start(ui.ctx(), true);
+                    }
                     ui.add_space(8.0);
                     ui.label(
                         "BigWave Radio streams live stations from the community-powered \

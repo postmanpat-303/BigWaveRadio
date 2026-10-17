@@ -1,7 +1,7 @@
 ; BigWave Radio - Windows x64 setup (NSIS 3, cross-buildable with makensis on Linux)
 ; Same layout as postmanpat-303/ChipWaveTracker installer/chipwave.nsi.
-; Build: scripts/package-windows.sh 0.9.4
-;   (makensis -DVERSION=0.9.4 -DVIVERSION=0.9.4.0 -DPKGDIR=../dist/pkg -DOUTFILE=../dist/BigWaveRadio-0.9.4-setup-x64.exe installer/bigwave.nsi)
+; Build: scripts/package-windows.sh 0.9.5
+;   (makensis -DVERSION=0.9.5 -DVIVERSION=0.9.5.0 -DPKGDIR=../dist/pkg -DOUTFILE=../dist/BigWaveRadio-0.9.5-setup-x64.exe installer/bigwave.nsi)
 ; Silent install: BigWaveRadio-<ver>-setup-x64.exe /S   (desktop shortcut included by default)
 Unicode true
 !include "MUI2.nsh"
