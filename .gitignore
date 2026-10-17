@@ -6,3 +6,16 @@ pkg/
 dist/pkg/
 dist/*.zip
 dist/*.exe
+dist/AppDir/
+dist/*.app/
+dist/BigWaveRadio-*/
+dist/*.dmg
+dist/*.deb
+dist/*.rpm
+dist/*.AppImage
+dist/*.tar.gz
+dist/*.pkg.tar.zst
+packaging/arch/*/src/
+packaging/arch/*/pkg/
+packaging/arch/*/*.tar.gz
+packaging/arch/*/*.pkg.tar.zst

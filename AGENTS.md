@@ -9,7 +9,9 @@ plugin API (v1) and starts with a one-shot prompt. In short:
 
 * A plugin is a folder `plugins/<id>/` with `plugin.toml` and `main.rhai`
   (Rhai script, not Rust). Installed copies live in
-  `%LOCALAPPDATA%\BigWaveRadio\plugins\<id>\`.
+  `%LOCALAPPDATA%\BigWaveRadio\plugins\<id>\` (Windows),
+  `~/Library/Application Support/BigWaveRadio/plugins/<id>/` (macOS) or
+  `~/.local/share/BigWaveRadio/plugins/<id>/` (Linux, `$XDG_DATA_HOME`).
 * Declare permissions in `plugin.toml`; there is no network or file access.
 * Draw by returning commands (`draw.fill/rect/circle/line/text/svg/rings`),
   never egui. `draw.rings` is the efficient way to do concentric-ring /

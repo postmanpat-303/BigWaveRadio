@@ -158,10 +158,17 @@ pub fn show(ctx: &Context, up: &mut Updater, accent: Color32) {
                     });
                 ui.add_space(6.0);
                 ui.label(
-                    RichText::new(if rel.setup_url.is_some() {
-                        "Download gets the installer; run it to upgrade. Your library and settings are kept."
-                    } else {
-                        "Download opens the release page."
+                    RichText::new(match (rel.asset_url.is_some(), update::Platform::current()) {
+                        (true, update::Platform::MacOs) => {
+                            "Download gets the disk image; drag BigWave Radio to Applications to upgrade. Your library and settings are kept."
+                        }
+                        (true, update::Platform::Linux { .. }) => {
+                            "Download gets the package for your system (or use your package manager). Your library and settings are kept."
+                        }
+                        (true, _) => {
+                            "Download gets the installer; run it to upgrade. Your library and settings are kept."
+                        }
+                        (false, _) => "Download opens the release page.",
                     })
                     .size(12.0)
                     .weak(),

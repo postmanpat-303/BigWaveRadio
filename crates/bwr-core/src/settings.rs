@@ -106,10 +106,7 @@ impl Default for Settings {
 }
 
 fn path() -> PathBuf {
-    let base = std::env::var("LOCALAPPDATA")
-        .map(PathBuf::from)
-        .unwrap_or_else(|_| PathBuf::from("."));
-    base.join("BigWaveRadio").join("settings.json")
+    crate::paths::data_dir().join("settings.json")
 }
 
 impl Settings {

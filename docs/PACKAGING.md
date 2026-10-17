@@ -1,18 +1,24 @@
-# Windows packaging
+# Packaging
+
+Windows is built on Linux with `scripts/package-windows.sh` (below). macOS and Linux
+packages are built by GitHub Actions; see [macOS](#macos) and [Linux](#linux) at the end.
+
+## Windows
 
 BigWave Radio is packaged the same way as
 [ChipWave Tracker](https://github.com/postmanpat-303/ChipWaveTracker)
 (`installer/chipwave.nsi` + `scripts/package-windows.sh`): an **NSIS** setup and a
 portable zip, both cross-built on Linux. ChipWave's release assets come from that
 script, not from GitHub Actions (its tag-triggered `cargo packager` CI job fails),
-so BigWave doesn't add a release workflow either. Building on Linux needs neither
+so the Windows assets are still built locally with that script. (macOS and Linux, which can't be cross-built
+here, have their own workflows: see the end of this file.) Building on Linux needs neither
 Windows nor Wine; Wine is only used to smoke-test the setup.
 
 ## Build
 
 ```bash
 # needs: rustup target x86_64-pc-windows-gnullvm, llvm-mingw (LLVM_MINGW=...), makensis (NSIS 3), zip
-scripts/package-windows.sh 0.9.5      # version must match [workspace.package] in Cargo.toml
+scripts/package-windows.sh 0.9.6      # version must match [workspace.package] in Cargo.toml
 ```
 
 Output (`dist/` is git-ignored apart from `dist/README.txt`):
@@ -68,3 +74,46 @@ BigWave-specific additions:
 All come from the wolf pack in `/workspace/loud/pack/BigWave_Radio/`. To check a
 build: `wrestool -x -t 14 <exe> -o x.ico` and compare its frames with
 `bigwave_radio_<size>.png`.
+
+
+## macOS
+
+`.github/workflows/macos.yml` (macos-14; on a `v*` tag push or `workflow_dispatch` with `release_tag`)
+runs `scripts/package-macos.sh <ver>`:
+
+1. `cargo build --release` for `aarch64-apple-darwin` and `x86_64-apple-darwin` (`MACOSX_DEPLOYMENT_TARGET=11.0`),
+   merged with `lipo` into `BigWave Radio.app/Contents/MacOS/BigWaveRadio`.
+2. `Info.plist` from `packaging/macos/Info.plist.in`: bundle id `ie.derekheasley.bigwaveradio`, version from Cargo,
+   `LSUIElement` false, icon `assets/BigWaveRadio.icns` (made from the wolf PNG, all sizes incl. Retina).
+   No `NSMicrophoneUsageDescription`: the app only plays audio, it never records.
+3. Ad-hoc signed (`codesign -s -`, needed for Apple Silicon), not notarised. Users get past Gatekeeper with
+   right-click → Open, or `xattr -dr com.apple.quarantine "/Applications/BigWave Radio.app"`.
+4. `BigWaveRadio-<ver>-macos-universal.dmg` (hdiutil UDZO: the app, an `Applications` link, `Read me first.txt`)
+   and `BigWaveRadio-<ver>-macos-universal.zip` (ditto).
+
+The workflow also runs the tests, `--check-plugin` on every bundled plugin, mounts the dmg, and launches the app for 8 s.
+
+Data: `~/Library/Application Support/BigWaveRadio` (`dirs::data_dir()`). No tray, global hotkey or
+media-key integration on macOS yet; closing the window quits.
+
+## Linux
+
+`.github/workflows/linux.yml` builds on **ubuntu-22.04** (x86_64) and **ubuntu-22.04-arm** (aarch64), so the
+binaries need glibc 2.35 or newer. `scripts/package-linux.sh <ver>` writes:
+
+| File | Tool | Tested in CI by |
+| --- | --- | --- |
+| `BigWaveRadio-<ver>-linux-<arch>.tar.gz` | tar | unpack, `--check-plugin`, `install.sh` / `--uninstall` |
+| `BigWaveRadio-<ver>-linux-<arch>.deb` | `cargo deb` (`[package.metadata.deb]` in `crates/bwr-app/Cargo.toml`) | `apt install` on Ubuntu 22.04, `--check-plugin`, 8 s launch under Xvfb |
+| `BigWaveRadio-<ver>-linux-<arch>.rpm` | `cargo generate-rpm` (`[package.metadata.generate-rpm]`) | `dnf install` in `fedora:latest`, `--check-plugin` |
+| `BigWaveRadio-<ver>-linux-<arch>.AppImage` | linuxdeploy (`LINUXDEPLOY=...`) | run with and without `APPIMAGE_EXTRACT_AND_RUN`, `--check-plugin` |
+| `BigWaveRadio-<ver>-linux-x86_64.pkg.tar.zst` | `makepkg` on `packaging/arch/bigwave-radio-bin/PKGBUILD` | `pacman -U` in `archlinux:latest`, `--check-plugin` |
+
+All packages install `bigwave-radio`, `bigwave-radio.desktop`, the AppStream metainfo and hicolor icons 16–512 px
+(`assets/icons/`, from the wolf pack). `packaging/arch/bigwave-radio/PKGBUILD` builds from the source tag instead
+(for the AUR). Data: `$XDG_DATA_HOME/BigWaveRadio` (`dirs::data_local_dir()`). No tray on Linux yet (closing quits);
+the Windows-only tray/hotkey/SMTC code is behind `cfg(windows)`.
+
+The update checker picks the asset for the running build: Windows → setup exe, macOS → dmg, Linux → the same
+package type it was installed from (AppImage via `$APPIMAGE`, deb/rpm/Arch via `/etc/os-release` when the binary is
+under `/usr`, otherwise the tar.gz), and the release page if there's no match.

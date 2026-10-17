@@ -1,0 +1,30 @@
+# Maintainer: Derek Heasley <https://github.com/postmanpat-303>
+# Prebuilt BigWave Radio from the GitHub release tarball (built on Ubuntu 22.04, glibc 2.35).
+# Build:  makepkg -si      (CachyOS / Arch / Manjaro / EndeavourOS)
+pkgname=bigwave-radio-bin
+pkgver=0.9.6
+pkgrel=1
+pkgdesc="Internet radio player with moods, star ratings, plugins and visualisers (radio-browser.info)"
+arch=('x86_64' 'aarch64')
+url="https://github.com/postmanpat-303/BigWaveRadio"
+license=('MIT')
+depends=('alsa-lib' 'openssl' 'gcc-libs' 'glibc' 'libxkbcommon' 'libx11' 'libxcursor' 'libxrandr' 'libxi' 'wayland' 'libglvnd' 'hicolor-icon-theme')
+provides=('bigwave-radio')
+conflicts=('bigwave-radio')
+options=('!strip' '!debug')
+source_x86_64=("BigWaveRadio-$pkgver-linux-x86_64.tar.gz::$url/releases/download/v$pkgver/BigWaveRadio-$pkgver-linux-x86_64.tar.gz")
+source_aarch64=("BigWaveRadio-$pkgver-linux-aarch64.tar.gz::$url/releases/download/v$pkgver/BigWaveRadio-$pkgver-linux-aarch64.tar.gz")
+sha256sums_x86_64=('SKIP')
+sha256sums_aarch64=('SKIP')
+
+package() {
+  cd "BigWaveRadio-$pkgver-linux-$CARCH"
+  install -Dm755 bigwave-radio "$pkgdir/usr/bin/bigwave-radio"
+  install -Dm644 share/applications/bigwave-radio.desktop "$pkgdir/usr/share/applications/bigwave-radio.desktop"
+  install -Dm644 share/metainfo/bigwave-radio.metainfo.xml "$pkgdir/usr/share/metainfo/bigwave-radio.metainfo.xml"
+  for s in 16 32 48 64 128 256 512; do
+    install -Dm644 "share/icons/hicolor/${s}x${s}/apps/bigwave-radio.png" \
+      "$pkgdir/usr/share/icons/hicolor/${s}x${s}/apps/bigwave-radio.png"
+  done
+  install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+}

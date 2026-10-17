@@ -5,6 +5,7 @@ pub mod discovery;
 pub mod geo;
 pub mod library;
 pub mod models;
+pub mod paths;
 pub mod ratings;
 pub mod settings;
 pub mod update;

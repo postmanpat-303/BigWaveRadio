@@ -31,8 +31,5 @@ pub fn log(line: &str) {
 }
 
 fn dirs_data() -> std::path::PathBuf {
-    std::env::var_os("LOCALAPPDATA")
-        .map(std::path::PathBuf::from)
-        .unwrap_or_else(|| std::path::PathBuf::from("."))
-        .join("BigWaveRadio")
+    bwr_core::paths::data_dir()
 }

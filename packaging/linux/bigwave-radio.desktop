@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=BigWave Radio
+GenericName=Internet Radio
+Comment=Stream thousands of live radio stations from radio-browser.info
+Exec=bigwave-radio
+Icon=bigwave-radio
+Terminal=false
+Categories=Audio;AudioVideo;Player;Network;
+Keywords=radio;stream;internet radio;music;
+StartupWMClass=bigwave-radio
+StartupNotify=true

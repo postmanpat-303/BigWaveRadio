@@ -41,10 +41,7 @@ struct FileOut<'a> {
 }
 
 fn data_dir() -> PathBuf {
-    let base = std::env::var("LOCALAPPDATA")
-        .map(PathBuf::from)
-        .unwrap_or_else(|_| PathBuf::from("."));
-    base.join("BigWaveRadio")
+    crate::paths::data_dir()
 }
 
 impl Ratings {

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>CFBundleDevelopmentRegion</key><string>en</string>
+  <key>CFBundleExecutable</key><string>BigWaveRadio</string>
+  <key>CFBundleIdentifier</key><string>ie.derekheasley.bigwaveradio</string>
+  <key>CFBundleName</key><string>BigWave Radio</string>
+  <key>CFBundleDisplayName</key><string>BigWave Radio</string>
+  <key>CFBundleIconFile</key><string>BigWaveRadio</string>
+  <key>CFBundlePackageType</key><string>APPL</string>
+  <key>CFBundleInfoDictionaryVersion</key><string>6.0</string>
+  <key>CFBundleShortVersionString</key><string>@VERSION@</string>
+  <key>CFBundleVersion</key><string>@VERSION@</string>
+  <key>LSMinimumSystemVersion</key><string>11.0</string>
+  <key>LSApplicationCategoryType</key><string>public.app-category.music</string>
+  <key>LSUIElement</key><false/>
+  <key>NSHighResolutionCapable</key><true/>
+  <key>NSHumanReadableCopyright</key><string>© 2026 Derek Heasley. MIT licence.</string>
+  <!-- No NSMicrophoneUsageDescription: BigWave only plays streams, it never records audio. -->
+</dict>
+</plist>

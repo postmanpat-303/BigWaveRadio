@@ -10,13 +10,15 @@
   <a href="https://github.com/postmanpat-303/BigWaveRadio/releases/latest"><img src="https://img.shields.io/github/v/release/postmanpat-303/BigWaveRadio?style=for-the-badge&color=3cd23c&label=release" alt="Latest release"></a>
   <a href="https://github.com/postmanpat-303/BigWaveRadio/releases"><img src="https://img.shields.io/github/downloads/postmanpat-303/BigWaveRadio/total?style=for-the-badge&color=1fb5c9" alt="Downloads"></a>
   <img src="https://img.shields.io/badge/Windows-11-0078D6?style=for-the-badge&logo=windows11&logoColor=white" alt="Windows 11">
+  <a href="#downloads"><img src="https://img.shields.io/badge/macOS-universal-000000?style=for-the-badge&logo=apple&logoColor=white" alt="macOS (universal)"></a>
+  <a href="#downloads"><img src="https://img.shields.io/badge/Linux-deb%20%C2%B7%20rpm%20%C2%B7%20Arch%20%C2%B7%20AppImage-FCC624?style=for-the-badge&logo=linux&logoColor=black" alt="Linux"></a>
   <img src="https://img.shields.io/badge/Rust-egui-B7410E?style=for-the-badge&logo=rust&logoColor=white" alt="Rust + egui">
   <img src="https://img.shields.io/badge/plugins-Rhai-784ba0?style=for-the-badge" alt="Rhai plugins">
   <img src="https://img.shields.io/badge/license-MIT-ffcc00?style=for-the-badge" alt="MIT">
   <a href="https://buymeacoffee.com/postmanpat"><img src="https://img.shields.io/badge/%E2%98%95%20Buy%20me%20a%20coffee-postmanpat-FFDD00?style=for-the-badge&logo=buymeacoffee&logoColor=black" alt="Buy me a coffee"></a>
 </p>
 
-<h3 align="center">A tiny, native internet radio player for Windows — with a demo-scene heart.</h3>
+<h3 align="center">A tiny, native internet radio player for Windows, macOS and Linux — with a demo-scene heart.</h3>
 
 <p align="center">
   Streams thousands of stations from the community-powered <a href="https://www.radio-browser.info">radio-browser.info</a> directory.<br>
@@ -34,6 +36,55 @@
 </p>
 
 <p align="center"><img src="docs/media/station-grid.png" alt="Discover page with the station grid" width="880"></p>
+
+<a id="downloads"></a>
+
+## ⬇️ Downloads
+
+Get them from the [latest release](https://github.com/postmanpat-303/BigWaveRadio/releases/latest) (`<ver>` is the version, e.g. `0.9.6`):
+
+| OS | File | Notes |
+| --- | --- | --- |
+| **Windows 10/11** (x64) | `BigWaveRadio-<ver>-setup-x64.exe` | Installer (recommended). Tray icon, media keys, Ctrl+Alt+B |
+| | `BigWaveRadio-<ver>-windows-x64.zip` | Portable, no install |
+| **macOS 11+** (Apple Silicon + Intel) | `BigWaveRadio-<ver>-macos-universal.dmg` | Open it, drag **BigWave Radio** to **Applications** |
+| | `BigWaveRadio-<ver>-macos-universal.zip` | The same `.app`, zipped |
+| **Ubuntu / Debian / Mint / Pop!_OS** | `BigWaveRadio-<ver>-linux-x86_64.deb` (or `-aarch64.deb`) | `sudo apt install ./BigWaveRadio-<ver>-linux-x86_64.deb` |
+| **Fedora / RHEL / openSUSE** | `BigWaveRadio-<ver>-linux-x86_64.rpm` (or `-aarch64.rpm`) | `sudo dnf install ./BigWaveRadio-<ver>-linux-x86_64.rpm` |
+| **Arch / CachyOS / Manjaro / EndeavourOS** | `BigWaveRadio-<ver>-linux-x86_64.pkg.tar.zst` | `sudo pacman -U ./BigWaveRadio-<ver>-linux-x86_64.pkg.tar.zst`, or build it yourself with [`packaging/arch`](packaging/arch) (`makepkg -si`) |
+| **Any Linux** (glibc 2.35+) | `BigWaveRadio-<ver>-linux-x86_64.AppImage` (or `-aarch64`) | `chmod +x` it and run it. Needs `libfuse2`, or set `APPIMAGE_EXTRACT_AND_RUN=1` |
+| | `BigWaveRadio-<ver>-linux-x86_64.tar.gz` (or `-aarch64`) | Unpack and run `./bigwave-radio`, or `./install.sh` to add it to your menu (per user, no root) |
+
+<details>
+<summary><b>🍎 macOS: first launch (Gatekeeper)</b></summary>
+<br>
+
+The app is ad-hoc signed but not notarised by Apple, so the first time macOS says it "can't be opened" or "cannot verify the developer". Either:
+
+* **Right-click** (or Control-click) **BigWave Radio** in Applications → **Open** → **Open**. You only need to do this once; or
+* in Terminal: `xattr -dr com.apple.quarantine "/Applications/BigWave Radio.app"`
+
+On macOS 15 and later, if there's no **Open** button, go to **System Settings → Privacy & Security** and click **Open Anyway** after the first try.
+</details>
+
+<details>
+<summary><b>🐧 Linux notes</b></summary>
+<br>
+
+* Every package installs the `bigwave-radio` command, a menu entry and the wolf icon (hicolor theme).
+* Runs on X11 and Wayland. Audio goes through ALSA, so PipeWire and PulseAudio systems work via their ALSA plugin (installed by default on desktop distros).
+* There's no tray icon on Linux or macOS yet: closing the window quits. Media keys / Ctrl+Alt+B are Windows-only for now.
+</details>
+
+**Where your data lives** (stations, ratings, settings, plugins):
+
+| OS | Folder |
+| --- | --- |
+| Windows | `%LOCALAPPDATA%\BigWaveRadio` |
+| macOS | `~/Library/Application Support/BigWaveRadio` |
+| Linux | `$XDG_DATA_HOME/BigWaveRadio` (usually `~/.local/share/BigWaveRadio`) |
+
+The app checks for updates (About → **Check for updates**) and offers the download that matches your system: the setup on Windows, the dmg on macOS, and the same package type you installed on Linux.
 
 ## 📺 Watch the promo
 
@@ -138,7 +189,7 @@ A bundled, non-strobing visualiser in the spirit of Winamp MilkDrop / AVS. It re
 
 ## 🧩 Plugins
 
-Plugins are folders with `plugin.toml` + `main.rhai` in `%LOCALAPPDATA%\BigWaveRadio\plugins\`. Approve permissions, enable/disable, edit settings and import a `.zip` (button or drag-and-drop) on the **Plugins** page. Saving a file reloads the plugin. Plugins get audio levels, bands, beat/BPM and break detection, but no network or file access.
+Plugins are folders with `plugin.toml` + `main.rhai` in the `plugins` folder of your data directory: `%LOCALAPPDATA%\BigWaveRadio\plugins\` on Windows, `~/Library/Application Support/BigWaveRadio/plugins/` on macOS, `~/.local/share/BigWaveRadio/plugins/` on Linux. Approve permissions, enable/disable, edit settings and import a `.zip` (button or drag-and-drop) on the **Plugins** page. Saving a file reloads the plugin. Plugins get audio levels, bands, beat/BPM and break detection, but no network or file access.
 
 ```mermaid
 flowchart LR
@@ -195,7 +246,7 @@ fn on_overlay(ctx, draw) {
 </details>
 
 * Authoring guide (for people and AI assistants): [docs/PLUGIN_GUIDE.md](docs/PLUGIN_GUIDE.md), plus [AGENTS.md](AGENTS.md). More examples are in [docs/plugin-examples](docs/plugin-examples).
-* Validate a plugin without opening the window: `BigWaveRadio.exe --check-plugin <folder>` (exit code 0 = OK), or the standalone Linux `bwr-plugin-check` attached to each release.
+* Validate a plugin without opening the window: `BigWaveRadio.exe --check-plugin <folder>` (`bigwave-radio --check-plugin` on Linux, `"/Applications/BigWave Radio.app/Contents/MacOS/BigWaveRadio" --check-plugin` on macOS; exit code 0 = OK), or the standalone Linux `bwr-plugin-check` attached to each release.
 * 🌐 **Community plugins:** browse and share plugins at [BigWaveRadio-Plugins](https://github.com/postmanpat-303/BigWaveRadio-Plugins) (linked from the Plugins page). Each plugin card on the Plugins page gets its own colour; set `accent = "#rrggbb"` in `plugin.toml` to choose it.
 
 ## 🏗️ Architecture
@@ -206,8 +257,8 @@ fn on_overlay(ctx, draw) {
 
 | Crate | Responsibility |
 | --- | --- |
-| `bwr-core` | radio-browser.info API client (IPv4-only DNS resolver, mirror failover, Schannel TLS via `native-tls`), station/tag/country models, library, ratings and settings persistence |
-| `bwr-player` | stream download, decode (symphonia), audio output (cpal/WASAPI) on a worker thread |
+| `bwr-core` | radio-browser.info API client (IPv4-only DNS resolver, mirror failover, native TLS via `native-tls` (Schannel / Secure Transport / OpenSSL)), station/tag/country models, library, ratings and settings persistence |
+| `bwr-player` | stream download, decode (symphonia), audio output (cpal: WASAPI / CoreAudio / ALSA) on a worker thread |
 | `bwr-spectrum` | FFT band analysis (`rustfft`) fed by the decoded PCM |
 | `bwr-plugins` | plugin host: manifests, Rhai engine + script API, permissions, hot reload, flash limiter, `.zip` import, `--check-plugin` |
 | `bwr-app` | egui user interface, worker-thread result pump |
@@ -238,12 +289,19 @@ when distributing, or run with the toolchain's `bin` directory on `PATH`.
 on Linux with llvm-mingw and NSIS (`makensis`) installed, run
 
 ```bash
-scripts/package-windows.sh 0.9.5
+scripts/package-windows.sh 0.9.6
 ```
 
 It writes `dist/BigWaveRadio-<ver>-windows-x64.zip` (portable) and
 `dist/BigWaveRadio-<ver>-setup-x64.exe` (NSIS installer, built from
 `installer/bigwave.nsi`). See [docs/PACKAGING.md](docs/PACKAGING.md).
+
+**macOS and Linux** build natively with plain `cargo build --release -p bwr-app`
+(Linux needs `libasound2-dev libssl-dev libxkbcommon-dev libwayland-dev libx11-dev libgl1-mesa-dev`
+or your distro's equivalents). The release packages come from GitHub Actions:
+[`.github/workflows/macos.yml`](.github/workflows/macos.yml) (`scripts/package-macos.sh`: universal
+`.app`, dmg, zip) and [`.github/workflows/linux.yml`](.github/workflows/linux.yml)
+(`scripts/package-linux.sh` on Ubuntu 22.04: tar.gz, deb, rpm, AppImage, plus the Arch package).
 
 </details>
 
@@ -252,11 +310,12 @@ It writes `dist/BigWaveRadio-<ver>-windows-x64.zip` (portable) and
 - Glitch-effect word-cloud search page
 - Mica / acrylic backdrop
 - Sleep timer
-- Signed installer
+- Signed installer (Windows) and notarised app (macOS)
+- Tray icon and media keys on macOS and Linux
 
 ## 💜 Credits
 
-Created by Derek Heasley. Inspired by ShortWave on Linux — I wanted a nice clean version for Windows. If you find this app useful, you can [buy me a coffee](https://buymeacoffee.com/postmanpat) or donate via PayPal at [paypal.me/derekh100](https://paypal.me/derekh100). Thank you. :)
+Created by Derek Heasley. Inspired by ShortWave on Linux — I wanted a nice clean version for Windows (and now it runs on macOS and Linux too). If you find this app useful, you can [buy me a coffee](https://buymeacoffee.com/postmanpat) or donate via PayPal at [paypal.me/derekh100](https://paypal.me/derekh100). Thank you. :)
 
 <a href="https://buymeacoffee.com/postmanpat"><img src="https://img.shields.io/badge/%E2%98%95%20Buy%20me%20a%20coffee-postmanpat-FFDD00?style=for-the-badge&logo=buymeacoffee&logoColor=black" alt="Buy me a coffee" height="36"></a>
 

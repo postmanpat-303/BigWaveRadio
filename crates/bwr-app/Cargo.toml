@@ -1,6 +1,10 @@
 [package]
 name = "bwr-app"
 version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+homepage.workspace = true
 edition = "2021"
 description = "BigWave Radio — native Windows internet radio player (egui shell)"
 
@@ -34,8 +38,53 @@ windows = { version = "0.58", features = [
     "Win32_UI_WindowsAndMessaging",
 ] }
 
-# Native file picker for the Plugins page "Import .zip" button.
+# Native file picker for the Plugins page "Import .zip" button
+# (Windows common dialog, macOS NSOpenPanel; Linux uses a path field).
+[target.'cfg(any(windows, target_os = "macos"))'.dependencies]
 rfd = "0.15"
+
+# --- Linux packages (CI: cargo deb / cargo generate-rpm, see .github/workflows/linux.yml)
+[package.metadata.deb]
+name = "bigwave-radio"
+maintainer = "Derek Heasley <https://github.com/postmanpat-303>"
+copyright = "2026 Derek Heasley"
+license-file = ["../../LICENSE", "0"]
+extended-description = """BigWave Radio streams live stations from the community-powered \
+radio-browser.info directory: mood chips, star ratings, plugins and visualisers."""
+section = "sound"
+priority = "optional"
+depends = "$auto"
+assets = [
+    ["target/release/bwr-app", "usr/bin/bigwave-radio", "755"],
+    ["../../packaging/linux/bigwave-radio.desktop", "usr/share/applications/", "644"],
+    ["../../packaging/linux/bigwave-radio.metainfo.xml", "usr/share/metainfo/", "644"],
+    ["../../assets/icons/bigwave-radio_16.png", "usr/share/icons/hicolor/16x16/apps/bigwave-radio.png", "644"],
+    ["../../assets/icons/bigwave-radio_32.png", "usr/share/icons/hicolor/32x32/apps/bigwave-radio.png", "644"],
+    ["../../assets/icons/bigwave-radio_48.png", "usr/share/icons/hicolor/48x48/apps/bigwave-radio.png", "644"],
+    ["../../assets/icons/bigwave-radio_64.png", "usr/share/icons/hicolor/64x64/apps/bigwave-radio.png", "644"],
+    ["../../assets/icons/bigwave-radio_128.png", "usr/share/icons/hicolor/128x128/apps/bigwave-radio.png", "644"],
+    ["../../assets/icons/bigwave-radio_256.png", "usr/share/icons/hicolor/256x256/apps/bigwave-radio.png", "644"],
+    ["../../assets/icons/bigwave-radio_512.png", "usr/share/icons/hicolor/512x512/apps/bigwave-radio.png", "644"],
+    ["../../README.md", "usr/share/doc/bigwave-radio/README.md", "644"],
+]
+
+[package.metadata.generate-rpm]
+name = "bigwave-radio"
+summary = "Internet radio player (radio-browser.info)"
+license = "MIT"
+assets = [
+    { source = "target/release/bwr-app", dest = "/usr/bin/bigwave-radio", mode = "755" },
+    { source = "../../packaging/linux/bigwave-radio.desktop", dest = "/usr/share/applications/bigwave-radio.desktop", mode = "644" },
+    { source = "../../packaging/linux/bigwave-radio.metainfo.xml", dest = "/usr/share/metainfo/bigwave-radio.metainfo.xml", mode = "644" },
+    { source = "../../assets/icons/bigwave-radio_16.png", dest = "/usr/share/icons/hicolor/16x16/apps/bigwave-radio.png", mode = "644" },
+    { source = "../../assets/icons/bigwave-radio_32.png", dest = "/usr/share/icons/hicolor/32x32/apps/bigwave-radio.png", mode = "644" },
+    { source = "../../assets/icons/bigwave-radio_48.png", dest = "/usr/share/icons/hicolor/48x48/apps/bigwave-radio.png", mode = "644" },
+    { source = "../../assets/icons/bigwave-radio_64.png", dest = "/usr/share/icons/hicolor/64x64/apps/bigwave-radio.png", mode = "644" },
+    { source = "../../assets/icons/bigwave-radio_128.png", dest = "/usr/share/icons/hicolor/128x128/apps/bigwave-radio.png", mode = "644" },
+    { source = "../../assets/icons/bigwave-radio_256.png", dest = "/usr/share/icons/hicolor/256x256/apps/bigwave-radio.png", mode = "644" },
+    { source = "../../assets/icons/bigwave-radio_512.png", dest = "/usr/share/icons/hicolor/512x512/apps/bigwave-radio.png", mode = "644" },
+    { source = "../../LICENSE", dest = "/usr/share/licenses/bigwave-radio/LICENSE", mode = "644", doc = true },
+]
 
 [build-dependencies]
 winresource = "0.1"

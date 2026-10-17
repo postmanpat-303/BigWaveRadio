@@ -12,6 +12,94 @@
   "body": "BigWave Radio 0.9.6 (test fixture).\r\n\r\n**Download:** `BigWaveRadio-0.9.6-setup-x64.exe` (installer) or the portable zip.\r\n\r\nNew in 0.9.6:\r\n- Sleep timer\r\n- Faster mood pages\r\n- Fix: tray icon tooltip shows the station\r\n\r\n```\r\nabc  BigWaveRadio-0.9.6-setup-x64.exe\r\n```",
   "assets": [
     {
+      "url": "https://api.github.com/repos/postmanpat-303/BigWaveRadio/releases/assets/958",
+      "id": 958,
+      "name": "BigWaveRadio-0.9.6-linux-x86_64.pkg.tar.zst",
+      "content_type": "application/octet-stream",
+      "size": 9000008,
+      "browser_download_url": "https://github.com/postmanpat-303/BigWaveRadio/releases/download/v0.9.6/BigWaveRadio-0.9.6-linux-x86_64.pkg.tar.zst"
+    },
+    {
+      "url": "https://api.github.com/repos/postmanpat-303/BigWaveRadio/releases/assets/957",
+      "id": 957,
+      "name": "BigWaveRadio-0.9.6-linux-aarch64.tar.gz",
+      "content_type": "application/octet-stream",
+      "size": 9000007,
+      "browser_download_url": "https://github.com/postmanpat-303/BigWaveRadio/releases/download/v0.9.6/BigWaveRadio-0.9.6-linux-aarch64.tar.gz"
+    },
+    {
+      "url": "https://api.github.com/repos/postmanpat-303/BigWaveRadio/releases/assets/956",
+      "id": 956,
+      "name": "BigWaveRadio-0.9.6-linux-aarch64.rpm",
+      "content_type": "application/octet-stream",
+      "size": 9000006,
+      "browser_download_url": "https://github.com/postmanpat-303/BigWaveRadio/releases/download/v0.9.6/BigWaveRadio-0.9.6-linux-aarch64.rpm"
+    },
+    {
+      "url": "https://api.github.com/repos/postmanpat-303/BigWaveRadio/releases/assets/955",
+      "id": 955,
+      "name": "BigWaveRadio-0.9.6-linux-aarch64.deb",
+      "content_type": "application/octet-stream",
+      "size": 9000005,
+      "browser_download_url": "https://github.com/postmanpat-303/BigWaveRadio/releases/download/v0.9.6/BigWaveRadio-0.9.6-linux-aarch64.deb"
+    },
+    {
+      "url": "https://api.github.com/repos/postmanpat-303/BigWaveRadio/releases/assets/954",
+      "id": 954,
+      "name": "BigWaveRadio-0.9.6-linux-aarch64.AppImage",
+      "content_type": "application/octet-stream",
+      "size": 9000004,
+      "browser_download_url": "https://github.com/postmanpat-303/BigWaveRadio/releases/download/v0.9.6/BigWaveRadio-0.9.6-linux-aarch64.AppImage"
+    },
+    {
+      "url": "https://api.github.com/repos/postmanpat-303/BigWaveRadio/releases/assets/953",
+      "id": 953,
+      "name": "BigWaveRadio-0.9.6-linux-x86_64.tar.gz",
+      "content_type": "application/octet-stream",
+      "size": 9000003,
+      "browser_download_url": "https://github.com/postmanpat-303/BigWaveRadio/releases/download/v0.9.6/BigWaveRadio-0.9.6-linux-x86_64.tar.gz"
+    },
+    {
+      "url": "https://api.github.com/repos/postmanpat-303/BigWaveRadio/releases/assets/952",
+      "id": 952,
+      "name": "BigWaveRadio-0.9.6-linux-x86_64.rpm",
+      "content_type": "application/octet-stream",
+      "size": 9000002,
+      "browser_download_url": "https://github.com/postmanpat-303/BigWaveRadio/releases/download/v0.9.6/BigWaveRadio-0.9.6-linux-x86_64.rpm"
+    },
+    {
+      "url": "https://api.github.com/repos/postmanpat-303/BigWaveRadio/releases/assets/951",
+      "id": 951,
+      "name": "BigWaveRadio-0.9.6-linux-x86_64.deb",
+      "content_type": "application/octet-stream",
+      "size": 9000001,
+      "browser_download_url": "https://github.com/postmanpat-303/BigWaveRadio/releases/download/v0.9.6/BigWaveRadio-0.9.6-linux-x86_64.deb"
+    },
+    {
+      "url": "https://api.github.com/repos/postmanpat-303/BigWaveRadio/releases/assets/950",
+      "id": 950,
+      "name": "BigWaveRadio-0.9.6-linux-x86_64.AppImage",
+      "content_type": "application/octet-stream",
+      "size": 9000000,
+      "browser_download_url": "https://github.com/postmanpat-303/BigWaveRadio/releases/download/v0.9.6/BigWaveRadio-0.9.6-linux-x86_64.AppImage"
+    },
+    {
+      "url": "https://api.github.com/repos/postmanpat-303/BigWaveRadio/releases/assets/901",
+      "id": 901,
+      "name": "BigWaveRadio-0.9.6-macos-universal.dmg",
+      "content_type": "application/x-apple-diskimage",
+      "size": 10100000,
+      "browser_download_url": "https://github.com/postmanpat-303/BigWaveRadio/releases/download/v0.9.6/BigWaveRadio-0.9.6-macos-universal.dmg"
+    },
+    {
+      "url": "https://api.github.com/repos/postmanpat-303/BigWaveRadio/releases/assets/900",
+      "id": 900,
+      "name": "BigWaveRadio-0.9.6-macos-universal.zip",
+      "content_type": "application/zip",
+      "size": 9800000,
+      "browser_download_url": "https://github.com/postmanpat-303/BigWaveRadio/releases/download/v0.9.6/BigWaveRadio-0.9.6-macos-universal.zip"
+    },
+    {
       "url": "https://api.github.com/repos/postmanpat-303/BigWaveRadio/releases/assets/651112362",
       "id": 651112362,
       "name": "BigWaveRadio-0.9.6-windows-x64.zip",

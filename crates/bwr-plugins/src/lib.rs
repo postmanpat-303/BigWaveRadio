@@ -1,7 +1,8 @@
 //! BigWave Radio plugin host.
 //!
 //! Plugins are folders containing `plugin.toml` + `main.rhai`, living in
-//! `%LOCALAPPDATA%\BigWaveRadio\plugins\<id>\`. Scripts never touch egui:
+//! `%LOCALAPPDATA%\BigWaveRadio\plugins\<id>\` on Windows and
+//! `~/Library/Application Support/BigWaveRadio/plugins/<id>/` on macOS. Scripts never touch egui:
 //! they return declarative drawing commands ([`DrawCmd`]) and simple widget
 //! descriptions ([`Widget`]) which the app renders. See `docs/PLUGIN_GUIDE.md`.
 
@@ -13,6 +14,7 @@ pub mod visual;
 mod host;
 mod hotkeys;
 mod manifest;
+mod paths;
 mod safety;
 mod ui;
 mod zipimport;
@@ -30,6 +32,7 @@ pub use manifest::{card_tint, Manifest, PageSpec, Permission, SettingKind, Setti
 pub use safety::{frame_luminance, FlashLimiter, FLASH_DELTA};
 pub use ui::{UiResult, Widget};
 pub use zipimport::import_zip;
+pub use paths::app_data_dir;
 
 /// Version of the script API this host implements (`api = 1` in plugin.toml).
 pub const API_VERSION: u32 = 1;
@@ -38,8 +41,8 @@ pub const DEFAULT_FLASH_HZ: f64 = 3.0;
 /// Absolute ceiling, even with the user's opt-in.
 pub const HARD_MAX_FLASH_HZ: f64 = 12.0;
 
-/// `%LOCALAPPDATA%\BigWaveRadio\plugins` (falls back to `./BigWaveRadio/plugins`).
+/// `<data dir>/plugins`: `%LOCALAPPDATA%\BigWaveRadio\plugins` on Windows,
+/// `~/Library/Application Support/BigWaveRadio/plugins` on macOS.
 pub fn default_plugins_dir() -> PathBuf {
-    let base = std::env::var("LOCALAPPDATA").map(PathBuf::from).unwrap_or_else(|_| PathBuf::from("."));
-    base.join("BigWaveRadio").join("plugins")
+    app_data_dir().join("plugins")
 }

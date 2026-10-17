@@ -6,8 +6,8 @@ use std::net::TcpListener;
 use std::time::Duration;
 
 use bwr_core::update::{
-    fetch_latest, is_newer, notes_to_plain, parse_release, parse_version, strip_v, UpdateState,
-    STARTUP_INTERVAL_SECS,
+    fetch_latest, is_newer, notes_to_plain, parse_release, parse_release_for, parse_version, strip_v,
+    linux_package, LinuxPackage, Platform, UpdateState, STARTUP_INTERVAL_SECS,
 };
 
 const FIXTURE: &str = include_str!("fixtures/release_latest.json");
@@ -55,7 +55,7 @@ fn the_running_crate_version_is_a_release_version() {
 
 #[test]
 fn parses_the_github_fixture() {
-    let r = parse_release(FIXTURE).expect("fixture parses");
+    let r = parse_release_for(FIXTURE, Platform::Windows).expect("fixture parses");
     assert_eq!(r.tag, "v0.9.6");
     assert_eq!(r.version, "0.9.6");
     assert_eq!(r.name, "BigWave Radio 0.9.6 (fixture)");
@@ -63,9 +63,9 @@ fn parses_the_github_fixture() {
         r.html_url,
         "https://github.com/postmanpat-303/BigWaveRadio/releases/tag/v0.9.6"
     );
-    // The zip is listed first in the fixture; Download must still pick the setup exe.
+    // Zips and the mac dmg are listed first; Windows must still pick the setup exe.
     assert_eq!(
-        r.setup_url.as_deref(),
+        r.asset_url.as_deref(),
         Some("https://github.com/postmanpat-303/BigWaveRadio/releases/download/v0.9.6/BigWaveRadio-0.9.6-setup-x64.exe")
     );
     assert!(r
@@ -76,11 +76,84 @@ fn parses_the_github_fixture() {
 }
 
 #[test]
+fn macos_downloads_the_universal_dmg() {
+    let r = parse_release_for(FIXTURE, Platform::MacOs).unwrap();
+    assert_eq!(
+        r.download_url(),
+        "https://github.com/postmanpat-303/BigWaveRadio/releases/download/v0.9.6/BigWaveRadio-0.9.6-macos-universal.dmg"
+    );
+    // A release with only the Windows build: the mac app goes to the release page.
+    let win_only = r#"{"tag_name":"v0.9.5","html_url":"https://example.invalid/r","assets":[
+        {"name":"BigWaveRadio-0.9.5-setup-x64.exe","browser_download_url":"https://example.invalid/s.exe"}]}"#;
+    let r = parse_release_for(win_only, Platform::MacOs).unwrap();
+    assert_eq!(r.asset_url, None);
+    assert_eq!(r.download_url(), "https://example.invalid/r");
+    // Platforms without a package (Linux) always get the release page.
+    let r = parse_release_for(FIXTURE, Platform::Other).unwrap();
+    assert_eq!(r.download_url(), r.html_url);
+}
+
+#[test]
+fn linux_picks_the_asset_for_its_package_type() {
+    let dl = |package, arch| {
+        parse_release_for(FIXTURE, Platform::Linux { package, arch })
+            .unwrap()
+            .download_url()
+            .rsplit('/')
+            .next()
+            .unwrap()
+            .to_string()
+    };
+    assert_eq!(dl(LinuxPackage::Deb, "x86_64"), "BigWaveRadio-0.9.6-linux-x86_64.deb");
+    assert_eq!(dl(LinuxPackage::Rpm, "x86_64"), "BigWaveRadio-0.9.6-linux-x86_64.rpm");
+    assert_eq!(dl(LinuxPackage::Arch, "x86_64"), "BigWaveRadio-0.9.6-linux-x86_64.pkg.tar.zst");
+    assert_eq!(dl(LinuxPackage::AppImage, "x86_64"), "BigWaveRadio-0.9.6-linux-x86_64.AppImage");
+    assert_eq!(dl(LinuxPackage::TarGz, "x86_64"), "BigWaveRadio-0.9.6-linux-x86_64.tar.gz");
+    assert_eq!(dl(LinuxPackage::Deb, "aarch64"), "BigWaveRadio-0.9.6-linux-aarch64.deb");
+    // No Arch package for aarch64 in the fixture: the aarch64 tarball.
+    assert_eq!(dl(LinuxPackage::Arch, "aarch64"), "BigWaveRadio-0.9.6-linux-aarch64.tar.gz");
+    // Nothing at all for this arch: the release page.
+    let r = parse_release_for(FIXTURE, Platform::Linux { package: LinuxPackage::Deb, arch: "riscv64" }).unwrap();
+    assert_eq!(r.download_url(), r.html_url);
+}
+
+#[test]
+fn linux_package_detection() {
+    use std::path::Path;
+    let ubuntu = "NAME=\"Ubuntu\"\nID=ubuntu\nID_LIKE=debian\n";
+    let fedora = "NAME=\"Fedora Linux\"\nID=fedora\n";
+    let cachy = "NAME=\"CachyOS Linux\"\nID=cachyos\nID_LIKE=arch\n";
+    let usr = Some(Path::new("/usr/bin/bigwave-radio"));
+    assert_eq!(linux_package(true, usr, ubuntu), LinuxPackage::AppImage);
+    assert_eq!(linux_package(false, usr, ubuntu), LinuxPackage::Deb);
+    assert_eq!(linux_package(false, usr, fedora), LinuxPackage::Rpm);
+    assert_eq!(linux_package(false, usr, cachy), LinuxPackage::Arch);
+    assert_eq!(linux_package(false, usr, "ID=gentoo\n"), LinuxPackage::TarGz);
+    // Unpacked tarball in the home folder, even on Ubuntu.
+    let home = Some(Path::new("/home/del/BigWaveRadio/bigwave-radio"));
+    assert_eq!(linux_package(false, home, ubuntu), LinuxPackage::TarGz);
+    assert_eq!(linux_package(false, None, ubuntu), LinuxPackage::TarGz);
+}
+
+#[test]
+fn the_build_picks_its_own_platform() {
+    let p = Platform::current();
+    if cfg!(windows) {
+        assert_eq!(p, Platform::Windows);
+    } else if cfg!(target_os = "macos") {
+        assert_eq!(p, Platform::MacOs);
+    } else if cfg!(target_os = "linux") {
+        assert!(matches!(p, Platform::Linux { arch, .. } if arch == std::env::consts::ARCH), "{p:?}");
+    }
+    assert_eq!(parse_release(FIXTURE).unwrap(), parse_release_for(FIXTURE, p).unwrap());
+}
+
+#[test]
 fn release_without_setup_downloads_the_release_page() {
     let json =
         r#"{"tag_name":"v0.9.7","html_url":"https://example.invalid/r","body":null,"assets":[]}"#;
-    let r = parse_release(json).unwrap();
-    assert_eq!(r.setup_url, None);
+    let r = parse_release_for(json, Platform::Windows).unwrap();
+    assert_eq!(r.asset_url, None);
     assert_eq!(r.download_url(), "https://example.invalid/r");
     assert_eq!(r.name, "v0.9.7");
     assert_eq!(r.notes, "");
@@ -245,12 +318,8 @@ fn live_github_latest_release() {
     )
     .expect("GitHub reachable");
     assert!(parse_version(&r.tag).is_some());
-    assert!(
-        r.setup_url
-            .as_deref()
-            .unwrap_or("")
-            .ends_with("-setup-x64.exe"),
-        "{r:?}"
-    );
+    if Platform::current() == Platform::Windows {
+        assert!(r.download_url().ends_with("-setup-x64.exe"), "{r:?}");
+    }
     println!("latest: {} -> {}", r.tag, r.download_url());
 }

@@ -11,10 +11,19 @@ working plugin from it alone. Everything a plugin can do is listed here.
 > There is no filesystem or network access. Declare every permission you
 > use. Never flash large areas of the screen faster than `ctx.flash_cap`.
 > When you can run commands, test with
-> `BigWaveRadio.exe --check-plugin <folder>` (or `bwr-app --check-plugin`)
+> `BigWaveRadio.exe --check-plugin <folder>` (or `bwr-app` / `bigwave-radio --check-plugin`)
 > and fix every `error:` line it prints.
 
 ## 1. Where plugins live
+
+| OS | Plugins folder |
+| --- | --- |
+| Windows | `%LOCALAPPDATA%\BigWaveRadio\plugins\` |
+| macOS | `~/Library/Application Support/BigWaveRadio/plugins/` |
+| Linux | `$XDG_DATA_HOME/BigWaveRadio/plugins/` (usually `~/.local/share/BigWaveRadio/plugins/`) |
+
+The **Open folder** button on the Plugins page opens it. The layout is the same everywhere
+(shown here with Windows separators):
 
 ```
 %LOCALAPPDATA%\BigWaveRadio\plugins\

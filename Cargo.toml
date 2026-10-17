@@ -5,7 +5,11 @@ members = ["crates/*"]
 [workspace.package]
 # One version for every crate; the About page, the exe resource and the
 # update checker all read CARGO_PKG_VERSION, so it must match the release tag.
-version = "0.9.5"
+version = "0.9.6"
+license = "MIT"
+authors = ["Derek Heasley"]
+repository = "https://github.com/postmanpat-303/BigWaveRadio"
+homepage = "https://github.com/postmanpat-303/BigWaveRadio"
 
 [profile.release]
 opt-level = 3

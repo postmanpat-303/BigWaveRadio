@@ -3,11 +3,8 @@ use std::path::PathBuf;
 use crate::models::Station;
 
 fn data_dir() -> PathBuf {
-    // %LOCALAPPDATA%\BigWaveRadio — same location the C# app used.
-    let base = std::env::var("LOCALAPPDATA")
-        .map(PathBuf::from)
-        .unwrap_or_else(|_| PathBuf::from("."));
-    base.join("BigWaveRadio")
+    // %LOCALAPPDATA%\BigWaveRadio on Windows, same location the C# app used.
+    crate::paths::data_dir()
 }
 
 /// The user's saved stations, persisted as library.json in LocalAppData.

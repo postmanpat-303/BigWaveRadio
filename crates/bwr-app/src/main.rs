@@ -41,7 +41,8 @@ fn make_options() -> eframe::NativeOptions {
     eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
             .with_title("BigWave Radio")
-            .with_app_id("bigwave.radio")
+            // Wayland app_id / X11 WM_CLASS: matches bigwave-radio.desktop on Linux.
+            .with_app_id(if cfg!(target_os = "linux") { "bigwave-radio" } else { "bigwave.radio" })
             .with_inner_size([1100.0, 720.0])
             .with_min_inner_size([760.0, 480.0])
             .with_icon(window_icon()),

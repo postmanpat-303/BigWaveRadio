@@ -199,22 +199,26 @@ pub fn ui(ui: &mut Ui, app: &mut BigWaveApp) {
             {
                 app.updater.state.save();
             }
-            if ui
-                .checkbox(&mut app.settings.minimize_to_tray, "Keep playing in the tray when I close the window")
-                .changed()
+            // The tray (and Ctrl+Alt+B) exist on Windows only; elsewhere closing quits.
+            #[cfg(windows)]
             {
-                app.persist_settings();
+                if ui
+                    .checkbox(&mut app.settings.minimize_to_tray, "Keep playing in the tray when I close the window")
+                    .changed()
+                {
+                    app.persist_settings();
+                }
+                ui.label(
+                    egui::RichText::new(
+                        "When on, closing hides BigWave Radio to the tray — playback continues, and \
+                         a notification tells you where it went. Windows 11 puts the wave icon in the \
+                         hidden ^ list beside the clock until you drag it out once; Ctrl+Alt+B also \
+                         brings the window back. Minimizing always keeps the taskbar button.",
+                    )
+                    .small()
+                    .weak(),
+                );
             }
-            ui.label(
-                egui::RichText::new(
-                    "When on, closing hides BigWave Radio to the tray — playback continues, and \
-                     a notification tells you where it went. Windows 11 puts the wave icon in the \
-                     hidden ^ list beside the clock until you drag it out once; Ctrl+Alt+B also \
-                     brings the window back. Minimizing always keeps the taskbar button.",
-                )
-                .small()
-                .weak(),
-            );
         });
 
         ui.add_space(10.0);

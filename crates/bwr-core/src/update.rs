@@ -30,14 +30,119 @@ pub struct Release {
     pub notes: String,
     /// The release page.
     pub html_url: String,
-    /// Direct download of the setup exe, if the release has one.
-    pub setup_url: Option<String>,
+    /// Direct download for this platform, if the release has one: the setup
+    /// exe on Windows, the universal .dmg on macOS.
+    pub asset_url: Option<String>,
 }
 
 impl Release {
-    /// Where "Download" goes: the setup exe, else the release page.
+    /// Where "Download" goes: this platform's asset, else the release page.
     pub fn download_url(&self) -> &str {
-        self.setup_url.as_deref().unwrap_or(&self.html_url)
+        self.asset_url.as_deref().unwrap_or(&self.html_url)
+    }
+}
+
+/// How this Linux build was installed (decides which asset "Download" fetches).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum LinuxPackage {
+    AppImage,
+    Deb,
+    Rpm,
+    /// Arch / CachyOS / Manjaro (`.pkg.tar.zst`)
+    Arch,
+    /// Unpacked tar.gz (or anything else)
+    TarGz,
+}
+
+/// Which release asset "Download" should fetch.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Platform {
+    /// `BigWaveRadio-<ver>-setup-x64.exe`
+    Windows,
+    /// `BigWaveRadio-<ver>-macos-universal.dmg` (or the .app zip)
+    MacOs,
+    /// `BigWaveRadio-<ver>-linux-<arch>.{AppImage,deb,rpm,pkg.tar.zst,tar.gz}`
+    Linux { package: LinuxPackage, arch: &'static str },
+    /// No packaged build: the release page.
+    Other,
+}
+
+impl Platform {
+    pub fn current() -> Self {
+        if cfg!(windows) {
+            Platform::Windows
+        } else if cfg!(target_os = "macos") {
+            Platform::MacOs
+        } else if cfg!(target_os = "linux") {
+            let exe = std::env::current_exe().ok();
+            let os_release = std::fs::read_to_string("/etc/os-release").unwrap_or_default();
+            Platform::Linux {
+                package: linux_package(
+                    std::env::var_os("APPIMAGE").is_some(),
+                    exe.as_deref(),
+                    &os_release,
+                ),
+                arch: std::env::consts::ARCH,
+            }
+        } else {
+            Platform::Other
+        }
+    }
+
+    /// Asset names in order of preference (lower-case `ends_with` patterns).
+    fn asset_suffixes(self) -> Vec<String> {
+        let v = |a: &[&str]| a.iter().map(|s| s.to_string()).collect();
+        match self {
+            Platform::Windows => v(&["-setup-x64.exe", "setup.exe"]),
+            Platform::MacOs => v(&["-macos-universal.dmg", ".dmg", "-macos-universal.zip"]),
+            Platform::Linux { package, arch } => {
+                let ext = match package {
+                    LinuxPackage::AppImage => "appimage",
+                    LinuxPackage::Deb => "deb",
+                    LinuxPackage::Rpm => "rpm",
+                    LinuxPackage::Arch => "pkg.tar.zst",
+                    LinuxPackage::TarGz => "tar.gz",
+                };
+                let mut out = vec![format!("-linux-{arch}.{ext}")];
+                if package != LinuxPackage::TarGz {
+                    // no package of that kind for this arch: the portable tarball
+                    out.push(format!("-linux-{arch}.tar.gz"));
+                }
+                out
+            }
+            Platform::Other => Vec::new(),
+        }
+    }
+}
+
+/// Work out how a Linux build was installed. Pure, for tests:
+/// `appimage` = the `APPIMAGE` variable is set (the AppImage runtime sets it);
+/// `exe` = this program's path; `os_release` = `/etc/os-release`.
+/// A binary under `/usr` came from the distro's package format; anything else
+/// is an unpacked tarball.
+pub fn linux_package(appimage: bool, exe: Option<&std::path::Path>, os_release: &str) -> LinuxPackage {
+    if appimage {
+        return LinuxPackage::AppImage;
+    }
+    if !exe.is_some_and(|p| p.starts_with("/usr")) {
+        return LinuxPackage::TarGz;
+    }
+    let mut ids = String::new();
+    for line in os_release.lines() {
+        if let Some(v) = line.strip_prefix("ID=").or_else(|| line.strip_prefix("ID_LIKE=")) {
+            ids.push(' ');
+            ids.push_str(&v.trim_matches('"').to_ascii_lowercase());
+        }
+    }
+    let has = |w: &str| ids.split_whitespace().any(|id| id == w);
+    if has("arch") || has("cachyos") || has("manjaro") || has("endeavouros") {
+        LinuxPackage::Arch
+    } else if has("debian") || has("ubuntu") {
+        LinuxPackage::Deb
+    } else if has("fedora") || has("rhel") || has("centos") || has("suse") || has("opensuse") {
+        LinuxPackage::Rpm
+    } else {
+        LinuxPackage::TarGz
     }
 }
 
@@ -105,8 +210,14 @@ pub fn is_newer(latest: &str, current: &str) -> bool {
     }
 }
 
-/// Parse the JSON of `GET /repos/{owner}/{repo}/releases/latest`.
+/// Parse the JSON of `GET /repos/{owner}/{repo}/releases/latest` for the
+/// platform this build runs on.
 pub fn parse_release(json: &str) -> Result<Release, String> {
+    parse_release_for(json, Platform::current())
+}
+
+/// [`parse_release`] for an explicit platform (tests use this).
+pub fn parse_release_for(json: &str, platform: Platform) -> Result<Release, String> {
     let gh: GhRelease =
         serde_json::from_str(json).map_err(|e| format!("unexpected reply from GitHub ({e})"))?;
     if gh.draft || gh.prerelease {
@@ -116,16 +227,13 @@ pub fn parse_release(json: &str) -> Result<Release, String> {
     if parse_version(&version).is_none() {
         return Err(format!("release tag '{}' is not a version", gh.tag_name));
     }
-    let lower = |a: &GhAsset| a.name.to_ascii_lowercase();
-    let setup_url = gh
-        .assets
+    let asset_url = platform
+        .asset_suffixes()
         .iter()
-        .find(|a| lower(a).ends_with("-setup-x64.exe"))
-        .or_else(|| {
-            gh.assets.iter().find(|a| {
-                let n = lower(a);
-                n.contains("setup") && n.ends_with(".exe")
-            })
+        .find_map(|suffix| {
+            gh.assets
+                .iter()
+                .find(|a| a.name.to_ascii_lowercase().ends_with(suffix.as_str()))
         })
         .map(|a| a.browser_download_url.clone());
     Ok(Release {
@@ -137,7 +245,7 @@ pub fn parse_release(json: &str) -> Result<Release, String> {
         version,
         notes: gh.body.unwrap_or_default(),
         html_url: gh.html_url.unwrap_or_else(|| RELEASES_PAGE.to_string()),
-        setup_url,
+        asset_url,
     })
 }
 

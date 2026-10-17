@@ -24,13 +24,13 @@ pub fn ui(ui: &mut Ui, app: &mut BigWaveApp) {
     ui.add_space(10.0);
     ui.horizontal(|ui| {
         ui.spacing_mut().item_spacing.x = 8.0;
-        #[cfg(windows)]
+        #[cfg(any(windows, target_os = "macos"))]
         if action_button(ui, "📦", "Import .zip…", Btn::Primary).clicked() {
             if let Some(p) = rfd::FileDialog::new().add_filter("Plugin archive", &["zip"]).pick_file() {
                 app.plugins.import(&p);
             }
         }
-        #[cfg(not(windows))]
+        #[cfg(not(any(windows, target_os = "macos")))]
         {
             ui.add(egui::TextEdit::singleline(&mut app.plugins.import_path).hint_text("path/to/plugin.zip").desired_width(220.0));
             if action_button(ui, "📦", "Import .zip", Btn::Primary).clicked() {
@@ -41,7 +41,9 @@ pub fn ui(ui: &mut Ui, app: &mut BigWaveApp) {
         if action_button(ui, "📂", "Open folder", Btn::Secondary).clicked() {
             #[cfg(windows)]
             let _ = std::process::Command::new("explorer").arg(&dir).spawn();
-            #[cfg(not(windows))]
+            #[cfg(target_os = "macos")]
+            let _ = std::process::Command::new("open").arg(&dir).spawn();
+            #[cfg(not(any(windows, target_os = "macos")))]
             let _ = std::process::Command::new("xdg-open").arg(&dir).spawn();
         }
         if action_button(ui, "⟳", "Reload all", Btn::Secondary).clicked() {
