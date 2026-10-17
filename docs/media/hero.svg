@@ -1,11 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 260" width="900" height="260" role="img" aria-label="BigWave Radio">
   <defs>
     <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#0b0420"/><stop offset="1" stop-color="#1a0b3d"/>
+      <stop offset="0" stop-color="#03120a"/><stop offset="1" stop-color="#0c2e16"/>
     </linearGradient>
     <linearGradient id="copper" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#ff3cac"><animate attributeName="stop-color" values="#ff3cac;#2b86c5;#00f0ff;#ff3cac" dur="6s" repeatCount="indefinite"/></stop>
-      <stop offset="1" stop-color="#ffcc00"><animate attributeName="stop-color" values="#ffcc00;#ff3cac;#784ba0;#ffcc00" dur="6s" repeatCount="indefinite"/></stop>
+      <stop offset="0" stop-color="#5cff2e"><animate attributeName="stop-color" values="#5cff2e;#00d98b;#c8ff00;#5cff2e" dur="6s" repeatCount="indefinite"/></stop>
+      <stop offset="1" stop-color="#e8ff6a"><animate attributeName="stop-color" values="#e8ff6a;#3cd23c;#1fb5c9;#e8ff6a" dur="6s" repeatCount="indefinite"/></stop>
     </linearGradient>
     <g id="disc" fill="none" stroke="#fff" stroke-opacity=".08" stroke-width="6">
       <circle r="24"/><circle r="48"/><circle r="72"/><circle r="96"/><circle r="120"/><circle r="144"/><circle r="168"/><circle r="192"/><circle r="216"/><circle r="240"/><circle r="264"/>
@@ -29,14 +29,14 @@
     <rect x="816" y="200" width="14" height="40"><animate attributeName="height" values="15;45;60;25;15" dur="1.4s" repeatCount="indefinite"/><animate attributeName="y" values="225;195;180;215;225" dur="1.4s" repeatCount="indefinite"/></rect>
   </g>
   <!-- radio wave -->
-  <path d="M0 175 Q 56 145 112 175 T 225 175 T 337 175 T 450 175 T 562 175 T 675 175 T 787 175 T 900 175 T 1012 175" fill="none" stroke="#00f0ff" stroke-width="2" opacity=".6">
+  <path d="M0 175 Q 56 145 112 175 T 225 175 T 337 175 T 450 175 T 562 175 T 675 175 T 787 175 T 900 175 T 1012 175" fill="none" stroke="#9dff6a" stroke-width="2" opacity=".6">
     <animateTransform attributeName="transform" type="translate" values="0 0;-225 0" dur="3s" repeatCount="indefinite"/>
   </path>
   <text x="450" y="112" text-anchor="middle" font-family="Verdana, 'DejaVu Sans', sans-serif" font-size="64" font-weight="bold" letter-spacing="4" fill="url(#copper)" stroke="#000" stroke-width="2">BIGWAVE RADIO</text>
-  <text x="450" y="146" text-anchor="middle" font-family="'Courier New', monospace" font-size="18" fill="#cfe8ff" letter-spacing="3">INTERNET RADIO FOR WINDOWS · WRITTEN IN RUST · ~8 MB</text>
+  <text x="450" y="146" text-anchor="middle" font-family="'Courier New', monospace" font-size="18" fill="#d8ffd0" letter-spacing="3">INTERNET RADIO FOR WINDOWS · WRITTEN IN RUST · ~8 MB</text>
   <!-- scroller -->
-  <text y="238" font-family="'Courier New', monospace" font-size="16" fill="#ffcc00" letter-spacing="2">
-    <animate attributeName="x" from="900" to="-1400" dur="22s" repeatCount="indefinite"/>
-    *** GREETINGS FROM BIGWAVE RADIO *** THOUSANDS OF STATIONS FROM RADIO-BROWSER.INFO *** RHAI PLUGINS *** MILKDROP-STYLE VISIONS *** BEAT STROBE WITH AMIGA INTERFERENCE RINGS *** ESC ALWAYS EXITS ***
+  <text y="238" font-family="'Courier New', monospace" font-size="16" fill="#c8ff00" letter-spacing="2">
+    <animate attributeName="x" from="900" to="-1900" dur="28s" repeatCount="indefinite"/>
+    *** GREETINGS FROM BIGWAVE RADIO *** THOUSANDS OF STATIONS FROM RADIO-BROWSER.INFO *** MOOD CHIPS: DANCE TRANCE CHILL EASY 80S 90S *** RHAI PLUGINS *** MILKDROP-STYLE VISIONS *** BEAT STROBE WITH AMIGA INTERFERENCE RINGS *** ESC ALWAYS EXITS ***
   </text>
 </svg>

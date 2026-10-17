@@ -1,10 +1,14 @@
 <p align="center">
+  <img src="docs/media/wolf-icon.png" alt="BigWave Radio icon: an engraved howling wolf on green" width="160">
+</p>
+
+<p align="center">
   <img src="docs/media/hero.svg" alt="BigWave Radio — animated banner" width="100%">
 </p>
 
 <p align="center">
-  <a href="https://github.com/postmanpat-303/BigWaveRadio/releases/latest"><img src="https://img.shields.io/github/v/release/postmanpat-303/BigWaveRadio?style=for-the-badge&color=ff3cac&label=release" alt="Latest release"></a>
-  <a href="https://github.com/postmanpat-303/BigWaveRadio/releases"><img src="https://img.shields.io/github/downloads/postmanpat-303/BigWaveRadio/total?style=for-the-badge&color=2b86c5" alt="Downloads"></a>
+  <a href="https://github.com/postmanpat-303/BigWaveRadio/releases/latest"><img src="https://img.shields.io/github/v/release/postmanpat-303/BigWaveRadio?style=for-the-badge&color=3cd23c&label=release" alt="Latest release"></a>
+  <a href="https://github.com/postmanpat-303/BigWaveRadio/releases"><img src="https://img.shields.io/github/downloads/postmanpat-303/BigWaveRadio/total?style=for-the-badge&color=1fb5c9" alt="Downloads"></a>
   <img src="https://img.shields.io/badge/Windows-11-0078D6?style=for-the-badge&logo=windows11&logoColor=white" alt="Windows 11">
   <img src="https://img.shields.io/badge/Rust-egui-B7410E?style=for-the-badge&logo=rust&logoColor=white" alt="Rust + egui">
   <img src="https://img.shields.io/badge/plugins-Rhai-784ba0?style=for-the-badge" alt="Rhai plugins">
@@ -19,8 +23,12 @@
 </p>
 
 <p align="center">
+  🐺 Part of the Wave family: <b>BigWave Radio</b> · <a href="https://github.com/postmanpat-303/ChipWaveTracker"><b>ChipWave Tracker</b></a> (an OctaMED-inspired music tracker) · <a href="https://github.com/postmanpat-303/StreamWave"><b>StreamWave</b></a> (an audio recorder and editor for streamers and podcasters)
+</p>
+
+<p align="center">
   <a href="https://github.com/postmanpat-303/BigWaveRadio/releases/latest">
-    <img src="https://img.shields.io/badge/%E2%AC%87%20Download-Latest%20release-ff3cac?style=for-the-badge&labelColor=0b0420" alt="Download the latest release" height="44">
+    <img src="https://img.shields.io/badge/%E2%AC%87%20Download-Latest%20release-3cd23c?style=for-the-badge&labelColor=03120a" alt="Download the latest release" height="44">
   </a>
 </p>
 
@@ -32,14 +40,14 @@
 
 <table>
   <tr>
-    <td width="33%" valign="top"><h4>📻 Discover</h4>Trending, popular and recently-added stations, plus Tags and Countries browsing.</td>
+    <td width="33%" valign="top"><h4>📻 Discover</h4>Trending, popular and recently-added stations, Tags browsing, and a world map with station bubbles for each country.</td>
     <td width="33%" valign="top"><h4>🎧 Mood chips</h4>One click for <b>Dance, Trance, Chill, Easy, 80s or 90s</b>. Each mood searches several radio-browser tags at once (trance covers progressive, uplifting, psytrance…). The mappings live in an editable <code>moods.json</code>.</td>
     <td width="33%" valign="top"><h4>⭐ Your Stars</h4>Rate stations 1–5 from the now-playing panel. <b>Your Stars</b> lists every station you rated, from any category, by star level or all sorted by stars.</td>
   </tr>
   <tr>
     <td valign="top"><h4>🔎 Music-first search</h4>Live top-bar search with one-click history. Results are ranked with working streams first, then votes, clicks and bitrate, and near-identical stations are merged. Talk, news, sport and religious stations are hidden unless you tick <b>Show talk</b>.</td>
     <td valign="top"><h4>✨ More like this · 🎲 Surprise me</h4>Find stations that share the playing station's tags, weighted by your ratings, or get a well-rated or popular pick within your moods. <b>Recently played</b> sits in My Library.</td>
-    <td valign="top"><h4>📊 Spectrum</h4>A 32-band spectrum analyser animated inside the playing station card.</td>
+    <td valign="top"><h4>🗂️ Compact station grid</h4>Tight cards that fit about twice as many stations on screen, with columns that follow the window width. Prefer roomier cards? Switch to <b>Comfortable</b> in Settings. A 32-band spectrum animates inside the playing card.</td>
   </tr>
   <tr>
     <td valign="top"><h4>ℹ️ Now-playing panel</h4>Station art, format, bitrate, votes, clicks, tags, website and copy-stream-URL.</td>
@@ -48,8 +56,8 @@
   </tr>
   <tr>
     <td valign="top"><h4>🎨 Themes</h4>Dark / light / system, plus 8 accent colours.</td>
-    <td valign="top"><h4>🧩 Plugins</h4>Rhai scripts with permissions, hot reload, <code>.zip</code> import, panels, whole pages and overlays.</td>
-    <td valign="top"><h4>⚡ Beat Strobe & 🌌 Visions</h4>Beat-synced strobe with AI-vs-humanity symbols and Amiga interference rings (flash rate capped by the app), plus a smooth MilkDrop-style visualiser with eight scenes.</td>
+    <td valign="top"><h4>🧩 Plugins</h4>Rhai scripts with permissions, hot reload, <code>.zip</code> import, panels, whole pages and overlays. <b>Double-click</b> a plugin in the side menu to start it. Find more in the <a href="https://github.com/postmanpat-303/BigWaveRadio-Plugins">community plugin hub</a>.</td>
+    <td valign="top"><h4>⚡ Beat Strobe & 🌌 Visions</h4>Beat-synced strobe with AI-vs-humanity symbols and Amiga interference rings (flash rate capped by the app), plus a smooth MilkDrop-style visualiser with eight scenes, now rendered sharper (360p engine, adjustable quality).</td>
   </tr>
 </table>
 
@@ -62,7 +70,7 @@
   </tr>
   <tr>
     <td><img src="docs/media/rating-card.png" alt="Now-playing panel with star rating"><br><sub>Now-playing panel with your star rating</sub></td>
-    <td><img src="docs/media/plugins-page.png" alt="Plugins page"><br><sub>Plugins page: flash safety, permissions and settings</sub></td>
+    <td><img src="docs/media/plugins-page.png" alt="Plugins page"><br><sub>Plugins page: tinted cards, flash safety, permissions and settings</sub></td>
   </tr>
   <tr>
     <td><img src="docs/media/strobe-page.png" alt="Beat Strobe page with symbols"><br><sub>Beat Strobe page with the symbol rotation</sub></td>
