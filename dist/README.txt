@@ -4,7 +4,8 @@ MIT - https://github.com/postmanpat-303/BigWaveRadio
 Licence: LICENSE.txt (MIT). Third-party notices: THIRD_PARTY_LICENSES.txt
 
 Created by Derek Heasley. If you find this app useful you can buy me a coffee:
-https://paypal.me/derekh100  Thank you. :)
+https://buymeacoffee.com/postmanpat  (or PayPal: https://paypal.me/derekh100)
+Thank you. :)
 
 Run: double-click BigWaveRadio.exe (keep libunwind.dll next to it).
 Windows SmartScreen may warn because the exe is not code-signed:
