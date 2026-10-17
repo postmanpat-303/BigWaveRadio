@@ -3,3 +3,6 @@ target/
 shot*.png
 staging/
 pkg/
+dist/pkg/
+dist/*.zip
+dist/*.exe

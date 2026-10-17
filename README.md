@@ -222,6 +222,17 @@ The executable is `target\release\bwr-app.exe` (~8 MB). The toolchain ships
 `libunwind.dll`, which the exe links against — copy that DLL next to the exe
 when distributing, or run with the toolchain's `bin` directory on `PATH`.
 
+**Release packaging** (same flow as [ChipWave Tracker](https://github.com/postmanpat-303/ChipWaveTracker)):
+on Linux with llvm-mingw and NSIS (`makensis`) installed, run
+
+```bash
+scripts/package-windows.sh 0.9.4
+```
+
+It writes `dist/BigWaveRadio-<ver>-windows-x64.zip` (portable) and
+`dist/BigWaveRadio-<ver>-setup-x64.exe` (NSIS installer, built from
+`installer/bigwave.nsi`). See [docs/PACKAGING.md](docs/PACKAGING.md).
+
 </details>
 
 ## 🗺️ Roadmap
