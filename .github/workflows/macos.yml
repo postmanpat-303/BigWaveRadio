@@ -34,7 +34,7 @@ jobs:
           echo "BigWave Radio $VER"
 
       - name: Tests
-        run: cargo test --workspace --locked
+        run: cargo test --workspace --locked --release
 
       - name: Build and package (universal .app, dmg, zip)
         run: scripts/package-macos.sh "${{ steps.ver.outputs.ver }}"

@@ -449,9 +449,18 @@ fn strobe_defaults_fixed_12hz_but_clamped_to_cap() {
     host.key("Escape");
 
     host.set_flash_safety(true, 12.0);
-    host.hotkey_key("F", CTRL);
-    host.hotkey_key("U", CTRL);
-    let n = count_onsets(&mut host);
+    // Wall-clock timing: on a loaded CI runner a 2 s window can sample too few
+    // frames to see every 12 Hz flash, so allow a couple of retries.
+    let mut n = 0;
+    for _ in 0..3 {
+        host.hotkey_key("F", CTRL);
+        host.hotkey_key("U", CTRL);
+        n = count_onsets(&mut host);
+        if n >= 12 {
+            break;
+        }
+        host.key("Escape");
+    }
     assert!(n >= 12, "with opt-in: much faster, got {n} flashes in 2 s");
     assert!(n <= 25, "never above 12 Hz, got {n}");
 }

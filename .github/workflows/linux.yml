@@ -52,7 +52,7 @@ jobs:
           echo "ver=$VER" >> "$GITHUB_OUTPUT"
 
       - name: Tests
-        run: cargo test --workspace --locked
+        run: cargo test --workspace --locked --release
 
       - name: Build
         run: |
