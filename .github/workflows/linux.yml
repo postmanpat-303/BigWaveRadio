@@ -42,7 +42,7 @@ jobs:
           sudo apt-get install -y --no-install-recommends \
             pkg-config libasound2-dev libssl-dev libxkbcommon-dev libwayland-dev \
             libx11-dev libxcursor-dev libxrandr-dev libxi-dev libgl1-mesa-dev \
-            libgl1-mesa-dri xvfb xauth libfuse2 file desktop-file-utils appstream
+            libgl1-mesa-dri xvfb xauth libfuse2 file desktop-file-utils
           cargo install --locked cargo-deb cargo-generate-rpm
 
       - name: Version
@@ -69,7 +69,6 @@ jobs:
       - name: Package (tar.gz, deb, rpm, AppImage)
         run: |
           desktop-file-validate packaging/linux/bigwave-radio.desktop
-          appstreamcli validate --no-net packaging/linux/bigwave-radio.metainfo.xml || true
           LINUXDEPLOY="$RUNNER_TEMP/linuxdeploy" scripts/package-linux.sh "${{ steps.ver.outputs.ver }}"
           ls -la dist
 
