@@ -10,7 +10,11 @@ Work through this before publishing a release.
 
 ## Pending
 
-- [ ] Update setup/installer icon (SetupIconFile) to new bwc icon
-  - Note: `installer/bigwave.ico` (the SetupIconFile) was already swapped to the bwc icon in fdf69d6.
-    Confirm that is wanted, and decide whether `wizard_image.bmp` / `wizard_small.bmp` should change too.
-    App shortcuts no longer depend on this file; they use `assets/bigwave.ico`.
+- [x] Update setup/installer icon (SetupIconFile) to new bwc icon
+  - Superseded 2026-10-17: the official icon is now the **engraved howling wolf on green**
+    (`/workspace/loud/pack/BigWave_Radio`). `installer/bigwave.ico` (SetupIconFile), `assets/bigwave.ico`
+    (exe + shortcuts), `assets/bigwave-icon.png` (window/taskbar, About icon) and
+    `assets/bigwave-icon-64.png` (tray) all carry the wolf icon.
+- [ ] Decide whether the installer wizard images (`installer/wizard_image.bmp`, `installer/wizard_small.bmp`)
+      and the About-page text logo (`assets/bigwave-logo.png`, still the wave + "BigWave Radio" artwork)
+      should be redone to match the wolf icon
