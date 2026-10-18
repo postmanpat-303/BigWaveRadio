@@ -95,9 +95,15 @@ BigWave-specific additions:
 | setup + uninstaller exe | `assets/bigwave.ico` (`MUI_ICON` / `MUI_UNICON`) |
 | About page logo | `assets/bigwave-logo.png` (wolf icon + wordmark, `scripts/make_branding.py`) |
 
-All come from the wolf pack in `/workspace/loud/pack/BigWave_Radio/`. To check a
-build: `wrestool -x -t 14 <exe> -o x.ico` and compare its frames with
-`bigwave_radio_<size>.png`.
+All come from the wolf pack in `/workspace/loud/pack/BigWave_Radio/` (copied to `assets/icons/`).
+
+`assets/bigwave.ico` is built by `scripts/make_ico.py`: 256 px as PNG, 128/64/48/32/24/16 px as
+32-bit BMP with alpha and a matching AND mask. Windows Explorer and Edge often cannot draw
+PNG frames at small sizes and show the generic exe/installer icon instead, so never write the
+.ico with Pillow's ICO writer (it stores every size as PNG) or copy the pack's all-PNG
+`bigwave_radio.ico`. To check a build: `python scripts/check_icons.py assets/bigwave.ico
+--exe BigWaveRadio.exe --match --setup BigWaveRadio-<ver>-setup-x64.exe` (needs `pefile`;
+the Windows workflow runs this).
 
 
 ## macOS

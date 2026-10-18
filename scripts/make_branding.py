@@ -3,6 +3,7 @@
 
 Inputs : assets/bigwave-icon.png (256 px wolf icon, same as /workspace/loud/pack/BigWave_Radio)
          assets/bigwave-wordmark.png (green/silver "BigWave RADIO" lettering)
+(assets/bigwave.ico is NOT made here: see scripts/make_ico.py, which writes BMP frames under 256 px.)
 Outputs: assets/bigwave-logo.png        512x512 About-page logo (wolf icon over the wordmark)
          installer/welcome.bmp          164x314 NSIS welcome/finish page bitmap
          installer/header.bmp           150x57  NSIS header bitmap
