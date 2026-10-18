@@ -2,6 +2,8 @@
   <img src="docs/media/wolf-icon.png" alt="BigWave Radio icon: an engraved howling wolf on green" width="160">
 </p>
 
+<h1 align="center">BigWave Radio: free internet radio player for Windows, macOS and Linux</h1>
+
 <p align="center">
   <img src="docs/media/hero.svg" alt="BigWave Radio — animated banner" width="100%">
 </p>
@@ -9,7 +11,7 @@
 <p align="center">
   <a href="https://github.com/postmanpat-303/BigWaveRadio/releases/latest"><img src="https://img.shields.io/github/v/release/postmanpat-303/BigWaveRadio?style=for-the-badge&color=3cd23c&label=release" alt="Latest release"></a>
   <a href="https://github.com/postmanpat-303/BigWaveRadio/releases"><img src="https://img.shields.io/github/downloads/postmanpat-303/BigWaveRadio/total?style=for-the-badge&color=1fb5c9" alt="Downloads"></a>
-  <img src="https://img.shields.io/badge/Windows-11-0078D6?style=for-the-badge&logo=windows11&logoColor=white" alt="Windows 11">
+  <a href="#downloads"><img src="https://img.shields.io/badge/platform-Windows%20%C2%B7%20macOS%20%C2%B7%20Linux-0078D6?style=for-the-badge" alt="Windows, macOS and Linux"></a>
   <a href="#downloads"><img src="https://img.shields.io/badge/macOS-universal-000000?style=for-the-badge&logo=apple&logoColor=white" alt="macOS (universal)"></a>
   <a href="#downloads"><img src="https://img.shields.io/badge/Linux-deb%20%C2%B7%20rpm%20%C2%B7%20Arch%20%C2%B7%20AppImage-FCC624?style=for-the-badge&logo=linux&logoColor=black" alt="Linux"></a>
   <img src="https://img.shields.io/badge/Rust-egui-B7410E?style=for-the-badge&logo=rust&logoColor=white" alt="Rust + egui">
@@ -21,7 +23,7 @@
 <h3 align="center">A tiny, native internet radio player for Windows, macOS and Linux — with a demo-scene heart.</h3>
 
 <p align="center">
-  Streams thousands of stations from the community-powered <a href="https://www.radio-browser.info">radio-browser.info</a> directory.<br>
+  This free internet radio player streams thousands of dance, chill, trance and retro stations from the community-powered <a href="https://www.radio-browser.info">radio-browser.info</a> directory.<br>
   A ground-up Rust rewrite that shrank the download from an ~84 MB installer to a single ~8 MB executable.
 </p>
 
