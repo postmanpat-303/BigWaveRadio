@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 260" width="900" height="260" role="img" aria-label="BigWave Radio">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#03120a"/><stop offset="1" stop-color="#0c2e16"/>
+    </linearGradient>
+    <linearGradient id="copper" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5cff2e"></stop>
+      <stop offset="1" stop-color="#e8ff6a"></stop>
+    </linearGradient>
+    <g id="disc" fill="none" stroke="#fff" stroke-opacity=".08" stroke-width="6">
+      <circle r="24"/><circle r="48"/><circle r="72"/><circle r="96"/><circle r="120"/><circle r="144"/><circle r="168"/><circle r="192"/><circle r="216"/><circle r="240"/><circle r="264"/>
+    </g>
+  </defs>
+  <rect width="900" height="260" fill="url(#sky)"/>
+  <!-- Amiga interference rings -->
+  <use href="#disc" x="300" y="130"></use>
+  <use href="#disc" x="600" y="130"></use>
+  <!-- copper bars -->
+  <rect x="0" y="0" width="900" height="6" fill="url(#copper)"/>
+  <rect x="0" y="254" width="900" height="6" fill="url(#copper)"/>
+  <!-- spectrum -->
+  <g fill="url(#copper)" opacity=".85">
+    <rect x="70" y="200" width="14" height="40"></rect>
+    <rect x="90" y="200" width="14" height="40"></rect>
+    <rect x="110" y="200" width="14" height="40"></rect>
+    <rect x="130" y="200" width="14" height="40"></rect>
+    <rect x="776" y="200" width="14" height="40"></rect>
+    <rect x="796" y="200" width="14" height="40"></rect>
+    <rect x="816" y="200" width="14" height="40"></rect>
+  </g>
+  <!-- radio wave -->
+  <path d="M0 175 Q 56 145 112 175 T 225 175 T 337 175 T 450 175 T 562 175 T 675 175 T 787 175 T 900 175 T 1012 175" fill="none" stroke="#9dff6a" stroke-width="2" opacity=".6">
+    
+  </path>
+  <text x="450" y="112" text-anchor="middle" font-family="Verdana, 'DejaVu Sans', sans-serif" font-size="64" font-weight="bold" letter-spacing="4" fill="url(#copper)" stroke="#000" stroke-width="2">BIGWAVE RADIO</text>
+  <text x="450" y="146" text-anchor="middle" font-family="'Courier New', monospace" font-size="18" fill="#d8ffd0" letter-spacing="3">WINDOWS · MACOS · LINUX · WRITTEN IN RUST · ~8 MB</text>
+  <!-- scroller -->
+  <text x="40" y="238" font-family="'Courier New', monospace" font-size="16" fill="#c8ff00" letter-spacing="2">
+    
+    *** GREETINGS FROM BIGWAVE RADIO *** THOUSANDS OF STATIONS FROM RADIO-BROWSER.INFO *** MOOD CHIPS: DANCE TRANCE CHILL EASY 80S 90S *** RHAI PLUGINS *** MILKDROP-STYLE VISIONS *** BEAT STROBE WITH AMIGA INTERFERENCE RINGS *** ESC ALWAYS EXITS ***
+  </text>
+</svg>
