@@ -6,7 +6,7 @@
 #   dist/BigWaveRadio-<ver>-linux-<arch>.rpm       cargo generate-rpm (skipped if missing)
 #   dist/BigWaveRadio-<ver>-linux-<arch>.AppImage  linuxdeploy      (skipped if LINUXDEPLOY is unset/missing)
 # The Arch package is built from packaging/arch/bigwave-radio-bin/PKGBUILD (CI: archlinux container).
-# Usage: scripts/package-linux.sh 0.9.7
+# Usage: scripts/package-linux.sh 0.9.8
 set -euo pipefail
 VER="${1:?version}"
 cd "$(dirname "$0")/.."

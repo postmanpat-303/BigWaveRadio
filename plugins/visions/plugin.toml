@@ -13,7 +13,7 @@ permissions = ["audio", "overlay", "fullscreen", "hotkeys", "panel", "page"]
 flashing = false
 accent = "#7b2ff7"     # card colour on the Plugins page
 
-# Translations shown when the app's Language is set (needs BigWave Radio newer than 0.9.7).
+# Translations shown when the app's Language is set (needs BigWave Radio 0.9.8 or newer).
 [descriptions]
 "pt-BR" = "Visualizador de áudio no estilo MilkDrop: túnel de feedback, caleidoscópio, plasma, campo de fluxo, esfera aramada, terreno de espectro, campo estelar e mandala, com transições suaves. Sem efeito estroboscópico."
 it = "Visualizzatore audio in stile MilkDrop: tunnel a retroazione, caleidoscopio, plasma, campo di flusso, sfera wireframe, terreno spettrale, campo stellare e mandala, con dissolvenze morbide. Senza effetto stroboscopico."

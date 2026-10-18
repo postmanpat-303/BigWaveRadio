@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       release_tag:
-        description: "Attach the dmg/zip to this release tag (e.g. v0.9.7); empty = artifacts only"
+        description: "Attach the dmg/zip to this release tag (e.g. v0.9.8); empty = artifacts only"
         required: false
         default: ""
   push:

@@ -2,7 +2,7 @@
 # BigWave Radio built from source (the release tag).
 # Build:  makepkg -si      (CachyOS / Arch / Manjaro / EndeavourOS)
 pkgname=bigwave-radio
-pkgver=0.9.7
+pkgver=0.9.8
 pkgrel=1
 pkgdesc="Internet radio player with moods, star ratings, plugins and visualisers (radio-browser.info)"
 arch=('x86_64' 'aarch64')

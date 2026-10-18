@@ -50,8 +50,8 @@ body:
     id: version
     attributes:
       label: BigWave Radio version
-      description: Shown on the About page, e.g. 0.9.7
-      placeholder: "0.9.7"
+      description: Shown on the About page, e.g. 0.9.8
+      placeholder: "0.9.8"
     validations:
       required: true
   - type: textarea

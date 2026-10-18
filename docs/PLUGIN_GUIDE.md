@@ -110,7 +110,7 @@ Language). A plugin can follow it:
   ```
 
   `choice` options are the stored values, so they are not translated. These
-  keys need a BigWave Radio newer than 0.9.7; older versions refuse a
+  keys need BigWave Radio 0.9.8 or newer; older versions refuse a
   plugin.toml that uses them.
 * **In the script**, `ctx.lang` is the UI language code (`"en"`, `"pt-BR"`,
   `"it"`); it changes as soon as the user switches. Pick your texts from it,

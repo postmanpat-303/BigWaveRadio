@@ -41,7 +41,7 @@ GitHub release, so assets are published by hand after review.
 Locally (Git Bash on Windows with VS Build Tools, Python and NSIS):
 
 ```bash
-scripts/package-windows.sh 0.9.7      # version must match [workspace.package] in Cargo.toml
+scripts/package-windows.sh 0.9.8      # version must match [workspace.package] in Cargo.toml
 ```
 
 Output (`dist/` is git-ignored apart from `dist/README.txt`):

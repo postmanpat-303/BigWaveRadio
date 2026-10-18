@@ -3,7 +3,7 @@
 # and package it. Runs on macOS only (CI: .github/workflows/macos.yml).
 #   dist/BigWaveRadio-<ver>-macos-universal.dmg   (app + Applications link)
 #   dist/BigWaveRadio-<ver>-macos-universal.zip   (the .app)
-# Usage: scripts/package-macos.sh 0.9.7
+# Usage: scripts/package-macos.sh 0.9.8
 set -euo pipefail
 VER="${1:?version}"
 cd "$(dirname "$0")/.."

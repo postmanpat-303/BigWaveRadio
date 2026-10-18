@@ -10,7 +10,7 @@ description = "Strobe that randomly syncs to the beat, blacks out during breaks 
 permissions = ["audio", "overlay", "fullscreen", "hotkeys", "panel", "page"]
 accent = "#e01030"     # card colour on the Plugins page
 
-# Translations shown when the app's Language is set (needs BigWave Radio newer than 0.9.7).
+# Translations shown when the app's Language is set (needs BigWave Radio 0.9.8 or newer).
 [descriptions]
 "pt-BR" = "Estroboscópio que às vezes sincroniza com a batida, apaga nas pausas e pisca símbolos de uma revolta das IAs. Na janela ou em tela cheia."
 it = "Stroboscopio che si sincronizza a caso con il battito, si oscura nelle pause e fa lampeggiare simboli della rivolta delle IA. In finestra o a schermo intero."

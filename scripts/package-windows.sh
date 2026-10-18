@@ -5,7 +5,7 @@
 #   dist/SHA256SUMS-windows.txt               sha256sum lines for both
 # The exe is self-contained: no libunwind.dll, no vcruntime (crt-static).
 # Runs in Git Bash on Windows (CI: .github/workflows/windows.yml on windows-latest).
-# Usage: scripts/package-windows.sh 0.9.7
+# Usage: scripts/package-windows.sh 0.9.8
 # Needs: Visual Studio Build Tools (MSVC + Windows SDK), rustup target
 #        x86_64-pc-windows-msvc, python, NSIS 3 (makensis) for the setup exe.
 set -euo pipefail
@@ -40,7 +40,7 @@ for c in "/c/Program Files (x86)/NSIS/makensis.exe" "/c/Program Files/NSIS/maken
   [ -z "$MAKENSIS" ] && [ -x "$c" ] && MAKENSIS="$c"
 done
 if [ -n "$MAKENSIS" ]; then
-  # NSIS VIProductVersion needs four numbers (0.9.7 -> 0.9.7.0)
+  # NSIS VIProductVersion needs four numbers (0.9.8 -> 0.9.8.0)
   VI=$(echo "$VER" | awk -F. '{printf "%d.%d.%d.%d", $1, $2, $3, $4}')
   # makensis accepts -D switches on Windows too (no MSYS path mangling).
   (cd installer && "$MAKENSIS" -V2 -DVERSION="$VER" -DVIVERSION="$VI" -DPKGDIR=../dist/pkg \
