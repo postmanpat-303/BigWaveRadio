@@ -21,8 +21,24 @@ pub fn reserved_height(app: &BigWaveApp) -> f32 {
     chips + talk + adv + 16.0
 }
 
+/// A mood's label in the UI language. The built-in moods are translated
+/// while their label is still the default; labels edited in moods.json
+/// (or moods the user added) are shown exactly as written.
+pub fn mood_label(mood: &bwr_core::Mood) -> String {
+    let translated = match (mood.id.as_str(), mood.label.as_str()) {
+        ("dance", "Dance") => t!("mood.dance"),
+        ("trance", "Trance") => t!("mood.trance"),
+        ("chill", "Chill") => t!("mood.chill"),
+        ("easy", "Easy") => t!("mood.easy"),
+        ("80s", "80s") => t!("mood.80s"),
+        ("90s", "90s") => t!("mood.90s"),
+        _ => return mood.label.clone(),
+    };
+    translated.to_string()
+}
+
 pub fn rail(ui: &mut Ui, app: &mut BigWaveApp) {
-    ui.label(egui::RichText::new("MOODS").small().weak());
+    ui.label(egui::RichText::new(t!("rail.moods")).small().weak());
     ui.add_space(4.0);
     let w = ui.available_width();
     let half = (w - GAP) / 2.0;
@@ -34,8 +50,9 @@ pub fn rail(ui: &mut Ui, app: &mut BigWaveApp) {
             for (j, mood) in pair.iter().enumerate() {
                 let idx = row * 2 + j;
                 let selected = app.page == Page::Mood(idx);
-                let label = format!("{} {}", mood.icon, mood.label);
-                let hover = format!("{}: #{}", mood.label, mood.tags.join(" #"));
+                let name = mood_label(mood);
+                let label = format!("{} {}", mood.icon, name);
+                let hover = format!("{}: #{}", name, mood.tags.join(" #"));
                 if mood_chip(ui, app, &label, None, half, selected, idx).on_hover_text(hover).clicked() {
                     app.open_mood(idx);
                 }
@@ -46,8 +63,8 @@ pub fn rail(ui: &mut Ui, app: &mut BigWaveApp) {
     let rated: usize = (1..=5).map(|r| app.ratings.count(r)).sum();
     let selected = app.page == Page::Stars;
     let count = (rated > 0).then(|| rated.to_string());
-    if mood_chip(ui, app, "★ Your Stars", count.as_deref(), w, selected, 99)
-        .on_hover_text("Every station you rated, from any category")
+    if mood_chip(ui, app, &format!("★ {}", t!("stars.title")), count.as_deref(), w, selected, 99)
+        .on_hover_text(t!("rail.stars_tip"))
         .clicked()
     {
         app.page = Page::Stars;
@@ -58,8 +75,8 @@ pub fn rail(ui: &mut Ui, app: &mut BigWaveApp) {
 
     let mut show = app.discovery.show_talk;
     if ui
-        .checkbox(&mut show, "Show talk")
-        .on_hover_text("Show news, talk, sport, religion, comedy and podcast stations")
+        .checkbox(&mut show, t!("rail.show_talk"))
+        .on_hover_text(t!("rail.show_talk_tip"))
         .changed()
     {
         app.discovery.show_talk = show;
@@ -69,8 +86,8 @@ pub fn rail(ui: &mut Ui, app: &mut BigWaveApp) {
 
     let arrow = if app.advanced_open { "−" } else { "+" };
     if ui
-        .add(egui::Label::new(egui::RichText::new(format!("{arrow} ADVANCED")).small().weak()).sense(Sense::click()))
-        .on_hover_text("Stream format and minimum bitrate")
+        .add(egui::Label::new(egui::RichText::new(format!("{arrow} {}", t!("rail.advanced"))).small().weak()).sense(Sense::click()))
+        .on_hover_text(t!("rail.advanced_tip"))
         .clicked()
     {
         app.advanced_open = !app.advanced_open;
@@ -82,17 +99,17 @@ pub fn rail(ui: &mut Ui, app: &mut BigWaveApp) {
 
 fn advanced(ui: &mut Ui, app: &mut BigWaveApp) {
     ui.add_space(4.0);
-    ui.label(egui::RichText::new("Format").small().weak());
+    ui.label(egui::RichText::new(t!("rail.format")).small().weak());
     egui::ComboBox::from_id_salt("nav-codec")
         .width(ui.available_width() - 4.0)
         .selected_text(if app.settings.codec.is_empty() {
-            "Any format".to_string()
+            t!("filter.any_format").to_string()
         } else {
             app.settings.codec.to_uppercase()
         })
         .show_ui(ui, |ui| {
             for c in ["", "mp3", "aac", "ogg", "flac", "opus"] {
-                let label = if c.is_empty() { "Any format".to_string() } else { c.to_uppercase() };
+                let label = if c.is_empty() { t!("filter.any_format").to_string() } else { c.to_uppercase() };
                 if ui.selectable_label(app.settings.codec == c, label).clicked() {
                     app.settings.codec = c.to_string();
                     app.persist_settings();
@@ -101,16 +118,16 @@ fn advanced(ui: &mut Ui, app: &mut BigWaveApp) {
             }
         });
     ui.add_space(4.0);
-    ui.label(egui::RichText::new("Minimum bitrate").small().weak());
+    ui.label(egui::RichText::new(t!("rail.min_bitrate")).small().weak());
     egui::ComboBox::from_id_salt("nav-bitrate")
         .width(ui.available_width() - 4.0)
         .selected_text(match app.settings.min_bitrate {
-            0 => "Any bitrate".to_string(),
+            0 => t!("filter.any_bitrate").to_string(),
             b => format!("{b} kbps+"),
         })
         .show_ui(ui, |ui| {
             for b in [0u32, 64, 128, 192, 256, 320] {
-                let label = if b == 0 { "Any bitrate".to_string() } else { format!("{b} kbps or more") };
+                let label = if b == 0 { t!("filter.any_bitrate").to_string() } else { t!("filter.kbps_or_more", kbps = b) };
                 if ui.selectable_label(app.settings.min_bitrate == b, label).clicked() {
                     app.settings.min_bitrate = b;
                     app.persist_settings();

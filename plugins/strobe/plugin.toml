@@ -1,7 +1,7 @@
 # Beat Strobe — bundled with BigWave Radio.
 id = "strobe"
 name = "Beat Strobe"
-version = "1.4.1"
+version = "1.4.2"
 api = 1
 runtime = "rhai"
 entry = "main.rhai"
@@ -10,22 +10,28 @@ description = "Strobe that randomly syncs to the beat, blacks out during breaks 
 permissions = ["audio", "overlay", "fullscreen", "hotkeys", "panel", "page"]
 accent = "#e01030"     # card colour on the Plugins page
 
+# Translations shown when the app's Language is set (needs BigWave Radio newer than 0.9.7).
+[descriptions]
+"pt-BR" = "Estroboscópio que às vezes sincroniza com a batida, apaga nas pausas e pisca símbolos de uma revolta das IAs. Na janela ou em tela cheia."
+it = "Stroboscopio che si sincronizza a caso con il battito, si oscura nelle pause e fa lampeggiare simboli della rivolta delle IA. In finestra o a schermo intero."
+
 [[pages]]
 id = "strobe"
 title = "Strobe"
 icon = "⚡"
+titles = { "pt-BR" = "Estrobo", it = "Strobo" }
 
 [[hotkeys]]
 keys = "Ctrl+F,U"     # hold Ctrl, press F, then U: start the strobe straight away
 action = "start"
 
 [settings]
-rate    = { type = "float",  default = 12.0, min = 1.0, max = 12.0, label = "Starting speed (Hz, limited by the flash cap)" }
-mode    = { type = "choice", default = "Fixed rate", options = ["Random beat", "Fixed rate"], label = "Mode" }
-display = { type = "choice", default = "Fullscreen", options = ["Fullscreen", "In window"], label = "Display" }
-symbols = { type = "bool",   default = true, label = "Show symbols" }
-rings   = { type = "bool",   default = true, label = "Amiga interference rings (all modes)" }
-sym_time = { type = "choice", default = "0.5 s", options = ["0.5 s", "1 s", "1.5 s", "2 s", "3 s", "Random 1.5-3 s"], label = "Symbol duration" }
-fade     = { type = "choice", default = "Off", options = ["Off", "1 s", "3 s", "5 s", "10 s", "15 s"], label = "Fade to black (hold time)" }
-on_time  = { type = "choice", default = "10 s", options = ["5 s", "10 s", "15 s", "20 s", "30 s", "60 s"], label = "Strobe on time between fades" }
-color   = { type = "color",  default = "#ffffff", label = "Flash colour" }
+rate    = { type = "float",  default = 12.0, min = 1.0, max = 12.0, label = "Starting speed (Hz, limited by the flash cap)", labels = { "pt-BR" = "Velocidade inicial (Hz, limitada pelo limite de flashes)", it = "Velocità iniziale (Hz, limitata dal limite lampeggiamenti)" } }
+mode    = { type = "choice", default = "Fixed rate", options = ["Random beat", "Fixed rate"], label = "Mode", labels = { "pt-BR" = "Modo", it = "Modalità" } }
+display = { type = "choice", default = "Fullscreen", options = ["Fullscreen", "In window"], label = "Display", labels = { "pt-BR" = "Exibição", it = "Visualizzazione" } }
+symbols = { type = "bool",   default = true, label = "Show symbols", labels = { "pt-BR" = "Mostrar símbolos", it = "Mostra simboli" } }
+rings   = { type = "bool",   default = true, label = "Amiga interference rings (all modes)", labels = { "pt-BR" = "Anéis de interferência Amiga (todos os modos)", it = "Anelli di interferenza Amiga (tutte le modalità)" } }
+sym_time = { type = "choice", default = "0.5 s", options = ["0.5 s", "1 s", "1.5 s", "2 s", "3 s", "Random 1.5-3 s"], label = "Symbol duration", labels = { "pt-BR" = "Duração dos símbolos", it = "Durata dei simboli" } }
+fade     = { type = "choice", default = "Off", options = ["Off", "1 s", "3 s", "5 s", "10 s", "15 s"], label = "Fade to black (hold time)", labels = { "pt-BR" = "Escurecer até o preto (tempo no escuro)", it = "Dissolvenza al nero (durata del buio)" } }
+on_time  = { type = "choice", default = "10 s", options = ["5 s", "10 s", "15 s", "20 s", "30 s", "60 s"], label = "Strobe on time between fades", labels = { "pt-BR" = "Tempo de estrobo entre os escurecimentos", it = "Durata dello strobo tra le dissolvenze" } }
+color   = { type = "color",  default = "#ffffff", label = "Flash colour", labels = { "pt-BR" = "Cor do flash", it = "Colore del lampo" } }

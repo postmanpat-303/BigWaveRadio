@@ -1,7 +1,7 @@
 # Visions — bundled with BigWave Radio.
 id = "visions"
 name = "Visions"
-version = "1.0.1"
+version = "1.0.2"
 api = 1
 runtime = "rhai"
 entry = "main.rhai"
@@ -13,6 +13,11 @@ permissions = ["audio", "overlay", "fullscreen", "hotkeys", "panel", "page"]
 flashing = false
 accent = "#7b2ff7"     # card colour on the Plugins page
 
+# Translations shown when the app's Language is set (needs BigWave Radio newer than 0.9.7).
+[descriptions]
+"pt-BR" = "Visualizador de áudio no estilo MilkDrop: túnel de feedback, caleidoscópio, plasma, campo de fluxo, esfera aramada, terreno de espectro, campo estelar e mandala, com transições suaves. Sem efeito estroboscópico."
+it = "Visualizzatore audio in stile MilkDrop: tunnel a retroazione, caleidoscopio, plasma, campo di flusso, sfera wireframe, terreno spettrale, campo stellare e mandala, con dissolvenze morbide. Senza effetto stroboscopico."
+
 [[pages]]
 id = "visions"
 title = "Visions"
@@ -23,9 +28,9 @@ keys = "Ctrl+M,D"     # hold Ctrl, press M, then D: start Visions
 action = "start"
 
 [settings]
-display    = { type = "choice", default = "Fullscreen", options = ["Fullscreen", "In window"], label = "Display" }
-cycle      = { type = "choice", default = "20 s", options = ["Off", "10 s", "20 s", "30 s", "60 s"], label = "Change scene every" }
-beat_change = { type = "bool", default = false, label = "Also change scene on strong beats" }
-quality    = { type = "choice", default = "Medium", options = ["Low", "Medium", "High"], label = "Quality" }
-intensity  = { type = "float", default = 1.0, min = 0.3, max = 1.5, label = "Intensity" }
-names      = { type = "bool", default = true, label = "Show the scene name when it changes" }
+display    = { type = "choice", default = "Fullscreen", options = ["Fullscreen", "In window"], label = "Display", labels = { "pt-BR" = "Exibição", it = "Visualizzazione" } }
+cycle      = { type = "choice", default = "20 s", options = ["Off", "10 s", "20 s", "30 s", "60 s"], label = "Change scene every", labels = { "pt-BR" = "Trocar de cena a cada", it = "Cambia scena ogni" } }
+beat_change = { type = "bool", default = false, label = "Also change scene on strong beats", labels = { "pt-BR" = "Trocar de cena também nas batidas fortes", it = "Cambia scena anche sui battiti forti" } }
+quality    = { type = "choice", default = "Medium", options = ["Low", "Medium", "High"], label = "Quality", labels = { "pt-BR" = "Qualidade", it = "Qualità" } }
+intensity  = { type = "float", default = 1.0, min = 0.3, max = 1.5, label = "Intensity", labels = { "pt-BR" = "Intensidade", it = "Intensità" } }
+names      = { type = "bool", default = true, label = "Show the scene name when it changes", labels = { "pt-BR" = "Mostrar o nome da cena quando ela mudar", it = "Mostra il nome della scena quando cambia" } }

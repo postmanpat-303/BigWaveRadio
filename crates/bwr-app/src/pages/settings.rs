@@ -34,19 +34,48 @@ fn card<R>(
 }
 
 pub fn ui(ui: &mut Ui, app: &mut BigWaveApp) {
-    ui.heading("Settings");
+    ui.heading(t!("settings.title"));
     ui.add_space(8.0);
     let dark = theme::is_dark(ui.ctx(), app.settings.theme);
     let accent = theme::accent_color(app.settings.accent);
 
     egui::ScrollArea::vertical().auto_shrink([false, false]).show(ui, |ui| {
+        // --- Language --------------------------------------------------------
+        card(ui, dark, accent, &format!("🌐  {}", t!("settings.language")), |ui| {
+            use crate::i18n::{Choice, Lang};
+            let current = Choice::parse(&app.ui_prefs.language);
+            let system = crate::i18n::system_lang();
+            let name = |c: Choice| match c {
+                Choice::System => t!("settings.language_system", lang = system.native_name()),
+                Choice::Fixed(l) => l.native_name().to_string(),
+            };
+            let mut picked = None;
+            egui::ComboBox::from_id_salt("ui-language")
+                .selected_text(name(current))
+                .width(240.0)
+                .show_ui(ui, |ui| {
+                    let choices = std::iter::once(Choice::System).chain(Lang::ALL.map(Choice::Fixed));
+                    for c in choices {
+                        if ui.selectable_label(current == c, name(c)).clicked() {
+                            picked = Some(c);
+                        }
+                    }
+                });
+            if let Some(c) = picked.filter(|c| *c != current) {
+                app.set_language(c);
+            }
+            ui.label(egui::RichText::new(t!("settings.language_hint")).small().weak());
+        });
+
+        ui.add_space(10.0);
+
         // --- Appearance ------------------------------------------------------
-        card(ui, dark, accent, "Theme", |ui| {
+        card(ui, dark, accent, t!("settings.theme"), |ui| {
             ui.horizontal(|ui| {
                 for (label, value) in [
-                    ("Match system", Theme::System),
-                    ("Light", Theme::Light),
-                    ("Dark", Theme::Dark),
+                    (t!("settings.match_system"), Theme::System),
+                    (t!("settings.light"), Theme::Light),
+                    (t!("settings.dark"), Theme::Dark),
                 ] {
                     if ui.selectable_label(app.settings.theme == value, label).clicked() {
                         app.settings.theme = value;
@@ -56,12 +85,12 @@ pub fn ui(ui: &mut Ui, app: &mut BigWaveApp) {
             });
 
             ui.add_space(10.0);
-            ui.label(egui::RichText::new("Highlight colour").heading().size(16.0));
+            ui.label(egui::RichText::new(t!("settings.highlight")).heading().size(16.0));
             ui.horizontal(|ui| {
                 // "Match system" swatch.
                 let system_selected = app.settings.accent == Accent::System;
                 if ui
-                    .selectable_label(system_selected, "Match system")
+                    .selectable_label(system_selected, t!("settings.match_system"))
                     .clicked()
                 {
                     app.settings.accent = Accent::System;
@@ -108,20 +137,20 @@ pub fn ui(ui: &mut Ui, app: &mut BigWaveApp) {
         ui.add_space(10.0);
 
         // --- Stream quality ---------------------------------------------------
-        card(ui, dark, accent, "Stream quality", |ui| {
+        card(ui, dark, accent, t!("settings.quality"), |ui| {
             ui.horizontal(|ui| {
-                ui.label("Minimum bitrate:");
+                ui.label(t!("settings.min_bitrate"));
                 egui::ComboBox::from_id_salt("min-bitrate")
                     .selected_text(match app.settings.min_bitrate {
-                        0 => "Any bitrate".to_string(),
-                        b => format!("{b} kbps or more"),
+                        0 => t!("filter.any_bitrate").to_string(),
+                        b => t!("filter.kbps_or_more", kbps = b),
                     })
                     .show_ui(ui, |ui| {
                         for b in [0u32, 64, 128, 192, 256, 320] {
                             let label = if b == 0 {
-                                "Any bitrate".to_string()
+                                t!("filter.any_bitrate").to_string()
                             } else {
-                                format!("{b} kbps or more")
+                                t!("filter.kbps_or_more", kbps = b)
                             };
                             if ui
                                 .selectable_label(app.settings.min_bitrate == b, label)
@@ -134,17 +163,17 @@ pub fn ui(ui: &mut Ui, app: &mut BigWaveApp) {
                         }
                     });
                 ui.add_space(16.0);
-                ui.label("Format:");
+                ui.label(t!("settings.format"));
                 egui::ComboBox::from_id_salt("codec-filter")
                     .selected_text(if app.settings.codec.is_empty() {
-                        "Any format".to_string()
+                        t!("filter.any_format").to_string()
                     } else {
                         app.settings.codec.to_uppercase()
                     })
                     .show_ui(ui, |ui| {
                         for c in ["", "mp3", "aac", "ogg", "flac", "opus"] {
                             let label = if c.is_empty() {
-                                "Any format".to_string()
+                                t!("filter.any_format").to_string()
                             } else {
                                 c.to_uppercase()
                             };
@@ -161,7 +190,7 @@ pub fn ui(ui: &mut Ui, app: &mut BigWaveApp) {
             });
             ui.label(
                 egui::RichText::new(
-                    "Applies everywhere: Discover lists, search, tags, countries, Surprise me.",
+                    t!("settings.quality_hint"),
                 )
                 .small()
                 .weak(),
@@ -171,18 +200,18 @@ pub fn ui(ui: &mut Ui, app: &mut BigWaveApp) {
         ui.add_space(10.0);
 
         // --- Station cards -----------------------------------------------------
-        card(ui, dark, accent, "Station cards", |ui| {
+        card(ui, dark, accent, t!("settings.cards"), |ui| {
             ui.horizontal(|ui| {
                 let mut comfy = app.discovery.comfortable_cards;
-                let a = ui.radio_value(&mut comfy, false, "Compact");
-                let b = ui.radio_value(&mut comfy, true, "Comfortable");
+                let a = ui.radio_value(&mut comfy, false, t!("settings.compact"));
+                let b = ui.radio_value(&mut comfy, true, t!("settings.comfortable"));
                 if a.changed() || b.changed() || comfy != app.discovery.comfortable_cards {
                     app.discovery.comfortable_cards = comfy;
                     app.discovery.save();
                 }
             });
             ui.label(
-                egui::RichText::new("Compact fits about twice as many stations on screen.")
+                egui::RichText::new(t!("settings.cards_hint"))
                     .small()
                     .weak(),
             );
@@ -191,10 +220,10 @@ pub fn ui(ui: &mut Ui, app: &mut BigWaveApp) {
         ui.add_space(10.0);
 
         // --- Behaviour ---------------------------------------------------------
-        card(ui, dark, accent, "Behaviour", |ui| {
+        card(ui, dark, accent, t!("settings.behaviour"), |ui| {
             if ui
-                .checkbox(&mut app.updater.state.check_at_startup, "Check for updates at startup")
-                .on_hover_text("Quietly, at most once a day. Shows a small notice if a new version is out.")
+                .checkbox(&mut app.updater.state.check_at_startup, t!("settings.check_updates"))
+                .on_hover_text(t!("settings.check_updates_tip"))
                 .changed()
             {
                 app.updater.state.save();
@@ -203,18 +232,13 @@ pub fn ui(ui: &mut Ui, app: &mut BigWaveApp) {
             #[cfg(windows)]
             {
                 if ui
-                    .checkbox(&mut app.settings.minimize_to_tray, "Keep playing in the tray when I close the window")
+                    .checkbox(&mut app.settings.minimize_to_tray, t!("settings.tray"))
                     .changed()
                 {
                     app.persist_settings();
                 }
                 ui.label(
-                    egui::RichText::new(
-                        "When on, closing hides BigWave Radio to the tray — playback continues, and \
-                         a notification tells you where it went. Windows 11 puts the wave icon in the \
-                         hidden ^ list beside the clock until you drag it out once; Ctrl+Alt+B also \
-                         brings the window back. Minimizing always keeps the taskbar button.",
-                    )
+                    egui::RichText::new(t!("settings.tray_hint"))
                     .small()
                     .weak(),
                 );
@@ -224,24 +248,24 @@ pub fn ui(ui: &mut Ui, app: &mut BigWaveApp) {
         ui.add_space(10.0);
 
         // --- Idle Visions -------------------------------------------------------
-        card(ui, dark, accent, "Idle Visions", |ui| {
+        card(ui, dark, accent, t!("settings.idle"), |ui| {
             if ui
                 .checkbox(
                     &mut app.settings.idle_visions,
-                    "Start the Visions visualiser when the app is left untouched",
+                    t!("settings.idle_start"),
                 )
                 .changed()
             {
                 app.persist_settings();
             }
             ui.horizontal(|ui| {
-                ui.label("After");
+                ui.label(t!("settings.idle_after"));
                 egui::ComboBox::from_id_salt("idle-minutes")
-                    .selected_text(format!("{} minutes", app.settings.idle_minutes))
+                    .selected_text(tn!("settings.minutes", app.settings.idle_minutes))
                     .show_ui(ui, |ui| {
                         for m in [1u32, 2, 5, 10, 15, 30] {
                             if ui
-                                .selectable_label(app.settings.idle_minutes == m, format!("{m} minutes"))
+                                .selectable_label(app.settings.idle_minutes == m, tn!("settings.minutes", m))
                                 .clicked()
                             {
                                 app.settings.idle_minutes = m;
@@ -251,10 +275,7 @@ pub fn ui(ui: &mut Ui, app: &mut BigWaveApp) {
                     });
             });
             ui.label(
-                egui::RichText::new(
-                    "Any mouse move or keypress closes the visualiser again. Only applies to \
-                     Visions sessions started by the timer — ones you start yourself keep running.",
-                )
+                egui::RichText::new(t!("settings.idle_hint"))
                 .small()
                 .weak(),
             );

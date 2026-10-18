@@ -190,10 +190,10 @@ fn on_overlay(ctx, draw) {
             draw.rect(0.0, 0.935, 1.0, 0.065, "#000000d0");   // keep the HUD readable
         }
         let rate = fmin(s.rate, ctx.flash_cap);
-        draw.text(0.02, 0.95, `${s.mode} | ${rate} Hz (cap ${ctx.flash_cap} Hz) | arrows: speed | Esc, any key or click: exit`, 14.0, "#5a5a5a");
+        draw.text(0.02, 0.95, `${s.mode} | ${rate} Hz (cap ${ctx.flash_cap} Hz) | ${tr(ctx, "hud")}`, 14.0, "#5a5a5a");
         if s.mode != "Fixed rate" && !s.playing {
             draw.rect(0.25, 0.46, 0.5, 0.08, "#000000d0");
-            draw.text_center(0.5, 0.5, "Play a station: the strobe follows the beat", 24.0, "#999999");
+            draw.text_center(0.5, 0.5, tr(ctx, "play"), 24.0, "#999999");
         }
     }
 }
@@ -229,26 +229,79 @@ fn on_key(ctx, key) {
     false   // anything else: the host closes the strobe
 }
 
+// UI text in the app's language (ctx.lang: "en", "pt-BR" or "it"); English
+// is the fallback. The choice values ("Fixed rate", "1 s", ...) are stored
+// settings, so they stay as they are.
+fn texts(lang) {
+    if lang == "pt-BR" {
+        return #{
+            warning: "Aviso de fotossensibilidade: luzes piscantes podem provocar convulsões em pessoas com epilepsia fotossensível. Não use o estroboscópio se você ou alguém assistindo puder ser afetado.",
+            mode: "Modo", display: "Exibição", speed: "Velocidade",
+            cap: "Limite de flashes: {cap} Hz. Aumente-o (até 12 Hz) em Segurança contra flashes, na página Plugins.",
+            sym_time: "Duração dos símbolos", fade: "Escurecer até o preto", on_time: "Tempo de estrobo",
+            fade_hint: "Escurecer até o preto: depois do tempo de estrobo, a tela escurece suavemente até o preto, fica assim por um tempo e depois volta.",
+            start: "Iniciar estrobo",
+            shortcut: "Atalho: Ctrl+F e depois U (inicia na hora). No estrobo: as setas mudam a velocidade; Esc, qualquer tecla ou clique sai.",
+            symbols: "Símbolos na rotação:",
+            hud: "setas: velocidade | Esc, qualquer tecla ou clique: sair",
+            play: "Toque uma estação: o estrobo segue a batida",
+        };
+    }
+    if lang == "it" {
+        return #{
+            warning: "Avviso di fotosensibilità: la luce lampeggiante può provocare crisi nelle persone con epilessia fotosensibile. Non usare lo stroboscopio se tu o chi guarda potreste esserne colpiti.",
+            mode: "Modalità", display: "Visualizzazione", speed: "Velocità",
+            cap: "Limite lampeggiamenti: {cap} Hz. Puoi alzarlo (fino a 12 Hz) in Sicurezza lampeggiamenti, nella pagina Plugin.",
+            sym_time: "Durata dei simboli", fade: "Dissolvenza al nero", on_time: "Durata dello strobo",
+            fade_hint: "Dissolvenza al nero: finita la durata dello strobo, lo schermo sfuma dolcemente al nero, resta buio, poi riappare.",
+            start: "Avvia strobo",
+            shortcut: "Scorciatoia: Ctrl+F, poi U (parte subito). Nello strobo: le frecce cambiano la velocità; Esc, un tasto qualsiasi o un clic per uscire.",
+            symbols: "Simboli a rotazione:",
+            hud: "frecce: velocità | Esc, un tasto qualsiasi o clic: esci",
+            play: "Avvia una stazione: lo strobo segue il battito",
+        };
+    }
+    #{
+        warning: "Photosensitivity warning: flashing light can trigger seizures in people with photosensitive epilepsy. Don't use the strobe if you or anyone watching may be affected.",
+        mode: "Mode", display: "Display", speed: "Speed",
+        cap: "Flash cap: {cap} Hz. Raise it (up to 12 Hz) under Flash safety on the Plugins page.",
+        sym_time: "Symbol duration", fade: "Fade to black", on_time: "Strobe on time",
+        fade_hint: "Fade to black: after the on time the strobe fades smoothly to black, holds, then fades back in.",
+        start: "Start strobe",
+        shortcut: "Shortcut: Ctrl+F, then U (starts straight away). In the strobe: arrow keys change speed, Esc / any key / click exits.",
+        symbols: "Symbols in the rotation:",
+        hud: "arrows: speed | Esc, any key or click: exit",
+        play: "Play a station: the strobe follows the beat",
+    }
+}
+
+fn tr(ctx, key) {
+    let t = texts(ctx.lang);
+    if t.contains(key) { t[key] } else { texts("en")[key] }
+}
+
 fn controls(ctx, ui) {
-    ui.label("Photosensitivity warning: flashing light can trigger seizures in people with photosensitive epilepsy. Don't use the strobe if you or anyone watching may be affected.");
+    ui.label(tr(ctx, "warning"));
     ui.space(6);
     let s = ctx.state;
-    s.mode = ui.choice("Mode", s.mode, ["Random beat", "Fixed rate"]);
-    s.display = ui.choice("Display", s.display, ["Fullscreen", "In window"]);
+    s.mode = ui.choice(tr(ctx, "mode"), s.mode, ["Random beat", "Fixed rate"]);
+    s.display = ui.choice(tr(ctx, "display"), s.display, ["Fullscreen", "In window"]);
     let labels = [];
     for r in allowed_rates(ctx.flash_cap) { labels.push(rate_label(r)); }
-    let picked = ui.choice("Speed", rate_label(fmin(s.rate, ctx.flash_cap)), labels);
+    let picked = ui.choice(tr(ctx, "speed"), rate_label(fmin(s.rate, ctx.flash_cap)), labels);
     s.rate = parse_float(picked.split(" ")[0]);
-    ui.small(`Flash cap: ${ctx.flash_cap} Hz. Raise it (up to 12 Hz) under Flash safety on the Plugins page.`);
-    s.sym_time = ui.choice("Symbol duration", s.sym_time, ["0.5 s", "1 s", "1.5 s", "2 s", "3 s", "Random 1.5-3 s"]);
-    s.fade = ui.choice("Fade to black", s.fade, ["Off", "1 s", "3 s", "5 s", "10 s", "15 s"]);
+    let cap = tr(ctx, "cap");
+    cap.replace("{cap}", `${ctx.flash_cap}`);
+    ui.small(cap);
+    s.sym_time = ui.choice(tr(ctx, "sym_time"), s.sym_time, ["0.5 s", "1 s", "1.5 s", "2 s", "3 s", "Random 1.5-3 s"]);
+    s.fade = ui.choice(tr(ctx, "fade"), s.fade, ["Off", "1 s", "3 s", "5 s", "10 s", "15 s"]);
     if s.fade != "Off" {
-        s.on_time = ui.choice("Strobe on time", s.on_time, ["5 s", "10 s", "15 s", "20 s", "30 s", "60 s"]);
+        s.on_time = ui.choice(tr(ctx, "on_time"), s.on_time, ["5 s", "10 s", "15 s", "20 s", "30 s", "60 s"]);
     }
-    ui.small("Fade to black: after the on time the strobe fades smoothly to black, holds, then fades back in.");
+    ui.small(tr(ctx, "fade_hint"));
     ui.space(6);
-    let start = ui.button("Start strobe");
-    ui.small("Shortcut: Ctrl+F, then U (starts straight away). In the strobe: arrow keys change speed, Esc / any key / click exits.");
+    let start = ui.button(tr(ctx, "start"));
+    ui.small(tr(ctx, "shortcut"));
     if start {
         s.opened = ctx.now;
         s.last_beat = ctx.now;
@@ -276,7 +329,7 @@ fn on_page(ctx, page_id, ui) {
     ui.heading("Beat Strobe");
     controls(ctx, ui);
     ui.separator();
-    ui.small("Symbols in the rotation:");
+    ui.small(tr(ctx, "symbols"));
     let preview = ui.canvas(220);
     preview.fill("#101010");
     let list = symbols();

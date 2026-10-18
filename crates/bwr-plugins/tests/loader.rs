@@ -862,3 +862,58 @@ fn card_tints_are_stable_and_honour_accent() {
     let r = check_plugin(&dir);
     assert!(r.ok() && r.warnings.iter().any(|w| w.contains("accent")), "{r}");
 }
+
+#[test]
+fn ctx_lang_follows_the_app_language() {
+    let tmp = tempfile::tempdir().unwrap();
+    write_plugin(
+        tmp.path(),
+        "polyglot",
+        "",
+        "fn on_load(ctx) { ctx.state.at_load = ctx.lang; }\nfn get(ctx) { [ctx.state.at_load, ctx.lang] }\n",
+    );
+    PluginHost::new(tmp.path()).approve("polyglot");
+    // The language is known before on_load runs...
+    let mut host = PluginHost::with_lang(tmp.path(), "pt-BR");
+    assert_eq!(host.lang(), "pt-BR");
+    let got = host.call_raw("polyglot", "get", vec![]).unwrap().cast::<rhai::Array>();
+    assert_eq!(got[0].clone().into_string().unwrap(), "pt-BR");
+    // ...and a switch in Settings shows up on the next call.
+    host.set_lang("it");
+    let got = host.call_raw("polyglot", "get", vec![]).unwrap().cast::<rhai::Array>();
+    assert_eq!(got[1].clone().into_string().unwrap(), "it");
+    // Plain `new` keeps English.
+    assert_eq!(PluginHost::new(tmp.path()).lang(), "en");
+}
+
+#[test]
+fn manifest_translations_pick_the_ui_language() {
+    let m: Manifest = toml::from_str(
+        r#"
+id = "t"
+name = "T"
+version = "1.0.0"
+api = 1
+description = "English"
+descriptions = { "pt-BR" = "Português", it = "Italiano" }
+[[pages]]
+id = "p"
+title = "Page"
+titles = { it = "Pagina" }
+[settings]
+speed = { type = "float", default = 1.0, label = "Speed", labels = { pt = "Velocidade", it = "Velocità" } }
+plain = { type = "bool", default = true }
+"#,
+    )
+    .unwrap();
+    assert_eq!(m.description_for("pt-BR"), "Português");
+    assert_eq!(m.description_for("it"), "Italiano");
+    assert_eq!(m.description_for("en"), "English");
+    assert_eq!(m.description_for("de"), "English");
+    assert_eq!(m.pages[0].title_for("it"), "Pagina");
+    assert_eq!(m.pages[0].title_for("pt-BR"), "Page");
+    // "pt" matches "pt-BR" via the language subtag.
+    assert_eq!(m.settings["speed"].label_for("speed", "pt-BR"), "Velocidade");
+    assert_eq!(m.settings["speed"].label_for("speed", "en"), "Speed");
+    assert_eq!(m.settings["plain"].label_for("plain", "it"), "plain");
+}

@@ -20,6 +20,9 @@ raw-window-handle = "0.6"
 image = { version = "0.25", default-features = false, features = ["png", "jpeg", "ico"] }
 reqwest = { version = "0.12", default-features = false, features = ["blocking", "native-tls"] }
 serde = { version = "1", features = ["derive"] }
+# UI translations (locales/*.toml) and OS language detection.
+toml = "0.8"
+sys-locale = "0.3"
 # Native Windows APIs for global media keys and the notification-area icon.
 # 0.58 is already in the dependency tree (via cpal), so this adds no new downloads.
 [target.'cfg(windows)'.dependencies]

@@ -86,6 +86,43 @@ mode  = { type = "choice", default = "a", options = ["a", "b"] }
 
 Settings are read with `ctx.settings.<key>`. They are read-only for the script.
 
+### Translations (optional)
+
+The app's UI can be English, Português (Brasil) or Italiano (Settings ->
+Language). A plugin can follow it:
+
+* **In plugin.toml**, add translated texts next to the English ones. Keys are
+  language codes (`"pt-BR"`, `it`; a bare `pt` also matches `pt-BR`). Anything
+  without a translation shows the English text.
+
+  ```toml
+  [descriptions]
+  "pt-BR" = "Uma linha"
+  it = "Una riga"
+
+  [[pages]]
+  id = "main"
+  title = "My Page"
+  titles = { "pt-BR" = "Minha página", it = "La mia pagina" }
+
+  [settings]
+  speed = { type = "float", default = 2.0, label = "Speed", labels = { "pt-BR" = "Velocidade", it = "Velocità" } }
+  ```
+
+  `choice` options are the stored values, so they are not translated. These
+  keys need a BigWave Radio newer than 0.9.7; older versions refuse a
+  plugin.toml that uses them.
+* **In the script**, `ctx.lang` is the UI language code (`"en"`, `"pt-BR"`,
+  `"it"`); it changes as soon as the user switches. Pick your texts from it,
+  falling back to English (see `texts()` / `tr()` in `plugins/strobe/main.rhai`):
+
+  ```rhai
+  fn tr(ctx, key) {
+      let t = if ctx.lang == "it" { #{ start: "Avvia" } } else { #{} };
+      if t.contains(key) { t[key] } else { #{ start: "Start" }[key] }
+  }
+  ```
+
 ### Permissions
 
 | permission | allows |
@@ -173,6 +210,7 @@ closes it.
 | `ctx.settings` | map of settings from plugin.toml (read-only) |
 | `ctx.now` | seconds since the app started (float) |
 | `ctx.flash_cap` | max flashes per second the user allows (3 by default, at most 12) |
+| `ctx.lang` | the app's UI language code: `"en"`, `"pt-BR"` or `"it"` (see Translations) |
 | `ctx.overlay_active` | your overlay is open and past the warning screen |
 | `ctx.is_fullscreen` | your overlay is fullscreen |
 | `ctx.id` | your plugin id |

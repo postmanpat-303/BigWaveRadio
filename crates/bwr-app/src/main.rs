@@ -2,6 +2,8 @@
 // Debug builds keep the console for diagnostics.
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+#[macro_use]
+mod i18n;
 mod app;
 #[cfg(windows)]
 mod backdrop;

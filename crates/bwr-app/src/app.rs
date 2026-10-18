@@ -117,6 +117,10 @@ impl StreamFilter {
 
 pub struct BigWaveApp {
     pub settings: Settings,
+    /// UI preferences that the old C# app never had (ui.json): language.
+    pub ui_prefs: bwr_core::UiPrefs,
+    /// This session's window-title quote (index into QUOTES).
+    quote: usize,
     pub library: Library,
     pub ratings: bwr_core::Ratings,
     /// Mood chips + talk filter config (editable moods.json).
@@ -213,6 +217,9 @@ pub struct BigWaveApp {
 impl BigWaveApp {
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
         let settings = Settings::load();
+        // UI language first: everything below may already show text.
+        let ui_prefs = bwr_core::UiPrefs::load();
+        crate::i18n::set(crate::i18n::Choice::parse(&ui_prefs.language).resolve());
         // Decode the About-page logo here (same path as the window icon, which
         // is proven to work) rather than via include_image!, which depends on
         // optional egui image loaders.
@@ -445,8 +452,11 @@ impl BigWaveApp {
         #[cfg(windows)]
         let tray = crate::tray::Tray::new();
 
+        let plugins = crate::plugin_bridge::PluginBridge::new(crate::i18n::current().code());
         let app = Self {
             settings,
+            ui_prefs,
+            quote: session_quote(),
             library: Library::load(),
             ratings: bwr_core::Ratings::load(),
             moods: bwr_core::MoodConfig::load(),
@@ -461,7 +471,7 @@ impl BigWaveApp {
             library_tab: LibraryTab::Favourites,
             stations: Vec::new(),
             current: None,
-            status: "Ready".into(),
+            status: t!("status.ready").into(),
             song_title: None,
             is_playing: false,
             loading: false,
@@ -502,21 +512,19 @@ impl BigWaveApp {
             ctx: cc.egui_ctx.clone(),
             filter,
             first_frame: true,
-            plugins: crate::plugin_bridge::PluginBridge::new(),
+            plugins,
         };
         theme::apply(&app.ctx, app.settings.theme, app.settings.accent);
         // Per-session motivational quote in the window title, after the app name.
-        cc.egui_ctx.send_viewport_cmd(egui::ViewportCommand::Title(format!(
-            "BigWave Radio — {}",
-            session_quote()
-        )));
+        cc.egui_ctx
+            .send_viewport_cmd(egui::ViewportCommand::Title(window_title(app.quote)));
         app
     }
 
     // ---- Public API used by pages/widgets -----------------------------------
 
     pub fn play_station(&mut self, station: Station) {
-        self.status = "Connecting…".into();
+        self.status = t!("status.connecting").into();
         self.song_title = None;
         self.current = Some(station.clone());
         self.player.play(&station.stream_url);
@@ -537,14 +545,14 @@ impl BigWaveApp {
     pub fn stop(&mut self) {
         self.player.stop();
         self.is_playing = false;
-        self.status = "Stopped".into();
+        self.status = t!("status.stopped").into();
     }
 
     pub fn toggle_play_pause(&mut self) {
         if self.is_playing {
             self.player.stop();
             self.is_playing = false;
-            self.status = "Paused".into();
+            self.status = t!("status.paused").into();
         } else if let Some(station) = self.current.clone() {
             self.play_station(station);
         }
@@ -576,6 +584,27 @@ impl BigWaveApp {
         }
     }
 
+    /// Apply a Language choice from Settings: switches the UI on the next
+    /// frame (no restart), saves ui.json and tells plugins (`ctx.lang`).
+    pub fn set_language(&mut self, choice: crate::i18n::Choice) {
+        let before = crate::i18n::current();
+        crate::i18n::set(choice.resolve());
+        self.ui_prefs.language = choice.code().to_string();
+        self.ui_prefs.save();
+        let now = crate::i18n::current();
+        self.plugins.host.set_lang(now.code());
+        if now != before {
+            // Texts built once (status line, title) follow the new language.
+            self.status = if self.is_playing {
+                crate::i18n::lookup(now, "status.connected").into()
+            } else {
+                crate::i18n::lookup(now, "status.ready").into()
+            };
+            self.ctx
+                .send_viewport_cmd(egui::ViewportCommand::Title(window_title(self.quote)));
+        }
+    }
+
     pub fn persist_settings(&mut self) {
         self.settings.save();
         self.filter
@@ -590,7 +619,7 @@ impl BigWaveApp {
     /// 🎲 Surprise me: a well-rated or popular station within the moods —
     /// the open mood page's mood, otherwise any of them.
     pub fn surprise(&mut self) {
-        self.status = "Finding a station for you…".into();
+        self.status = t!("status.finding").into();
         let tags = match self.page {
             Page::Mood(i) if i < self.moods.moods.len() => self.moods.moods[i].tags.clone(),
             _ => self.moods.all_mood_tags(),
@@ -632,13 +661,13 @@ impl BigWaveApp {
         let profile = bwr_core::discovery::taste_profile(rated.iter().map(|(r, s)| (*r, s)));
         let tags = bwr_core::discovery::seed_tags(seed, &self.moods, &profile, 4);
         if tags.is_empty() {
-            self.status = "This station has no tags to match on".into();
+            self.status = t!("status.no_tags").into();
             return;
         }
         self.page = Page::Search;
         self.search_active = true;
         self.search_pending = false;
-        self.similar_label = Some(format!("More like {} · #{}", seed.name, tags.join(" #")));
+        self.similar_label = Some(t!("search.more_like", name = seed.name, tags = tags.join(" #")));
         self.query.clear();
         self.last_searched.clear();
         self.loading = true;
@@ -671,7 +700,7 @@ impl BigWaveApp {
     pub fn more_like_this(&mut self, tag: &str, from: &str) {
         self.page = Page::Search;
         self.search_active = true;
-        self.similar_label = Some(format!("More like {from} · #{tag}"));
+        self.similar_label = Some(t!("search.more_like", name = from, tags = tag));
         self.loading = true;
         let exclude = self
             .current
@@ -849,10 +878,9 @@ impl BigWaveApp {
             }
             NetResult::Failed(message) => {
                 if self.stations.is_empty() {
-                    self.status = format!("Error: {message}");
-                } else if self.status.starts_with("Finding a station") {
-                    self.status =
-                        "No station matched the filters — try loosening them".into();
+                    self.status = t!("status.error", error = message);
+                } else if self.status == t!("status.finding") {
+                    self.status = t!("status.no_match").into();
                 }
             }
         }
@@ -861,31 +889,37 @@ impl BigWaveApp {
 
 /// Famous life quotes for the window title — one per session, picked at
 /// random. Kept short so the title bar and taskbar stay readable.
+/// Catalog keys (`[quote]` in locales/*.toml).
 const QUOTES: &[&str] = &[
-    "The unexamined life is not worth living. — Socrates",
-    "Not all those who wander are lost. — J.R.R. Tolkien",
-    "In the middle of difficulty lies opportunity. — Albert Einstein",
-    "Whatever you are, be a good one. — Abraham Lincoln",
-    "It does not matter how slowly you go, as long as you do not stop. — Confucius",
-    "The best way to predict the future is to invent it. — Alan Kay",
-    "He who has a why to live can bear almost any how. — Friedrich Nietzsche",
-    "Strive not to be a success, but rather to be of value. — Albert Einstein",
-    "Happiness depends upon ourselves. — Aristotle",
-    "Dream big and dare to fail. — Norman Vaughan",
-    "Turn your wounds into wisdom. — Oprah Winfrey",
-    "Well begun is half done. — Aristotle",
-    "The only true wisdom is in knowing you know nothing. — Socrates",
-    "Life shrinks or expands in proportion to one's courage. — Anaïs Nin",
+    "quote.q01",
+    "quote.q02",
+    "quote.q03",
+    "quote.q04",
+    "quote.q05",
+    "quote.q06",
+    "quote.q07",
+    "quote.q08",
+    "quote.q09",
+    "quote.q10",
+    "quote.q11",
+    "quote.q12",
+    "quote.q13",
+    "quote.q14",
 ];
 
-/// Pick the session's quote. Seeded from the wall clock — no rand dependency,
-/// and a fresh pick on every launch.
-fn session_quote() -> &'static str {
+/// Pick the session's quote (an index into QUOTES). Seeded from the wall
+/// clock — no rand dependency, and a fresh pick on every launch.
+fn session_quote() -> usize {
     let nanos = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .map(|d| d.subsec_nanos() as u64 ^ d.as_secs())
         .unwrap_or(0);
-    QUOTES[(nanos % QUOTES.len() as u64) as usize]
+    (nanos % QUOTES.len() as u64) as usize
+}
+
+/// Window title: the app name plus the session's quote in the UI language.
+fn window_title(quote: usize) -> String {
+    format!("BigWave Radio — {}", crate::i18n::tr(QUOTES[quote % QUOTES.len()]))
 }
 
 fn send_result(tx: &mpsc::Sender<NetResult>, res: bwr_core::client::Result<Vec<Station>>) {
@@ -1048,20 +1082,20 @@ impl eframe::App for BigWaveApp {
             }
             self.plugins.note_player_event(&event);
             match event {
-                PlayerEvent::Connecting => self.status = "Connecting…".into(),
+                PlayerEvent::Connecting => self.status = t!("status.connecting").into(),
                 PlayerEvent::Playing => {
                     self.is_playing = true;
-                    self.status = "Connected".into();
+                    self.status = t!("status.connected").into();
                 }
                 PlayerEvent::Stopped => {
                     self.is_playing = false;
-                    if self.status != "Paused" {
-                        self.status = "Stopped".into();
+                    if self.status != t!("status.paused") {
+                        self.status = t!("status.stopped").into();
                     }
                 }
                 PlayerEvent::Failed(e) => {
                     self.is_playing = false;
-                    self.status = format!("Playback error: {e}");
+                    self.status = t!("status.playback_error", error = e);
                 }
                 PlayerEvent::Meta(title) => {
                     self.song_title = Some(title);
@@ -1185,7 +1219,7 @@ impl eframe::App for BigWaveApp {
             use windows::Media::MediaPlaybackStatus;
             let smtc_status = if self.is_playing {
                 MediaPlaybackStatus::Playing
-            } else if self.status == "Paused" {
+            } else if self.status == t!("status.paused") {
                 MediaPlaybackStatus::Paused
             } else {
                 MediaPlaybackStatus::Stopped
@@ -1230,8 +1264,8 @@ impl eframe::App for BigWaveApp {
                 // get back. Clicking the toast restores the window.
                 if let Some(tray) = &self.tray {
                     tray.notify(
-                        "BigWave Radio — still playing",
-                        "Open the ^ list beside the clock to find the wave icon (drag it out once to keep it there), or press Ctrl+Alt+B to bring the window back.",
+                        t!("tray.toast_title"),
+                        t!("tray.toast_body"),
                     );
                 }
             }
@@ -1262,7 +1296,7 @@ impl eframe::App for BigWaveApp {
                     .clamp(200.0, 560.0);
                 let response = ui.add(
                     egui::TextEdit::singleline(&mut self.query)
-                        .hint_text("Search stations…")
+                        .hint_text(t!("top.search_hint"))
                         .desired_width(width),
                 );
                 if response.changed() {
@@ -1273,7 +1307,7 @@ impl eframe::App for BigWaveApp {
                 // 🎲 Surprise me — random station, honouring the quality filter.
                 if ui
                     .button(egui::RichText::new("🎲").size(16.0))
-                    .on_hover_text("Surprise me — play a random station")
+                    .on_hover_text(t!("top.surprise_tip"))
                     .clicked()
                 {
                     self.surprise();
@@ -1306,7 +1340,7 @@ impl eframe::App for BigWaveApp {
                     egui::popup::PopupCloseBehavior::CloseOnClickOutside,
                     |ui| {
                         ui.set_min_width(240.0);
-                        ui.label(egui::RichText::new("RECENT SEARCHES").small().weak());
+                        ui.label(egui::RichText::new(t!("top.recent")).small().weak());
                         for q in history {
                             let mut remove = false;
                             let picked = ui
@@ -1316,7 +1350,7 @@ impl eframe::App for BigWaveApp {
                                         .clicked();
                                     if ui
                                         .add(egui::Button::new("🗙").small().frame(false))
-                                        .on_hover_text("Remove from history")
+                                        .on_hover_text(t!("top.remove"))
                                         .clicked()
                                     {
                                         remove = true;
@@ -1341,7 +1375,7 @@ impl eframe::App for BigWaveApp {
                                 ui.memory_mut(|m| m.close_popup());
                             }
                         }
-                        if ui.add(egui::Button::new("Clear history").small()).clicked() {
+                        if ui.add(egui::Button::new(t!("top.clear_history")).small()).clicked() {
                             self.settings.search_history.clear();
                             self.settings.save();
                             ui.memory_mut(|m| m.close_popup());
@@ -1370,22 +1404,23 @@ impl eframe::App for BigWaveApp {
                     .auto_shrink([false, false])
                     .max_height((ui.available_height() - reserve).max(72.0))
                     .show(ui, |ui| {
-                        nav_button(ui, self, Page::Discover, "🏠  Discover");
-                        nav_button(ui, self, Page::Search, "🔎  Search");
-                        nav_button(ui, self, Page::Library, "★  My Library");
+                        nav_button(ui, self, Page::Discover, &format!("🏠  {}", t!("nav.discover")));
+                        nav_button(ui, self, Page::Search, &format!("🔎  {}", t!("nav.search")));
+                        nav_button(ui, self, Page::Library, &format!("★  {}", t!("nav.library")));
                         ui.add_space(4.0);
                         ui.separator();
                         ui.add_space(4.0);
-                        nav_button(ui, self, Page::Tags, "🏷  Tags");
-                        nav_button(ui, self, Page::Countries, "🗺  Countries");
+                        nav_button(ui, self, Page::Tags, &format!("🏷  {}", t!("nav.tags")));
+                        nav_button(ui, self, Page::Countries, &format!("🗺  {}", t!("nav.countries")));
                         ui.add_space(4.0);
                         ui.separator();
                         ui.add_space(4.0);
                         for (i, (pid, pg)) in self.plugins.pages.clone().into_iter().enumerate() {
-                            let icon = if pg.icon.is_empty() { "🔌".to_string() } else { pg.icon };
+                            let icon = if pg.icon.is_empty() { "🔌".to_string() } else { pg.icon.clone() };
                             let hint = self.plugins.hotkey_hint(&pid).map(|k| format!("   {k}")).unwrap_or_default();
-                            let resp = nav_button(ui, self, Page::PluginPage(i), &format!("{icon}  {}{hint}", pg.title));
-                            resp.clone().on_hover_text(format!("{} — double-click to start", pg.title));
+                            let title = pg.title_for(crate::i18n::current().code()).to_string();
+                            let resp = nav_button(ui, self, Page::PluginPage(i), &format!("{icon}  {title}{hint}"));
+                            resp.clone().on_hover_text(t!("nav.plugin_tip", title = title));
                             // Double-click a plugin in the side menu to start it
                             // (prefers an action named "start", else its first action).
                             if resp.double_clicked() {
@@ -1401,9 +1436,9 @@ impl eframe::App for BigWaveApp {
                                 }
                             }
                         }
-                        nav_button(ui, self, Page::Plugins, "🔌  Plugins");
-                        nav_button(ui, self, Page::Settings, "⚙  Settings");
-                        nav_button(ui, self, Page::About, "ℹ  About");
+                        nav_button(ui, self, Page::Plugins, &format!("🔌  {}", t!("nav.plugins")));
+                        nav_button(ui, self, Page::Settings, &format!("⚙  {}", t!("nav.settings")));
+                        nav_button(ui, self, Page::About, &format!("ℹ  {}", t!("nav.about")));
                     });
 
                 ui.add_space(6.0);

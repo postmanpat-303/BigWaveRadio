@@ -27,6 +27,8 @@ plugin API (v1) and starts with a one-shot prompt. In short:
   (needs the `hotkeys` permission) and handle `on_hotkey(ctx, action)`. The
   first step must use Ctrl or Alt; Esc is reserved for the host.
 * Flashing content must respect `ctx.flash_cap`; the host enforces it anyway.
+* `ctx.lang` is the UI language (`"en"`, `"pt-BR"`, `"it"`); plugin.toml can
+  carry `[descriptions]`, page `titles` and setting `labels` per language.
 
 Working examples: `plugins/strobe/` (bundled) and `docs/plugin-examples/*`.
 
@@ -42,6 +44,10 @@ Working examples: `plugins/strobe/` (bundled) and `docs/plugin-examples/*`.
 * Adding a script API: register it in `crates/bwr-plugins/src/api.rs`, gate it
   with a permission, document it in `docs/PLUGIN_GUIDE.md`, add a test in
   `crates/bwr-plugins/tests/loader.rs`. Breaking changes need `API_VERSION` + 1.
+* UI text is translated: never hard-code it. Add a key to
+  `crates/bwr-app/locales/en.toml` (plus `pt-BR.toml`, `it.toml`) and use
+  `t!("key")` / `t!("key", name = v)` / `tn!("key", n)`. The i18n tests fail on
+  missing, extra or unused keys. See docs/TRANSLATING.md.
 * `cargo test` must pass (it also checks every example plugin and that the
   guide inlines the example files verbatim).
 * Target is Windows (`x86_64-pc-windows-msvc`, static CRT; built by

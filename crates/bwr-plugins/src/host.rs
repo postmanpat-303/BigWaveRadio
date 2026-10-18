@@ -173,6 +173,8 @@ pub struct PluginHost {
     /// to the user's own key chord starts without the warning screen.
     hotkey_plugin: Option<String>,
     chords: crate::ChordMatcher,
+    /// UI language code ("en", "pt-BR", "it"), exposed to scripts as `ctx.lang`.
+    lang: String,
 }
 
 fn fingerprint(dir: &Path) -> u64 {
@@ -228,6 +230,12 @@ pub fn migrate_state(state: &mut HostState) -> bool {
 impl PluginHost {
     /// Create a host for `dir` (created if missing) and load every plugin.
     pub fn new(dir: impl Into<PathBuf>) -> Self {
+        Self::with_lang(dir, "en")
+    }
+
+    /// Like [`PluginHost::new`], with the app's UI language already set so
+    /// `on_load` sees the right `ctx.lang`.
+    pub fn with_lang(dir: impl Into<PathBuf>, lang: &str) -> Self {
         let dir = dir.into();
         let _ = std::fs::create_dir_all(&dir);
         let state = std::fs::read_to_string(dir.join(STATE_FILE))
@@ -250,6 +258,7 @@ impl PluginHost {
             readonly: false,
             hotkey_plugin: None,
             chords: Default::default(),
+            lang: lang.to_string(),
         };
         host.limiter.set_cap(host.flash_cap());
         if migrated {
@@ -267,6 +276,17 @@ impl PluginHost {
     pub fn flash_cap(&self) -> f64 {
         let max = if self.state.allow_fast_flash { HARD_MAX_FLASH_HZ } else { DEFAULT_FLASH_HZ };
         self.state.flash_cap_hz.clamp(0.5, max)
+    }
+
+    /// The UI language code scripts see as `ctx.lang`.
+    pub fn lang(&self) -> &str {
+        &self.lang
+    }
+
+    /// Change the UI language (the app's Language setting). Scripts see the
+    /// new `ctx.lang` on their next hook call.
+    pub fn set_lang(&mut self, code: &str) {
+        self.lang = code.to_string();
     }
 
     pub fn set_flash_safety(&mut self, allow_fast: bool, cap_hz: f64) {
@@ -294,6 +314,7 @@ impl PluginHost {
             readonly: true,
             hotkey_plugin: None,
             chords: Default::default(),
+            lang: "en".into(),
         };
         let p = host.load_dir(plugin_dir);
         if let Some(m) = &p.manifest {
@@ -587,6 +608,7 @@ impl PluginHost {
         let flash_cap = self.flash_cap();
         let now = self.now();
         let overlay = self.overlay.clone();
+        let lang = self.lang.clone();
         let p = &mut self.plugins[i];
         if !matches!(p.status, PluginStatus::Running) {
             return None;
@@ -605,6 +627,9 @@ impl PluginHost {
             let mut d = ctx.0.borrow_mut();
             d.now = now;
             d.flash_cap = flash_cap;
+            if d.lang != lang {
+                d.lang = lang;
+            }
             let mine = overlay.as_ref().filter(|s| s.plugin_id == d.plugin_id);
             d.overlay_active = mine.is_some_and(|s| s.phase == OverlayPhase::Running);
             d.fullscreen = mine.is_some_and(|s| s.fullscreen);

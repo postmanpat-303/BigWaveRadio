@@ -28,7 +28,7 @@ pub use visual::{VisualEngine, VisualParams, SCENES};
 pub use draw::{is_closed, parse_svg_path, poly_area, triangulate, DrawCmd, Rgba, MAX_RINGS};
 pub use host::{migrate_state, AudioFrame, HostState, OverlayPhase, OverlaySession, Plugin, PluginHost, PluginStatus, StationInfo};
 pub use hotkeys::{parse_chord, ChordMatcher, ChordResult, HotkeySpec, Mods, Step, CHORD_TIMEOUT};
-pub use manifest::{card_tint, Manifest, PageSpec, Permission, SettingKind, SettingSpec};
+pub use manifest::{card_tint, localized, Manifest, PageSpec, Permission, SettingKind, SettingSpec};
 pub use safety::{frame_luminance, FlashLimiter, FLASH_DELTA};
 pub use ui::{UiResult, Widget};
 pub use zipimport::import_zip;

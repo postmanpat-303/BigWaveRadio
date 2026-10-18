@@ -7,7 +7,7 @@ use crate::theme;
 use crate::widgets::station_card::station_grid;
 
 pub fn ui(ui: &mut Ui, app: &mut BigWaveApp) {
-    ui.heading("Search");
+    ui.heading(t!("search.title"));
     ui.add_space(2.0);
     if let Some(label) = &app.similar_label {
         ui.label(egui::RichText::new(format!("✨ {label}")).size(13.0).weak());
@@ -19,7 +19,7 @@ pub fn ui(ui: &mut Ui, app: &mut BigWaveApp) {
         let box_width = (ui.available_width() - 70.0).clamp(260.0, 520.0);
         let response = ui.add(
             egui::TextEdit::singleline(&mut app.query)
-                .hint_text("Search stations by name…")
+                .hint_text(t!("search.hint"))
                 .font(egui::FontId::proportional(16.0))
                 .desired_width(box_width),
         );
@@ -28,7 +28,7 @@ pub fn ui(ui: &mut Ui, app: &mut BigWaveApp) {
             ui.spinner();
         }
         if !app.query.is_empty()
-            && ui.button(egui::RichText::new("🗙").size(16.0)).on_hover_text("Clear").clicked()
+            && ui.button(egui::RichText::new("🗙").size(16.0)).on_hover_text(t!("common.clear")).clicked()
         {
             app.query.clear();
             app.search_active = false;
@@ -54,7 +54,7 @@ pub fn ui(ui: &mut Ui, app: &mut BigWaveApp) {
     } else {
         // Idle state: recent searches, then the floating tag word cloud.
         if !app.settings.search_history.is_empty() {
-            ui.label(egui::RichText::new("Recent searches").size(13.0).weak());
+            ui.label(egui::RichText::new(t!("search.recent")).size(13.0).weak());
             ui.add_space(4.0);
             ui.horizontal_wrapped(|ui| {
                 for q in app.settings.search_history.clone() {
@@ -66,7 +66,7 @@ pub fn ui(ui: &mut Ui, app: &mut BigWaveApp) {
             ui.add_space(10.0);
         }
         ui.label(
-            egui::RichText::new("Pick a vibe from the cloud — click a word to tune in.")
+            egui::RichText::new(t!("search.cloud_hint"))
                 .weak(),
         );
         ui.add_space(6.0);

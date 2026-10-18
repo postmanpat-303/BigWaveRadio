@@ -36,6 +36,8 @@ pub(crate) struct CtxData {
     pub store_dirty: bool,
     pub now: f64,
     pub flash_cap: f64,
+    /// UI language code: "en", "pt-BR" or "it".
+    pub lang: String,
     pub overlay_active: bool,
     pub fullscreen: bool,
     pub requests: Vec<Request>,
@@ -56,6 +58,7 @@ impl Ctx {
             store_dirty: false,
             now: 0.0,
             flash_cap: crate::DEFAULT_FLASH_HZ,
+            lang: "en".into(),
             overlay_active: false,
             fullscreen: false,
             requests: Vec::new(),
@@ -183,6 +186,7 @@ pub(crate) fn build_engine() -> Engine {
     e.register_get("settings", |c: &mut Ctx| c.0.borrow().settings.clone());
     e.register_get("now", |c: &mut Ctx| c.0.borrow().now);
     e.register_get("flash_cap", |c: &mut Ctx| c.0.borrow().flash_cap);
+    e.register_get("lang", |c: &mut Ctx| c.0.borrow().lang.clone());
     e.register_get("overlay_active", |c: &mut Ctx| c.0.borrow().overlay_active);
     e.register_get("is_fullscreen", |c: &mut Ctx| c.0.borrow().fullscreen);
     e.register_get("id", |c: &mut Ctx| c.0.borrow().plugin_id.clone());

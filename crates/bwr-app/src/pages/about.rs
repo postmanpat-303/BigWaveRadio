@@ -36,7 +36,7 @@ fn card<R>(
 }
 
 pub fn ui(ui: &mut Ui, app: &mut BigWaveApp) {
-    ui.heading("About");
+    ui.heading(t!("about.title"));
     ui.add_space(8.0);
     let dark = theme::is_dark(ui.ctx(), app.settings.theme);
     let accent = theme::accent_color(app.settings.accent);
@@ -82,7 +82,7 @@ pub fn ui(ui: &mut Ui, app: &mut BigWaveApp) {
                     });
                     ui.add_space(6.0);
                     let checking = app.updater.checking();
-                    let label = if checking { "Checking for updates…" } else { "Check for updates" };
+                    let label = if checking { t!("about.checking") } else { t!("about.check") };
                     if ui
                         .add_enabled_ui(!checking, |ui| {
                             crate::pages::plugins::action_button(ui, "🔄", label, Btn::Secondary)
@@ -93,23 +93,19 @@ pub fn ui(ui: &mut Ui, app: &mut BigWaveApp) {
                         app.updater.start(ui.ctx(), true);
                     }
                     ui.add_space(8.0);
-                    ui.label(
-                        "BigWave Radio streams live stations from the community-powered \
-                         radio-browser.info directory. Your library and settings are \
-                         stored locally on this PC.",
-                    );
+                    ui.label(t!("about.blurb"));
                     ui.add_space(14.0);
                     ui.label(
-                        egui::RichText::new("Created by Derek Heasley")
+                        egui::RichText::new(t!("about.created_by", name = "Derek Heasley"))
                             .strong()
                             .size(16.0),
                     );
                     ui.add_space(2.0);
-                    ui.label("Inspired by ShortWave on Linux, I wanted a nice clean version for Windows.");
+                    ui.label(t!("about.inspired"));
                     ui.add_space(16.0);
-                    ui.label("If you find this app useful, you can buy me a coffee:");
+                    ui.label(t!("about.coffee_intro"));
                     ui.add_space(8.0);
-                    if crate::pages::plugins::action_button(ui, "☕", "Buy me a coffee", Btn::Large)
+                    if crate::pages::plugins::action_button(ui, "☕", t!("about.coffee"), Btn::Large)
                         .on_hover_text(DONATE_URL)
                         .clicked()
                     {
@@ -120,7 +116,7 @@ pub fn ui(ui: &mut Ui, app: &mut BigWaveApp) {
                         // Centre the small "or PayPal" line under the button.
                         let w = ui.fonts(|f| {
                             f.layout_no_wrap(
-                                "or PayPal: paypal.me/derekh100".into(),
+                                format!("{} paypal.me/derekh100", t!("about.or_paypal")),
                                 egui::FontId::proportional(12.5),
                                 egui::Color32::WHITE,
                             )
@@ -128,7 +124,7 @@ pub fn ui(ui: &mut Ui, app: &mut BigWaveApp) {
                             .x
                         }) + ui.spacing().item_spacing.x;
                         ui.add_space(((ui.available_width() - w) / 2.0).max(0.0));
-                        ui.label(egui::RichText::new("or PayPal:").size(12.5).weak());
+                        ui.label(egui::RichText::new(t!("about.or_paypal")).size(12.5).weak());
                         ui.hyperlink_to(
                             egui::RichText::new("paypal.me/derekh100").size(12.5),
                             PAYPAL_URL,
@@ -139,7 +135,7 @@ pub fn ui(ui: &mut Ui, app: &mut BigWaveApp) {
                         // Centre the "Demos and promos" line like the PayPal one.
                         let w = ui.fonts(|f| {
                             f.layout_no_wrap(
-                                "Demos and promos: ▶ YouTube".into(),
+                                format!("{} ▶ YouTube", t!("about.demos")),
                                 egui::FontId::proportional(12.5),
                                 egui::Color32::WHITE,
                             )
@@ -147,7 +143,7 @@ pub fn ui(ui: &mut Ui, app: &mut BigWaveApp) {
                             .x
                         }) + ui.spacing().item_spacing.x;
                         ui.add_space(((ui.available_width() - w) / 2.0).max(0.0));
-                        ui.label(egui::RichText::new("Demos and promos:").size(12.5).weak());
+                        ui.label(egui::RichText::new(t!("about.demos")).size(12.5).weak());
                         ui.hyperlink_to(
                             egui::RichText::new("▶ YouTube")
                                 .size(12.5)
@@ -157,7 +153,7 @@ pub fn ui(ui: &mut Ui, app: &mut BigWaveApp) {
                         .on_hover_text(YOUTUBE_URL);
                     });
                     ui.add_space(4.0);
-                    ui.label(egui::RichText::new("Thank you. :)").weak());
+                    ui.label(egui::RichText::new(t!("about.thanks")).weak());
                 });
             },
         );

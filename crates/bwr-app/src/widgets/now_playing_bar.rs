@@ -60,7 +60,7 @@ pub fn bar(ui: &mut Ui, app: &mut BigWaveApp) {
         .current
         .as_ref()
         .map(|s| s.name.clone())
-        .unwrap_or_else(|| "Pick a station to start listening".to_string());
+        .unwrap_or_else(|| t!("player.pick").to_string());
     let status: String = app.status.chars().take(80).collect();
     left_painter.text(
         Pos2::new(bar.left() + 14.0, bar.top() + 12.0),
@@ -119,9 +119,9 @@ pub fn bar(ui: &mut Ui, app: &mut BigWaveApp) {
                 .min_size(Vec2::new(42.0, 40.0)),
             )
             .on_hover_text(if saved {
-                "Remove from My Library"
+                t!("player.remove_library")
             } else {
-                "Save to My Library"
+                t!("player.save_library")
             })
             .clicked()
         {
@@ -171,7 +171,7 @@ pub fn bar(ui: &mut Ui, app: &mut BigWaveApp) {
         ui,
         dice_rect,
         "🎲",
-        "SURPRISE",
+        t!("player.surprise"),
         accent,
         dark,
         true,
@@ -184,7 +184,7 @@ pub fn bar(ui: &mut Ui, app: &mut BigWaveApp) {
         ui,
         prev_rect,
         "⏮",
-        "PREV",
+        t!("player.prev"),
         accent,
         dark,
         app.can_go_previous(),
@@ -196,7 +196,7 @@ pub fn bar(ui: &mut Ui, app: &mut BigWaveApp) {
         ui,
         stop_rect,
         "⏹",
-        "STOP",
+        t!("player.stop"),
         accent,
         dark,
         has_station,
@@ -204,7 +204,7 @@ pub fn bar(ui: &mut Ui, app: &mut BigWaveApp) {
     ) {
         app.stop();
     }
-    let play_label = if app.is_playing { "PAUSE" } else { "PLAY" };
+    let play_label = if app.is_playing { t!("player.pause") } else { t!("player.play") };
     let play_glyph = if app.is_playing { "⏸" } else { "▶" };
     if play_btn(ui, play_rect, play_glyph, play_label, accent, dark, has_station) {
         app.toggle_play_pause();
@@ -213,7 +213,7 @@ pub fn bar(ui: &mut Ui, app: &mut BigWaveApp) {
         ui,
         next_rect,
         "⏭",
-        "NEXT",
+        t!("player.next"),
         accent,
         dark,
         app.can_go_next(),
@@ -234,7 +234,8 @@ fn transport_btn(
     enabled: bool,
     _selected: bool,
 ) -> bool {
-    let id = ui.id().with(caption);
+    // Keyed by glyph, not caption: captions change with the UI language.
+    let id = ui.id().with(glyph);
     let sense = if enabled { Sense::click() } else { Sense::hover() };
     let response = ui.interact(rect, id, sense);
 

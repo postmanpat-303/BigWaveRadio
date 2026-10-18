@@ -10,7 +10,7 @@ pub fn panel(ui: &mut Ui, app: &mut BigWaveApp) {
     };
 
     ui.add_space(8.0);
-    ui.label(egui::RichText::new("Now playing").small().weak());
+    ui.label(egui::RichText::new(t!("info.now_playing")).small().weak());
     ui.add_space(6.0);
 
     // Station artwork.
@@ -33,7 +33,7 @@ pub fn panel(ui: &mut Ui, app: &mut BigWaveApp) {
     ui.add_space(4.0);
     let rating = app.ratings.get(&station.uuid);
     ui.horizontal(|ui| {
-        ui.label(egui::RichText::new("YOUR RATING").small().weak());
+        ui.label(egui::RichText::new(t!("info.your_rating")).small().weak());
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
             let mut new_rating: Option<u8> = None;
             // right_to_left places the FIRST widget at the right edge, so draw
@@ -54,7 +54,7 @@ pub fn panel(ui: &mut Ui, app: &mut BigWaveApp) {
                         )
                         .frame(false),
                     )
-                    .on_hover_text(format!("Rate {star} star{}", if star > 1 { "s" } else { "" }))
+                    .on_hover_text(tn!("info.rate", star))
                     .clicked()
                 {
                     new_rating = Some(if rating == star { 0 } else { star });
@@ -75,12 +75,12 @@ pub fn panel(ui: &mut Ui, app: &mut BigWaveApp) {
     ui.add_space(6.0);
 
     // Stream properties.
-    property(ui, "Format", &station.codec.to_uppercase());
+    property(ui, t!("info.format"), &station.codec.to_uppercase());
     if station.bitrate > 0 {
-        property(ui, "Bitrate", &format!("{} kbps", station.bitrate));
+        property(ui, t!("info.bitrate"), &format!("{} kbps", station.bitrate));
     }
-    property(ui, "Votes", &thousands(station.votes));
-    property(ui, "Clicks", &thousands(station.click_count));
+    property(ui, t!("info.votes"), &thousands(station.votes));
+    property(ui, t!("info.clicks"), &thousands(station.click_count));
 
     // Tags as clickable chips: each one fills the app with similar stations.
     let tag_list: Vec<String> = station
@@ -91,14 +91,14 @@ pub fn panel(ui: &mut Ui, app: &mut BigWaveApp) {
         .take(10)
         .collect();
     if !tag_list.is_empty() {
-        ui.label(egui::RichText::new("Tags").weak());
+        ui.label(egui::RichText::new(t!("info.tags")).weak());
         ui.add_space(2.0);
         let mut picked: Option<String> = None;
         ui.horizontal_wrapped(|ui| {
             for tag in &tag_list {
                 if ui
                     .add(egui::Button::new(format!("#{tag}")).small())
-                    .on_hover_text(format!("More stations tagged #{tag}"))
+                    .on_hover_text(t!("info.tag_tip", tag = tag))
                     .clicked()
                 {
                     picked = Some(tag.clone());
@@ -114,8 +114,8 @@ pub fn panel(ui: &mut Ui, app: &mut BigWaveApp) {
     ui.add_space(6.0);
 
     if ui
-        .button(egui::RichText::new("✨  More like this").size(14.0))
-        .on_hover_text("Stations sharing this one's tags, tuned by your star ratings")
+        .button(egui::RichText::new(format!("✨  {}", t!("info.more_like"))).size(14.0))
+        .on_hover_text(t!("info.more_like_tip"))
         .clicked()
     {
         app.more_like_station(&station);
@@ -124,16 +124,16 @@ pub fn panel(ui: &mut Ui, app: &mut BigWaveApp) {
 
     // Links.
     if !station.homepage.trim().is_empty() {
-        ui.hyperlink_to("🌐 Station website", &station.homepage);
+        ui.hyperlink_to(format!("🌐 {}", t!("info.website")), &station.homepage);
         ui.add_space(2.0);
     }
-    if ui.button("📋 Copy stream URL").clicked() {
+    if ui.button(format!("📋 {}", t!("info.copy_url"))).clicked() {
         ui.ctx().copy_text(station.stream_url.clone());
     }
     // Surprise me.
     if ui
-        .button(egui::RichText::new("🎲  Surprise me").size(14.0))
-        .on_hover_text("Play a well-rated or popular station from your moods")
+        .button(egui::RichText::new(format!("🎲  {}", t!("info.surprise"))).size(14.0))
+        .on_hover_text(t!("info.surprise_tip"))
         .clicked()
     {
         app.surprise();
@@ -151,13 +151,14 @@ fn property(ui: &mut Ui, label: &str, value: &str) {
     });
 }
 
-/// 307150 -> "307,150"
+/// 307150 -> "307,150" (the separator follows the UI language: "307.150").
 fn thousands(n: u32) -> String {
+    let sep = t!("format.thousands_sep");
     let digits = n.to_string();
     let mut out = String::new();
     for (i, c) in digits.chars().enumerate() {
         if i > 0 && (digits.len() - i) % 3 == 0 {
-            out.push(',');
+            out.push_str(sep);
         }
         out.push(c);
     }

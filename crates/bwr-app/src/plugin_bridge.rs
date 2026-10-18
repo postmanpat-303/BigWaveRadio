@@ -34,10 +34,11 @@ pub struct PluginBridge {
 }
 
 impl PluginBridge {
-    pub fn new() -> Self {
+    /// `lang`: the UI language code, so `on_load` already sees `ctx.lang`.
+    pub fn new(lang: &str) -> Self {
         let dir = bwr_plugins::default_plugins_dir();
         bwr_plugins::install_bundled(&dir);
-        let host = PluginHost::new(dir);
+        let host = PluginHost::with_lang(dir, lang);
         let pages = host.pages();
         Self {
             host,
@@ -79,9 +80,9 @@ impl PluginBridge {
         match bwr_plugins::import_zip(path, &self.host.dir) {
             Ok(id) => {
                 self.host.scan();
-                self.toast(format!("Imported plugin \"{id}\". Enable it on the Plugins page."));
+                self.toast(t!("plugins.imported", id = id));
             }
-            Err(e) => self.toast(format!("Import failed: {e}")),
+            Err(e) => self.toast(t!("plugins.import_failed", error = e)),
         }
     }
 }
@@ -302,24 +303,26 @@ pub fn post_frame(app: &mut BigWaveApp, ctx: &Context) {
                         let inner = Rect::from_center_size(rect.center(), egui::vec2(560.0_f32.min(rect.width() - 40.0), 320.0));
                         ui.allocate_new_ui(egui::UiBuilder::new().max_rect(inner), |ui| {
                             ui.vertical_centered(|ui| {
-                                ui.label(egui::RichText::new("⚠ Photosensitivity warning").size(28.0).color(Color32::from_rgb(255, 200, 40)));
+                                ui.label(egui::RichText::new(format!("⚠ {}", t!("warning.title"))).size(28.0).color(Color32::from_rgb(255, 200, 40)));
                                 ui.add_space(12.0);
                                 ui.label(
-                                    egui::RichText::new(format!(
-                                        "\"{name}\" shows flashing lights. Flashing can trigger seizures in people with \
-                                         photosensitive epilepsy. Stop immediately if you feel unwell.\n\n\
-                                         Flashes are limited to {cap} per second. Esc always exits."
-                                    ))
+                                    egui::RichText::new(t!("warning.body", name = name, cap = cap))
                                     .size(16.0)
                                     .color(Color32::from_gray(220)),
                                 );
                                 ui.add_space(18.0);
                                 ui.horizontal(|ui| {
-                                    ui.add_space((ui.available_width() - 330.0).max(0.0) / 2.0);
-                                    if ui.button(egui::RichText::new("I understand, start (Enter)").size(16.0)).clicked() {
+                                    // Centre the two buttons (their width depends on the language).
+                                    let text_w = |s: &str| {
+                                        ui.fonts(|f| f.layout_no_wrap(s.to_owned(), egui::FontId::proportional(16.0), Color32::WHITE).size().x)
+                                    };
+                                    let pad = ui.spacing().button_padding.x * 2.0;
+                                    let w = text_w(t!("warning.accept")) + text_w(t!("warning.cancel")) + pad * 2.0 + ui.spacing().item_spacing.x;
+                                    ui.add_space((ui.available_width() - w).max(0.0) / 2.0);
+                                    if ui.button(egui::RichText::new(t!("warning.accept")).size(16.0)).clicked() {
                                         accept = true;
                                     }
-                                    if ui.button(egui::RichText::new("Cancel (Esc)").size(16.0)).clicked() {
+                                    if ui.button(egui::RichText::new(t!("warning.cancel")).size(16.0)).clicked() {
                                         cancel = true;
                                     }
                                 });

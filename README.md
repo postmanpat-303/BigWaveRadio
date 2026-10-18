@@ -122,7 +122,7 @@ The app checks for updates (About → **Check for updates**) and offers the down
   <tr>
     <td valign="top"><h4>ℹ️ Now-playing panel</h4>Station art, format, bitrate, votes, clicks, tags, website and copy-stream-URL.</td>
     <td valign="top"><h4>🎚️ Transport & Advanced</h4>Previous / play / pause / stop / next and volume. Format and minimum-bitrate filters sit under <b>Advanced</b> in the left rail.</td>
-    <td valign="top"><h4>💾 Your data</h4><code>settings.json</code> stays compatible with the original C# app. New state goes in <code>discovery.json</code>, <code>moods.json</code> and <code>update.json</code>.</td>
+    <td valign="top"><h4>💾 Your data</h4><code>settings.json</code> stays compatible with the original C# app. New state goes in <code>discovery.json</code>, <code>moods.json</code>, <code>update.json</code> and <code>ui.json</code> (language).</td>
   </tr>
   <tr>
     <td valign="top"><h4>🎨 Themes</h4>Dark / light / system, plus 8 accent colours.</td>
@@ -131,7 +131,7 @@ The app checks for updates (About → **Check for updates**) and offers the down
   </tr>
   <tr>
     <td valign="top"><h4>🔄 Update checker</h4><b>Check for updates</b> on the About page shows what's new and links straight to the new installer. A quiet check at startup (at most once a day, switch it off in Settings) shows a small notice when a new version is out. Nothing installs by itself.</td>
-    <td valign="top"></td>
+    <td valign="top"><h4>🌐 Languages</h4>English, <b>Português (Brasil)</b> and <b>Italiano</b>. Pick one under Settings → Language (it switches straight away), or leave it on <b>System</b> to follow your computer. Want BigWave Radio in your language? See <a href="docs/TRANSLATING.md">TRANSLATING.md</a>.</td>
     <td valign="top"></td>
   </tr>
 </table>

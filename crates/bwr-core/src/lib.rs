@@ -8,6 +8,7 @@ pub mod models;
 pub mod paths;
 pub mod ratings;
 pub mod settings;
+pub mod ui_prefs;
 pub mod update;
 
 pub use client::RadioBrowserClient;
@@ -17,3 +18,4 @@ pub use models::{Country, Station, Tag};
 pub use ratings::Ratings;
 pub use discovery::{DiscoveryState, Mood, MoodConfig};
 pub use settings::{Accent, Settings};
+pub use ui_prefs::UiPrefs;

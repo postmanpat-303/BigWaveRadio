@@ -10,14 +10,10 @@ use crate::plugin_bridge::render_widgets;
 pub const COMMUNITY_URL: &str = "https://github.com/postmanpat-303/BigWaveRadio-Plugins";
 
 pub fn ui(ui: &mut Ui, app: &mut BigWaveApp) {
-    ui.heading("Plugins");
+    ui.heading(t!("plugins.title"));
     let dir = app.plugins.host.dir.clone();
     ui.label(
-        RichText::new(format!(
-            "Plugins are folders with plugin.toml + main.rhai in {}. Drop a folder there or import a .zip \
-             (you can also drag a .zip onto the window). Edits reload automatically.",
-            dir.display()
-        ))
+        RichText::new(t!("plugins.intro", dir = dir.display()))
         .size(13.0)
         .color(secondary_text(ui)),
     );
@@ -25,20 +21,20 @@ pub fn ui(ui: &mut Ui, app: &mut BigWaveApp) {
     ui.horizontal(|ui| {
         ui.spacing_mut().item_spacing.x = 8.0;
         #[cfg(any(windows, target_os = "macos"))]
-        if action_button(ui, "📦", "Import .zip…", Btn::Primary).clicked() {
-            if let Some(p) = rfd::FileDialog::new().add_filter("Plugin archive", &["zip"]).pick_file() {
+        if action_button(ui, "📦", t!("plugins.import_dialog"), Btn::Primary).clicked() {
+            if let Some(p) = rfd::FileDialog::new().add_filter(t!("plugins.archive"), &["zip"]).pick_file() {
                 app.plugins.import(&p);
             }
         }
         #[cfg(not(any(windows, target_os = "macos")))]
         {
-            ui.add(egui::TextEdit::singleline(&mut app.plugins.import_path).hint_text("path/to/plugin.zip").desired_width(220.0));
-            if action_button(ui, "📦", "Import .zip", Btn::Primary).clicked() {
+            ui.add(egui::TextEdit::singleline(&mut app.plugins.import_path).hint_text(t!("plugins.import_path_hint")).desired_width(220.0));
+            if action_button(ui, "📦", t!("plugins.import"), Btn::Primary).clicked() {
                 let p = std::path::PathBuf::from(app.plugins.import_path.trim());
                 app.plugins.import(&p);
             }
         }
-        if action_button(ui, "📂", "Open folder", Btn::Secondary).clicked() {
+        if action_button(ui, "📂", t!("plugins.open_folder"), Btn::Secondary).clicked() {
             #[cfg(windows)]
             let _ = std::process::Command::new("explorer").arg(&dir).spawn();
             #[cfg(target_os = "macos")]
@@ -46,12 +42,12 @@ pub fn ui(ui: &mut Ui, app: &mut BigWaveApp) {
             #[cfg(not(any(windows, target_os = "macos")))]
             let _ = std::process::Command::new("xdg-open").arg(&dir).spawn();
         }
-        if action_button(ui, "⟳", "Reload all", Btn::Secondary).clicked() {
+        if action_button(ui, "⟳", t!("plugins.reload_all"), Btn::Secondary).clicked() {
             app.plugins.host.scan();
         }
         ui.add_space(4.0);
-        let browse = action_button(ui, "🌐", "Browse community plugins", Btn::Link)
-            .on_hover_text("The community plugin hub on GitHub: download a plugin's .zip there, then import it here.");
+        let browse = action_button(ui, "🌐", t!("plugins.browse"), Btn::Link)
+            .on_hover_text(t!("plugins.browse_tip"));
         if browse.clicked() {
             ui.ctx().open_url(egui::OpenUrl::new_tab(COMMUNITY_URL));
         }
@@ -63,7 +59,7 @@ pub fn ui(ui: &mut Ui, app: &mut BigWaveApp) {
         ui.add_space(8.0);
         let ids: Vec<String> = app.plugins.host.plugins.iter().map(|p| p.id()).collect();
         if ids.is_empty() {
-            ui.label(RichText::new("No plugins installed yet.").weak());
+            ui.label(RichText::new(t!("plugins.none")).weak());
         }
         for id in ids {
             plugin_card(ui, app, &id);
@@ -72,7 +68,7 @@ pub fn ui(ui: &mut Ui, app: &mut BigWaveApp) {
         ui.add_space(6.0);
         let hint = secondary_text(ui);
         ui.label(
-            RichText::new("Writing a plugin (or asking an AI to)? See PLUGIN_GUIDE.md in the plugins folder, and test it with: BigWaveRadio.exe --check-plugin <folder>")
+            RichText::new(t!("plugins.writing_hint"))
                 .size(12.5)
                 .color(hint),
         );
@@ -83,19 +79,17 @@ pub fn ui(ui: &mut Ui, app: &mut BigWaveApp) {
 fn flash_safety(ui: &mut Ui, app: &mut BigWaveApp) {
     egui::Frame::group(ui.style()).show(ui, |ui| {
         ui.set_width(ui.available_width());
-        ui.label(RichText::new("FLASH SAFETY").small().strong());
+        ui.label(RichText::new(t!("plugins.flash_safety")).small().strong());
         let host = &mut app.plugins.host;
         let mut allow = host.state.allow_fast_flash;
         let mut cap = host.flash_cap();
         ui.label(
-            RichText::new(
-                "The app limits how often any plugin can flash the screen. 3 per second is the accessibility guideline (WCAG).",
-            )
+            RichText::new(t!("plugins.flash_intro"))
             .small(),
         );
-        let mut changed = ui.checkbox(&mut allow, "Allow faster flashing (up to 12 per second). I accept the seizure risk.").changed();
+        let mut changed = ui.checkbox(&mut allow, t!("plugins.allow_fast")).changed();
         let max = if allow { HARD_MAX_FLASH_HZ } else { bwr_plugins::DEFAULT_FLASH_HZ };
-        changed |= ui.add(egui::Slider::new(&mut cap, 0.5..=max).suffix(" Hz").text("Flash cap")).changed();
+        changed |= ui.add(egui::Slider::new(&mut cap, 0.5..=max).suffix(" Hz").text(t!("plugins.flash_cap"))).changed();
         if changed {
             host.set_flash_safety(allow, cap);
         }
@@ -104,10 +98,10 @@ fn flash_safety(ui: &mut Ui, app: &mut BigWaveApp) {
 
 fn status_badge(ui: &mut Ui, s: &PluginStatus) {
     let (text, color) = match s {
-        PluginStatus::Running => ("ENABLED", Color32::from_rgb(70, 190, 110)),
-        PluginStatus::Disabled => ("DISABLED", Color32::from_rgb(130, 130, 140)),
-        PluginStatus::NeedsApproval => ("NEEDS APPROVAL", Color32::from_rgb(235, 175, 40)),
-        PluginStatus::Error(_) => ("ERROR", Color32::from_rgb(230, 70, 70)),
+        PluginStatus::Running => (t!("plugins.status_enabled"), Color32::from_rgb(70, 190, 110)),
+        PluginStatus::Disabled => (t!("plugins.status_disabled"), Color32::from_rgb(130, 130, 140)),
+        PluginStatus::NeedsApproval => (t!("plugins.status_needs_approval"), Color32::from_rgb(235, 175, 40)),
+        PluginStatus::Error(_) => (t!("plugins.status_error"), Color32::from_rgb(230, 70, 70)),
     };
     egui::Frame::new()
         .fill(color.gamma_multiply(0.22))
@@ -155,28 +149,28 @@ fn plugin_card(ui: &mut Ui, app: &mut BigWaveApp, id: &str) {
             if let Some(m) = &manifest {
                 ui.label(RichText::new(format!("v{}", m.version)).small().monospace());
                 if !m.author.is_empty() {
-                    ui.label(RichText::new(format!("by {}", m.author)).small().weak());
+                    ui.label(RichText::new(t!("plugins.by", author = m.author)).small().weak());
                 }
             }
             status_badge(ui, &status);
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 ui.spacing_mut().item_spacing.x = 6.0;
-                if action_button(ui, "⟳", "Reload", Btn::Small).clicked() {
+                if action_button(ui, "⟳", t!("plugins.reload"), Btn::Small).clicked() {
                     app.plugins.host.reload(id);
                 }
                 match &status {
                     PluginStatus::Running => {
-                        if action_button(ui, "⏸", "Disable", Btn::Small).clicked() {
+                        if action_button(ui, "⏸", t!("plugins.disable"), Btn::Small).clicked() {
                             app.plugins.host.set_enabled(id, false);
                         }
                     }
                     PluginStatus::Disabled => {
-                        if action_button(ui, "▶", "Enable", Btn::SmallPrimary).clicked() {
+                        if action_button(ui, "▶", t!("plugins.enable"), Btn::SmallPrimary).clicked() {
                             app.plugins.host.approve(id);
                         }
                     }
                     PluginStatus::NeedsApproval => {
-                        if action_button(ui, "✔", "Allow & enable", Btn::SmallPrimary).clicked() {
+                        if action_button(ui, "✔", t!("plugins.allow_enable"), Btn::SmallPrimary).clicked() {
                             app.plugins.host.approve(id);
                         }
                     }
@@ -186,13 +180,19 @@ fn plugin_card(ui: &mut Ui, app: &mut BigWaveApp, id: &str) {
         });
         ui.add_space(2.0);
         if let Some(m) = &manifest {
-            if !m.description.is_empty() {
-                ui.label(RichText::new(&m.description).size(14.0));
+            let description = m.description_for(crate::i18n::current().code());
+            if !description.is_empty() {
+                ui.label(RichText::new(description).size(14.0));
             }
-            let perms: Vec<String> = m.permission_set().into_iter().map(|p: Permission| p.describe().to_string()).collect();
+            let perms: Vec<&str> = m.permission_set().into_iter().map(permission_text).collect();
             if !perms.is_empty() {
-                let prefix = if status == PluginStatus::NeedsApproval { "Wants to: " } else { "Can: " };
-                ui.label(RichText::new(format!("{prefix}{}", perms.join(", "))).size(12.5).color(secondary_text(ui)));
+                let list = perms.join(", ");
+                let line = if status == PluginStatus::NeedsApproval {
+                    t!("plugins.wants_to", list = list)
+                } else {
+                    t!("plugins.can", list = list)
+                };
+                ui.label(RichText::new(line).size(12.5).color(secondary_text(ui)));
             }
         }
         if let PluginStatus::Error(e) = &status {
@@ -201,7 +201,7 @@ fn plugin_card(ui: &mut Ui, app: &mut BigWaveApp, id: &str) {
 
         if status == PluginStatus::Running {
             if let Some(m) = manifest.as_ref().filter(|m| !m.settings.is_empty()) {
-                egui::CollapsingHeader::new("Settings").id_salt(("plugin-settings", id)).show(ui, |ui| {
+                egui::CollapsingHeader::new(t!("plugins.settings")).id_salt(("plugin-settings", id)).show(ui, |ui| {
                     for (key, spec) in &m.settings {
                         setting_row(ui, app, id, key, spec);
                     }
@@ -215,7 +215,7 @@ fn plugin_card(ui: &mut Ui, app: &mut BigWaveApp, id: &str) {
             }
         }
         if !log.is_empty() {
-            egui::CollapsingHeader::new(format!("Log ({})", log.len())).id_salt(("plugin-log", id)).show(ui, |ui| {
+            egui::CollapsingHeader::new(t!("plugins.log", count = log.len())).id_salt(("plugin-log", id)).show(ui, |ui| {
                 for l in &log {
                     let color = if l.starts_with("error") { Color32::from_rgb(240, 100, 100) } else { Color32::GRAY };
                     ui.label(RichText::new(l).monospace().small().color(color));
@@ -347,6 +347,21 @@ mod tests {
     }
 }
 
+/// What a permission allows, in the UI language (lower case, for "Can: ...").
+fn permission_text(p: Permission) -> &'static str {
+    match p {
+        Permission::Audio => t!("perm.audio"),
+        Permission::NowPlaying => t!("perm.now_playing"),
+        Permission::PlayerControl => t!("perm.player_control"),
+        Permission::Overlay => t!("perm.overlay"),
+        Permission::Fullscreen => t!("perm.fullscreen"),
+        Permission::Hotkeys => t!("perm.hotkeys"),
+        Permission::Panel => t!("perm.panel"),
+        Permission::Page => t!("perm.page"),
+        Permission::Storage => t!("perm.storage"),
+    }
+}
+
 fn m_has(m: &Option<bwr_plugins::Manifest>, p: Permission) -> bool {
     m.as_ref().is_some_and(|m| m.permission_set().contains(&p))
 }
@@ -354,7 +369,7 @@ fn m_has(m: &Option<bwr_plugins::Manifest>, p: Permission) -> bool {
 fn setting_row(ui: &mut Ui, app: &mut BigWaveApp, id: &str, key: &str, spec: &bwr_plugins::SettingSpec) {
     let host = &mut app.plugins.host;
     let Some(cur) = host.setting(id, key) else { return };
-    let label = spec.label.clone().unwrap_or_else(|| key.to_string());
+    let label = spec.label_for(key, crate::i18n::current().code()).to_string();
     let new: Option<serde_json::Value> = match spec.kind {
         SettingKind::Float => {
             let mut v = cur.as_float().unwrap_or(0.0);
@@ -406,13 +421,13 @@ fn setting_row(ui: &mut Ui, app: &mut BigWaveApp, id: &str, key: &str, spec: &bw
 /// A whole nav page contributed by a plugin (`[[pages]]` + `on_page`).
 pub fn plugin_page(ui: &mut Ui, app: &mut BigWaveApp, index: usize) {
     let Some((id, page)) = app.plugins.pages.get(index).cloned() else {
-        ui.label("This plugin page is no longer available.");
+        ui.label(t!("plugins.page_gone"));
         return;
     };
     egui::ScrollArea::vertical().auto_shrink([false, false]).show(ui, |ui| {
         let widgets = app.plugins.host.page(&id, &page.id);
         if widgets.is_empty() {
-            ui.heading(&page.title);
+            ui.heading(page.title_for(crate::i18n::current().code()));
         }
         let results = render_widgets(ui, &format!("page-{id}-{}", page.id), &widgets);
         app.plugins.host.set_ui_results(&id, &format!("page:{}", page.id), results);

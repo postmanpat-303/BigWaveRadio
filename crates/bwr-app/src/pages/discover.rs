@@ -7,9 +7,9 @@ use crate::theme;
 use crate::widgets::station_card::station_grid;
 
 pub fn ui(ui: &mut Ui, app: &mut BigWaveApp) {
-    ui.heading("Discover");
+    ui.heading(t!("discover.title"));
     ui.label(
-        egui::RichText::new("Live radio from the community-powered radio-browser.info directory")
+        egui::RichText::new(t!("discover.subtitle"))
             .small()
             .weak(),
     );
@@ -17,9 +17,9 @@ pub fn ui(ui: &mut Ui, app: &mut BigWaveApp) {
 
     ui.horizontal(|ui| {
         for (label, tab) in [
-            ("Trending", DiscoverTab::Trending),
-            ("Popular", DiscoverTab::Popular),
-            ("Recently added", DiscoverTab::Recent),
+            (t!("discover.trending"), DiscoverTab::Trending),
+            (t!("discover.popular"), DiscoverTab::Popular),
+            (t!("discover.recent"), DiscoverTab::Recent),
         ] {
             if tab_button(ui, app, label, app.discover_tab == tab) && app.discover_tab != tab {
                 app.discover_tab = tab;

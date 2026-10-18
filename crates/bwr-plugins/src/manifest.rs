@@ -91,6 +91,16 @@ pub struct PageSpec {
     pub title: String,
     #[serde(default)]
     pub icon: String,
+    /// Translated titles by language code (`titles = { "pt-BR" = "...", it = "..." }`).
+    #[serde(default)]
+    pub titles: BTreeMap<String, String>,
+}
+
+impl PageSpec {
+    /// The title in UI language `lang`, falling back to `title`.
+    pub fn title_for(&self, lang: &str) -> &str {
+        localized(&self.titles, lang).unwrap_or(&self.title)
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
@@ -115,6 +125,34 @@ pub struct SettingSpec {
     pub label: Option<String>,
     #[serde(default)]
     pub options: Vec<String>,
+    /// Translated labels by language code (`labels = { "pt-BR" = "...", it = "..." }`).
+    #[serde(default)]
+    pub labels: BTreeMap<String, String>,
+}
+
+impl SettingSpec {
+    /// The label in UI language `lang`, falling back to `label`, then `key`.
+    pub fn label_for<'a>(&'a self, key: &'a str, lang: &str) -> &'a str {
+        localized(&self.labels, lang).or(self.label.as_deref()).unwrap_or(key)
+    }
+}
+
+/// Pick a translation for `lang` ("pt-BR"): exact code first (any case),
+/// then the bare language ("pt"), then any entry with that language.
+pub fn localized<'a>(map: &'a BTreeMap<String, String>, lang: &str) -> Option<&'a str> {
+    if map.is_empty() {
+        return None;
+    }
+    let primary = lang.split(['-', '_']).next().unwrap_or(lang);
+    map.iter()
+        .find(|(k, _)| k.eq_ignore_ascii_case(lang))
+        .or_else(|| map.iter().find(|(k, _)| k.eq_ignore_ascii_case(primary)))
+        .or_else(|| {
+            map.iter().find(|(k, _)| {
+                k.split(['-', '_']).next().is_some_and(|p| p.eq_ignore_ascii_case(primary))
+            })
+        })
+        .map(|(_, v)| v.as_str())
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -132,6 +170,9 @@ pub struct Manifest {
     pub author: String,
     #[serde(default)]
     pub description: String,
+    /// Translated descriptions by language code (`[descriptions]` table).
+    #[serde(default)]
+    pub descriptions: BTreeMap<String, String>,
     #[serde(default)]
     pub permissions: Vec<String>,
     #[serde(default)]
@@ -150,6 +191,13 @@ pub struct Manifest {
     /// tint is derived from the id.
     #[serde(default)]
     pub accent: String,
+}
+
+impl Manifest {
+    /// The description in UI language `lang`, falling back to `description`.
+    pub fn description_for(&self, lang: &str) -> &str {
+        localized(&self.descriptions, lang).unwrap_or(&self.description)
+    }
 }
 
 /// Card tint for a plugin: its `accent` colour if valid, otherwise a

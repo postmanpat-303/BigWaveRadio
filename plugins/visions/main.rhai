@@ -150,7 +150,7 @@ fn on_overlay(ctx, draw) {
         draw.text(0.03, 0.05, name, 26.0, `#ffffff${hex}`);
     }
     if ctx.now - s.opened < 4.0 {
-        draw.text(0.03, 0.95, "Left / Right: scene  |  Esc, any other key or click: exit", 14.0, "#ffffff90");
+        draw.text(0.03, 0.95, tr(ctx, "hud"), 14.0, "#ffffff90");
     }
 }
 
@@ -174,17 +174,52 @@ fn on_hotkey(ctx, action) {
     if action == "start" { start(ctx); }
 }
 
+// UI text in the app's language (ctx.lang: "en", "pt-BR" or "it"); English
+// is the fallback. Scene names stay as they are.
+fn texts(lang) {
+    if lang == "pt-BR" {
+        return #{
+            hud: "Esquerda / Direita: cena  |  Esc, outra tecla ou clique: sair",
+            start: "Iniciar Visions",
+            shortcut: "Atalho: Ctrl+M e depois D. Esquerda / Direita trocam de cena, Esc sai.",
+            about: "Um visualizador no estilo MilkDrop que reage à música. Suave e sem efeito estroboscópico: as batidas viram pulsos e mudanças de cor.",
+            settings: "As configurações (exibição, tempo das cenas, qualidade) ficam na página Plugins.",
+        };
+    }
+    if lang == "it" {
+        return #{
+            hud: "Sinistra / Destra: scena  |  Esc, un altro tasto o clic: esci",
+            start: "Avvia Visions",
+            shortcut: "Scorciatoia: Ctrl+M, poi D. Sinistra / Destra cambiano scena, Esc esce.",
+            about: "Un visualizzatore in stile MilkDrop che reagisce alla musica. Morbido e senza effetto stroboscopico: i battiti diventano pulsazioni e cambi di colore.",
+            settings: "Le impostazioni (visualizzazione, tempi delle scene, qualità) sono nella pagina Plugin.",
+        };
+    }
+    #{
+        hud: "Left / Right: scene  |  Esc, any other key or click: exit",
+        start: "Start Visions",
+        shortcut: "Shortcut: Ctrl+M, then D. Left / Right switch scene, Esc exits.",
+        about: "A MilkDrop-style visualiser that reacts to the music. Smooth and non-strobing: beats become pulses and colour shifts.",
+        settings: "Settings (display, scene timing, quality) are on the Plugins page.",
+    }
+}
+
+fn tr(ctx, key) {
+    let t = texts(ctx.lang);
+    if t.contains(key) { t[key] } else { texts("en")[key] }
+}
+
 fn on_panel(ctx, ui) {
-    if ui.button("Start Visions") { start(ctx); }
-    ui.small("Shortcut: Ctrl+M, then D. Left / Right switch scene, Esc exits.");
+    if ui.button(tr(ctx, "start")) { start(ctx); }
+    ui.small(tr(ctx, "shortcut"));
 }
 
 fn on_page(ctx, page_id, ui) {
     ui.heading("Visions");
-    ui.label("A MilkDrop-style visualiser that reacts to the music. Smooth and non-strobing: beats become pulses and colour shifts.");
+    ui.label(tr(ctx, "about"));
     ui.space(6);
-    if ui.button("Start Visions") { start(ctx); }
-    ui.small("Shortcut: Ctrl+M, then D. Left / Right switch scene, Esc exits. Settings (display, scene timing, quality) are on the Plugins page.");
+    if ui.button(tr(ctx, "start")) { start(ctx); }
+    ui.small(`${tr(ctx, "shortcut")} ${tr(ctx, "settings")}`);
     ui.space(6);
     // Live previews of every scene.
     let c = ui.canvas(300);

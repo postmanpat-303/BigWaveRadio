@@ -8,15 +8,15 @@ use crate::widgets::station_card::station_grid;
 
 pub fn mood_page(ui: &mut Ui, app: &mut BigWaveApp, idx: usize) {
     let Some(mood) = app.moods.moods.get(idx).cloned() else {
-        ui.label("That mood no longer exists in moods.json.");
+        ui.label(t!("moods.missing"));
         return;
     };
     ui.horizontal(|ui| {
-        ui.heading(format!("{} {}", mood.icon, mood.label));
+        ui.heading(format!("{} {}", mood.icon, crate::widgets::mood_rail::mood_label(&mood)));
         ui.add_space(12.0);
         if ui
-            .button(egui::RichText::new(format!("🎲  Surprise me ({})", mood.label)).size(14.0))
-            .on_hover_text("Play a well-rated or popular station from this mood")
+            .button(egui::RichText::new(format!("🎲  {}", t!("moods.surprise", mood = crate::widgets::mood_rail::mood_label(&mood)))).size(14.0))
+            .on_hover_text(t!("moods.surprise_tip"))
             .clicked()
         {
             app.surprise();
@@ -30,10 +30,7 @@ pub fn mood_page(ui: &mut Ui, app: &mut BigWaveApp, idx: usize) {
             .small()
             .weak(),
     )
-    .on_hover_text(format!(
-        "Mood → tag mappings live in {}; edit it and restart to change them.",
-        bwr_core::MoodConfig::path().display()
-    ));
+    .on_hover_text(t!("moods.mapping_tip", path = bwr_core::MoodConfig::path().display()));
     talk_note(ui, app);
     ui.add_space(8.0);
     station_grid(ui, app);
@@ -47,14 +44,11 @@ pub fn talk_note(ui: &mut Ui, app: &mut BigWaveApp) {
     }
     ui.horizontal(|ui| {
         ui.label(
-            egui::RichText::new(format!(
-                "{hidden} talk station{} hidden",
-                if hidden == 1 { "" } else { "s" }
-            ))
+            egui::RichText::new(tn!("moods.talk_hidden", hidden))
             .small()
             .weak(),
         );
-        if ui.small_button("Show talk").clicked() {
+        if ui.small_button(t!("rail.show_talk")).clicked() {
             app.discovery.show_talk = true;
             app.discovery.save();
         }
@@ -65,9 +59,9 @@ pub fn talk_note(ui: &mut Ui, app: &mut BigWaveApp) {
 /// Each row on the left is a star level; "All rated" lists everything,
 /// best stars first.
 pub fn stars_page(ui: &mut Ui, app: &mut BigWaveApp) {
-    ui.heading("★ Your Stars");
+    ui.heading(format!("★ {}", t!("stars.title")));
     ui.label(
-        egui::RichText::new("Every station you rated, from any category. Rate a station from the info panel on the right while it plays.")
+        egui::RichText::new(t!("stars.subtitle"))
             .small()
             .weak(),
     );
@@ -104,7 +98,7 @@ pub fn stars_page(ui: &mut Ui, app: &mut BigWaveApp) {
             if app.ratings.is_empty() {
                 ui.add_space(30.0);
                 ui.label(
-                    egui::RichText::new("Nothing rated yet. Play a station and set its stars in the info panel.")
+                    egui::RichText::new(t!("stars.empty"))
                         .weak(),
                 );
                 return;
@@ -120,9 +114,9 @@ pub fn stars_page(ui: &mut Ui, app: &mut BigWaveApp) {
             if list.is_empty() {
                 ui.add_space(30.0);
                 ui.label(egui::RichText::new(if app.loading {
-                    "Fetching your rated stations…"
+                    t!("stars.fetching")
                 } else {
-                    "No stations at this level."
+                    t!("stars.level_empty")
                 }).weak());
                 return;
             }
@@ -145,7 +139,7 @@ fn level_row(ui: &mut Ui, app: &BigWaveApp, level: u8, count: usize) -> bool {
     }
     let y = rect.center().y;
     if level == 0 {
-        ui.painter().text(Pos2::new(rect.left() + 10.0, y), Align2::LEFT_CENTER, "All rated", FontId::proportional(14.0), strong);
+        ui.painter().text(Pos2::new(rect.left() + 10.0, y), Align2::LEFT_CENTER, t!("stars.all"), FontId::proportional(14.0), strong);
     } else {
         for s in 0..5u8 {
             let filled = s < level;

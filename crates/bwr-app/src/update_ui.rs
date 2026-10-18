@@ -128,13 +128,13 @@ pub fn show(ctx: &Context, up: &mut Updater, accent: Color32) {
         ui.set_width(w);
         match dialog {
             Dialog::Update(rel) => {
-                ui.heading(RichText::new("⬆  An update is available").color(accent));
+                ui.heading(RichText::new(format!("⬆  {}", t!("update.available"))).color(accent));
                 ui.add_space(8.0);
                 egui::Grid::new("update-versions").num_columns(2).spacing([16.0, 4.0]).show(ui, |ui| {
-                    ui.label("Installed version");
+                    ui.label(t!("update.installed"));
                     ui.label(RichText::new(format!("v{}", current_version())).strong());
                     ui.end_row();
-                    ui.label("Latest version");
+                    ui.label(t!("update.latest"));
                     ui.label(RichText::new(format!("v{}", rel.version)).strong().color(accent));
                     ui.end_row();
                 });
@@ -150,7 +150,7 @@ pub fn show(ctx: &Context, up: &mut Updater, accent: Color32) {
                         egui::ScrollArea::vertical().max_height(240.0).auto_shrink([false, true]).show(ui, |ui| {
                             ui.set_width(ui.available_width());
                             if notes.is_empty() {
-                                ui.label(RichText::new("No release notes.").weak());
+                                ui.label(RichText::new(t!("update.no_notes")).weak());
                             } else {
                                 ui.label(RichText::new(notes).size(13.0));
                             }
@@ -159,35 +159,29 @@ pub fn show(ctx: &Context, up: &mut Updater, accent: Color32) {
                 ui.add_space(6.0);
                 ui.label(
                     RichText::new(match (rel.asset_url.is_some(), update::Platform::current()) {
-                        (true, update::Platform::MacOs) => {
-                            "Download gets the disk image; drag BigWave Radio to Applications to upgrade. Your library and settings are kept."
-                        }
-                        (true, update::Platform::Linux { .. }) => {
-                            "Download gets the package for your system (or use your package manager). Your library and settings are kept."
-                        }
-                        (true, _) => {
-                            "Download gets the installer; run it to upgrade. Your library and settings are kept."
-                        }
-                        (false, _) => "Download opens the release page.",
+                        (true, update::Platform::MacOs) => t!("update.how_macos"),
+                        (true, update::Platform::Linux { .. }) => t!("update.how_linux"),
+                        (true, _) => t!("update.how_windows"),
+                        (false, _) => t!("update.how_page"),
                     })
                     .size(12.0)
                     .weak(),
                 );
                 ui.add_space(10.0);
                 ui.horizontal(|ui| {
-                    if action_button(ui, "⬇", "Download", Btn::Primary).on_hover_text(rel.download_url()).clicked() {
+                    if action_button(ui, "⬇", t!("update.download"), Btn::Primary).on_hover_text(rel.download_url()).clicked() {
                         ctx.open_url(egui::OpenUrl::new_tab(rel.download_url()));
                         close = true;
                     }
-                    if action_button(ui, "🌐", "View release page", Btn::Secondary).on_hover_text(&rel.html_url).clicked() {
+                    if action_button(ui, "🌐", t!("update.view_page"), Btn::Secondary).on_hover_text(&rel.html_url).clicked() {
                         ctx.open_url(egui::OpenUrl::new_tab(&rel.html_url));
                     }
-                    if action_button(ui, "", "Not now", Btn::Secondary).clicked() {
+                    if action_button(ui, "", t!("update.not_now"), Btn::Secondary).clicked() {
                         close = true;
                     }
                     if ui
-                        .add(egui::Button::new(RichText::new("Skip this version").size(12.5)).frame(false))
-                        .on_hover_text("Don't remind me about this version at startup")
+                        .add(egui::Button::new(RichText::new(t!("update.skip")).size(12.5)).frame(false))
+                        .on_hover_text(t!("update.skip_tip"))
                         .clicked()
                     {
                         skip = Some(rel.version.clone());
@@ -196,24 +190,24 @@ pub fn show(ctx: &Context, up: &mut Updater, accent: Color32) {
                 });
             }
             Dialog::UpToDate(v) => {
-                ui.heading("✔  You're up to date");
+                ui.heading(format!("✔  {}", t!("update.up_to_date_title")));
                 ui.add_space(6.0);
-                ui.label(format!("You're up to date (v{v})."));
+                ui.label(t!("update.up_to_date", version = v));
                 ui.add_space(10.0);
-                if action_button(ui, "", "OK", Btn::Primary).clicked() {
+                if action_button(ui, "", t!("common.ok"), Btn::Primary).clicked() {
                     close = true;
                 }
             }
             Dialog::Failed(e) => {
-                ui.heading("Couldn't check for updates");
+                ui.heading(t!("update.failed_title"));
                 ui.add_space(6.0);
-                ui.label(format!("Reason: {e}."));
+                ui.label(t!("update.reason", reason = e));
                 ui.add_space(10.0);
                 ui.horizontal(|ui| {
-                    if action_button(ui, "🌐", "Open releases page", Btn::Secondary).clicked() {
+                    if action_button(ui, "🌐", t!("update.open_releases"), Btn::Secondary).clicked() {
                         ctx.open_url(egui::OpenUrl::new_tab(update::RELEASES_PAGE));
                     }
-                    if action_button(ui, "", "OK", Btn::Primary).clicked() {
+                    if action_button(ui, "", t!("common.ok"), Btn::Primary).clicked() {
                         close = true;
                     }
                 });
@@ -252,13 +246,13 @@ fn banner(ctx: &Context, up: &mut Updater, accent: Color32) {
                 .show(ui, |ui| {
                     ui.horizontal(|ui| {
                         ui.label(RichText::new("⬆").color(accent).size(16.0));
-                        ui.label(format!("BigWave Radio v{} is available", rel.version));
-                        if action_button(ui, "", "Details", Btn::SmallPrimary).clicked() {
+                        ui.label(t!("update.banner", version = rel.version));
+                        if action_button(ui, "", t!("update.details"), Btn::SmallPrimary).clicked() {
                             open_dialog = true;
                         }
                         if ui
                             .add(egui::Button::new("🗙").frame(false))
-                            .on_hover_text("Dismiss")
+                            .on_hover_text(t!("common.dismiss"))
                             .clicked()
                         {
                             dismiss = true;

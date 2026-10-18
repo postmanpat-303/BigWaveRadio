@@ -62,11 +62,11 @@ pub fn station_grid(ui: &mut Ui, app: &mut BigWaveApp) {
         ui.centered_and_justified(|ui| {
             ui.label(
                 egui::RichText::new(if app.loading {
-                    "Loading…"
+                    t!("cards.loading")
                 } else if !app.stations.is_empty() {
-                    "Only talk stations here — tick Show talk in the left rail to see them."
+                    t!("cards.only_talk")
                 } else {
-                    "No stations to show."
+                    t!("cards.empty")
                 })
                 .weak(),
             );
@@ -181,7 +181,7 @@ fn card(ui: &mut Ui, station: &Station, app: &mut BigWaveApp, m: &Metrics, width
     painter.text(
         Pos2::new(meta_x, meta_y),
         Align2::LEFT_CENTER,
-        station.summary_line(),
+        summary_line(station),
         FontId::proportional(m.meta_size),
         if dark { Color32::from_gray(160) } else { Color32::from_gray(90) },
     );
@@ -216,6 +216,26 @@ fn card(ui: &mut Ui, station: &Station, app: &mut BigWaveApp, m: &Metrics, width
         app.play_station(station.clone());
     }
     response.on_hover_text(&station.name);
+}
+
+/// "Country · Language · MP3 · 128 kbps · 42 votes" card subtitle (the
+/// translated twin of `Station::summary_line`).
+fn summary_line(s: &bwr_core::Station) -> String {
+    let mut parts: Vec<String> = [s.country.trim(), s.language.trim()]
+        .into_iter()
+        .filter(|p| !p.is_empty())
+        .map(str::to_string)
+        .collect();
+    if !s.codec.trim().is_empty() {
+        parts.push(s.codec.trim().to_uppercase());
+    }
+    if s.bitrate > 0 {
+        parts.push(format!("{} kbps", s.bitrate));
+    }
+    if s.votes > 0 {
+        parts.push(tn!("cards.votes", s.votes));
+    }
+    parts.join(" · ")
 }
 
 #[cfg(test)]

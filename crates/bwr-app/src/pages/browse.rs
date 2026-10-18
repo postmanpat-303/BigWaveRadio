@@ -8,8 +8,8 @@ use crate::theme;
 use crate::widgets::station_card::station_grid;
 
 pub fn tags_page(ui: &mut Ui, app: &mut BigWaveApp) {
-    ui.heading("Tags");
-    ui.label("Browse genres and moods — pick one to see its stations.");
+    ui.heading(t!("browse.tags_title"));
+    ui.label(t!("browse.tags_hint"));
     ui.add_space(8.0);
     if app.browse_selection.is_none() {
         if app.tags.is_empty() && !app.loading {
@@ -32,8 +32,8 @@ pub fn tags_page(ui: &mut Ui, app: &mut BigWaveApp) {
 }
 
 pub fn countries_page(ui: &mut Ui, app: &mut BigWaveApp) {
-    ui.heading("Countries");
-    ui.label("Browse stations by country, A to Z.");
+    ui.heading(t!("browse.countries_title"));
+    ui.label(t!("browse.countries_hint"));
     ui.add_space(8.0);
     if app.browse_selection.is_none() {
         if app.countries.is_empty() && !app.loading {
@@ -201,7 +201,7 @@ fn world_map(ui: &mut Ui, app: &mut BigWaveApp) {
             egui::LayerId::new(egui::Order::Tooltip, ui.id().with("map-tip")),
             ui.id().with("map-tip"),
             |ui| {
-                ui.label(format!("{name} — {count} stations"));
+                ui.label(tn!("browse.map_tip", *count, name = name));
             },
         );
         if response.clicked() {
@@ -214,7 +214,7 @@ fn world_map(ui: &mut Ui, app: &mut BigWaveApp) {
     }
     ui.add_space(4.0);
     ui.label(
-        egui::RichText::new("Bubbles sized by station count — click one, or pick a country below.")
+        egui::RichText::new(t!("browse.map_hint"))
             .small()
             .weak(),
     );
@@ -222,7 +222,7 @@ fn world_map(ui: &mut Ui, app: &mut BigWaveApp) {
 
 fn selection_header(ui: &mut Ui, app: &mut BigWaveApp) {
     ui.horizontal(|ui| {
-        if ui.button("← Back").clicked() {
+        if ui.button(format!("← {}", t!("common.back"))).clicked() {
             app.browse_selection = None;
             app.stations.clear();
             app.loading = false;

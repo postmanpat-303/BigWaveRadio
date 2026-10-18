@@ -162,13 +162,19 @@ unsafe extern "system" fn tray_wndproc(
                     Ok(m) => m,
                     Err(_) => return LRESULT(0),
                 };
-                let _ = AppendMenuW(menu, MF_STRING, MENU_SHOW, w!("Show BigWave Radio"));
+                // Built per right-click, so the menu follows the UI language.
+                let show = windows::core::HSTRING::from(t!("tray.show"));
+                let play = windows::core::HSTRING::from(t!("tray.play_pause"));
+                let next = windows::core::HSTRING::from(t!("tray.next"));
+                let prev = windows::core::HSTRING::from(t!("tray.previous"));
+                let quit = windows::core::HSTRING::from(t!("tray.quit"));
+                let _ = AppendMenuW(menu, MF_STRING, MENU_SHOW, PCWSTR(show.as_ptr()));
                 let _ = AppendMenuW(menu, MF_SEPARATOR, 0, PCWSTR::null());
-                let _ = AppendMenuW(menu, MF_STRING, MENU_PLAY_PAUSE, w!("Play / Pause"));
-                let _ = AppendMenuW(menu, MF_STRING, MENU_NEXT, w!("Next station"));
-                let _ = AppendMenuW(menu, MF_STRING, MENU_PREVIOUS, w!("Previous station"));
+                let _ = AppendMenuW(menu, MF_STRING, MENU_PLAY_PAUSE, PCWSTR(play.as_ptr()));
+                let _ = AppendMenuW(menu, MF_STRING, MENU_NEXT, PCWSTR(next.as_ptr()));
+                let _ = AppendMenuW(menu, MF_STRING, MENU_PREVIOUS, PCWSTR(prev.as_ptr()));
                 let _ = AppendMenuW(menu, MF_SEPARATOR, 0, PCWSTR::null());
-                let _ = AppendMenuW(menu, MF_STRING, MENU_QUIT, w!("Quit"));
+                let _ = AppendMenuW(menu, MF_STRING, MENU_QUIT, PCWSTR(quit.as_ptr()));
                 let _ = SetMenuDefaultItem(menu, MENU_SHOW as u32, 0);
 
                 let mut pt = POINT::default();

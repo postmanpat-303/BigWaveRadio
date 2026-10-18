@@ -1,0 +1,307 @@
+# BigWave Radio: English UI text. This is the source catalog and the
+# fallback for any key a translation is missing. See docs/TRANSLATING.md.
+#
+# {name} placeholders are filled in by the app; keep them exactly.
+# Plurals use .one / .other sub-keys, with {n} for the number.
+
+[common]
+back = "Back"
+clear = "Clear"
+dismiss = "Dismiss"
+ok = "OK"
+
+[format]
+# Digit-group separator for big numbers (votes, clicks): 307,150.
+thousands_sep = ","
+
+[status]
+ready = "Ready"
+connecting = "Connecting…"
+connected = "Connected"
+stopped = "Stopped"
+paused = "Paused"
+finding = "Finding a station for you…"
+no_tags = "This station has no tags to match on"
+no_match = "No station matched the filters — try loosening them"
+error = "Error: {error}"
+playback_error = "Playback error: {error}"
+
+[top]
+search_hint = "Search stations…"
+surprise_tip = "Surprise me — play a random station"
+recent = "RECENT SEARCHES"
+remove = "Remove from history"
+clear_history = "Clear history"
+
+[nav]
+discover = "Discover"
+search = "Search"
+library = "My Library"
+tags = "Tags"
+countries = "Countries"
+plugins = "Plugins"
+settings = "Settings"
+about = "About"
+plugin_tip = "{title} — double-click to start"
+
+[discover]
+title = "Discover"
+subtitle = "Live radio from the community-powered radio-browser.info directory"
+trending = "Trending"
+popular = "Popular"
+recent = "Recently added"
+
+[search]
+title = "Search"
+hint = "Search stations by name…"
+recent = "Recent searches"
+cloud_hint = "Pick a vibe from the cloud — click a word to tune in."
+more_like = "More like {name} · #{tags}"
+
+[library]
+title = "My Library"
+favourites = "Favourites"
+recent = "Recently played"
+favourites_hint = "Stations you starred for quick access — stored locally on this PC."
+empty = "No saved stations yet. Tap the ☆ on any station card to save it here."
+recent_hint = "Stations you played lately — newest first."
+recent_empty = "Nothing played yet."
+
+[browse]
+tags_title = "Tags"
+tags_hint = "Browse genres and moods — pick one to see its stations."
+countries_title = "Countries"
+countries_hint = "Browse stations by country, A to Z."
+map_hint = "Bubbles sized by station count — click one, or pick a country below."
+
+[browse.map_tip]
+one = "{name} — {n} station"
+other = "{name} — {n} stations"
+
+[mood]
+dance = "Dance"
+trance = "Trance"
+chill = "Chill"
+easy = "Easy"
+80s = "80s"
+90s = "90s"
+
+[moods]
+missing = "That mood no longer exists in moods.json."
+surprise = "Surprise me ({mood})"
+surprise_tip = "Play a well-rated or popular station from this mood"
+mapping_tip = "Mood → tag mappings live in {path}; edit it and restart to change them."
+
+[moods.talk_hidden]
+one = "{n} talk station hidden"
+other = "{n} talk stations hidden"
+
+[rail]
+moods = "MOODS"
+stars_tip = "Every station you rated, from any category"
+show_talk = "Show talk"
+show_talk_tip = "Show news, talk, sport, religion, comedy and podcast stations"
+advanced = "ADVANCED"
+advanced_tip = "Stream format and minimum bitrate"
+format = "Format"
+min_bitrate = "Minimum bitrate"
+
+[filter]
+any_format = "Any format"
+any_bitrate = "Any bitrate"
+kbps_or_more = "{kbps} kbps or more"
+
+[stars]
+title = "Your Stars"
+subtitle = "Every station you rated, from any category. Rate a station from the info panel on the right while it plays."
+empty = "Nothing rated yet. Play a station and set its stars in the info panel."
+fetching = "Fetching your rated stations…"
+level_empty = "No stations at this level."
+all = "All rated"
+
+[cards]
+loading = "Loading…"
+only_talk = "Only talk stations here — tick Show talk in the left rail to see them."
+empty = "No stations to show."
+
+[cards.votes]
+one = "{n} vote"
+other = "{n} votes"
+
+[player]
+pick = "Pick a station to start listening"
+save_library = "Save to My Library"
+remove_library = "Remove from My Library"
+# Captions under the transport buttons: keep them short (about 8 letters).
+surprise = "SURPRISE"
+prev = "PREV"
+play = "PLAY"
+pause = "PAUSE"
+stop = "STOP"
+next = "NEXT"
+
+[info]
+now_playing = "Now playing"
+your_rating = "YOUR RATING"
+format = "Format"
+bitrate = "Bitrate"
+votes = "Votes"
+clicks = "Clicks"
+tags = "Tags"
+tag_tip = "More stations tagged #{tag}"
+more_like = "More like this"
+more_like_tip = "Stations sharing this one's tags, tuned by your star ratings"
+website = "Station website"
+copy_url = "Copy stream URL"
+surprise = "Surprise me"
+surprise_tip = "Play a well-rated or popular station from your moods"
+
+[info.rate]
+one = "Rate {n} star"
+other = "Rate {n} stars"
+
+[settings]
+title = "Settings"
+language = "Language"
+language_system = "System · {lang}"
+language_hint = "Applies straight away. System follows your computer's language."
+theme = "Theme"
+match_system = "Match system"
+light = "Light"
+dark = "Dark"
+highlight = "Highlight colour"
+quality = "Stream quality"
+min_bitrate = "Minimum bitrate:"
+format = "Format:"
+quality_hint = "Applies everywhere: Discover lists, search, tags, countries, Surprise me."
+cards = "Station cards"
+compact = "Compact"
+comfortable = "Comfortable"
+cards_hint = "Compact fits about twice as many stations on screen."
+behaviour = "Behaviour"
+check_updates = "Check for updates at startup"
+check_updates_tip = "Quietly, at most once a day. Shows a small notice if a new version is out."
+tray = "Keep playing in the tray when I close the window"
+tray_hint = "When on, closing hides BigWave Radio to the tray — playback continues, and a notification tells you where it went. Windows 11 puts the wave icon in the hidden ^ list beside the clock until you drag it out once; Ctrl+Alt+B also brings the window back. Minimizing always keeps the taskbar button."
+idle = "Idle Visions"
+idle_start = "Start the Visions visualiser when the app is left untouched"
+idle_after = "After"
+idle_hint = "Any mouse move or keypress closes the visualiser again. Only applies to Visions sessions started by the timer — ones you start yourself keep running."
+
+[settings.minutes]
+one = "{n} minute"
+other = "{n} minutes"
+
+[plugins]
+title = "Plugins"
+intro = "Plugins are folders with plugin.toml + main.rhai in {dir}. Drop a folder there or import a .zip (you can also drag a .zip onto the window). Edits reload automatically."
+import_dialog = "Import .zip…"
+import = "Import .zip"
+import_path_hint = "path/to/plugin.zip"
+archive = "Plugin archive"
+open_folder = "Open folder"
+reload_all = "Reload all"
+browse = "Browse community plugins"
+browse_tip = "The community plugin hub on GitHub: download a plugin's .zip there, then import it here."
+none = "No plugins installed yet."
+writing_hint = "Writing a plugin (or asking an AI to)? See PLUGIN_GUIDE.md in the plugins folder, and test it with: BigWaveRadio.exe --check-plugin <folder>"
+flash_safety = "FLASH SAFETY"
+flash_intro = "The app limits how often any plugin can flash the screen. 3 per second is the accessibility guideline (WCAG)."
+allow_fast = "Allow faster flashing (up to 12 per second). I accept the seizure risk."
+flash_cap = "Flash cap"
+status_enabled = "ENABLED"
+status_disabled = "DISABLED"
+status_needs_approval = "NEEDS APPROVAL"
+status_error = "ERROR"
+by = "by {author}"
+reload = "Reload"
+disable = "Disable"
+enable = "Enable"
+allow_enable = "Allow & enable"
+wants_to = "Wants to: {list}"
+can = "Can: {list}"
+settings = "Settings"
+log = "Log ({count})"
+page_gone = "This plugin page is no longer available."
+imported = "Imported plugin \"{id}\". Enable it on the Plugins page."
+import_failed = "Import failed: {error}"
+
+[perm]
+# What a plugin permission allows; shown after "Can:" / "Wants to:".
+audio = "read audio levels and beats"
+now_playing = "see the station and song playing"
+player_control = "control playback and volume"
+overlay = "draw over the app window"
+fullscreen = "go fullscreen"
+hotkeys = "use keyboard shortcuts"
+panel = "show a panel on the Plugins page"
+page = "add pages to the side bar"
+storage = "save small amounts of data"
+
+[warning]
+title = "Photosensitivity warning"
+body = "\"{name}\" shows flashing lights. Flashing can trigger seizures in people with photosensitive epilepsy. Stop immediately if you feel unwell.\n\nFlashes are limited to {cap} per second. Esc always exits."
+accept = "I understand, start (Enter)"
+cancel = "Cancel (Esc)"
+
+[update]
+available = "An update is available"
+installed = "Installed version"
+latest = "Latest version"
+no_notes = "No release notes."
+how_macos = "Download gets the disk image; drag BigWave Radio to Applications to upgrade. Your library and settings are kept."
+how_linux = "Download gets the package for your system (or use your package manager). Your library and settings are kept."
+how_windows = "Download gets the installer; run it to upgrade. Your library and settings are kept."
+how_page = "Download opens the release page."
+download = "Download"
+view_page = "View release page"
+not_now = "Not now"
+skip = "Skip this version"
+skip_tip = "Don't remind me about this version at startup"
+up_to_date_title = "You're up to date"
+up_to_date = "You're up to date (v{version})."
+failed_title = "Couldn't check for updates"
+reason = "Reason: {reason}."
+open_releases = "Open releases page"
+banner = "BigWave Radio v{version} is available"
+details = "Details"
+
+[about]
+title = "About"
+check = "Check for updates"
+checking = "Checking for updates…"
+blurb = "BigWave Radio streams live stations from the community-powered radio-browser.info directory. Your library and settings are stored locally on this PC."
+created_by = "Created by {name}"
+inspired = "Inspired by ShortWave on Linux, I wanted a nice clean version for Windows."
+coffee_intro = "If you find this app useful, you can buy me a coffee:"
+coffee = "Buy me a coffee"
+or_paypal = "or PayPal:"
+demos = "Demos and promos:"
+thanks = "Thank you. :)"
+
+[tray]
+show = "Show BigWave Radio"
+play_pause = "Play / Pause"
+next = "Next station"
+previous = "Previous station"
+quit = "Quit"
+toast_title = "BigWave Radio — still playing"
+toast_body = "Open the ^ list beside the clock to find the wave icon (drag it out once to keep it there), or press Ctrl+Alt+B to bring the window back."
+
+[quote]
+# Window-title quotes, one picked per session. Use the well-known wording
+# in your language if there is one.
+q01 = "The unexamined life is not worth living. — Socrates"
+q02 = "Not all those who wander are lost. — J.R.R. Tolkien"
+q03 = "In the middle of difficulty lies opportunity. — Albert Einstein"
+q04 = "Whatever you are, be a good one. — Abraham Lincoln"
+q05 = "It does not matter how slowly you go, as long as you do not stop. — Confucius"
+q06 = "The best way to predict the future is to invent it. — Alan Kay"
+q07 = "He who has a why to live can bear almost any how. — Friedrich Nietzsche"
+q08 = "Strive not to be a success, but rather to be of value. — Albert Einstein"
+q09 = "Happiness depends upon ourselves. — Aristotle"
+q10 = "Dream big and dare to fail. — Norman Vaughan"
+q11 = "Turn your wounds into wisdom. — Oprah Winfrey"
+q12 = "Well begun is half done. — Aristotle"
+q13 = "The only true wisdom is in knowing you know nothing. — Socrates"
+q14 = "Life shrinks or expands in proportion to one's courage. — Anaïs Nin"

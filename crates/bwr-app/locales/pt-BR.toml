@@ -1,0 +1,299 @@
+# BigWave Radio: Português (Brasil). See docs/TRANSLATING.md.
+# Os nomes "BigWave Radio", das estações e dos plugins não são traduzidos.
+
+[common]
+back = "Voltar"
+clear = "Limpar"
+dismiss = "Dispensar"
+ok = "OK"
+
+[format]
+thousands_sep = "."
+
+[status]
+ready = "Pronto"
+connecting = "Conectando…"
+connected = "Conectado"
+stopped = "Parado"
+paused = "Pausado"
+finding = "Procurando uma estação para você…"
+no_tags = "Esta estação não tem tags para comparar"
+no_match = "Nenhuma estação corresponde aos filtros — tente afrouxá-los"
+error = "Erro: {error}"
+playback_error = "Erro de reprodução: {error}"
+
+[top]
+search_hint = "Buscar estações…"
+surprise_tip = "Me surpreenda — tocar uma estação aleatória"
+recent = "BUSCAS RECENTES"
+remove = "Remover do histórico"
+clear_history = "Limpar histórico"
+
+[nav]
+discover = "Descobrir"
+search = "Buscar"
+library = "Minha Biblioteca"
+tags = "Tags"
+countries = "Países"
+plugins = "Plugins"
+settings = "Configurações"
+about = "Sobre"
+plugin_tip = "{title} — clique duas vezes para iniciar"
+
+[discover]
+title = "Descobrir"
+subtitle = "Rádio ao vivo do diretório comunitário radio-browser.info"
+trending = "Em alta"
+popular = "Populares"
+recent = "Adicionadas recentemente"
+
+[search]
+title = "Buscar"
+hint = "Buscar estações pelo nome…"
+recent = "Buscas recentes"
+cloud_hint = "Escolha uma vibe na nuvem — clique numa palavra para sintonizar."
+more_like = "Parecidas com {name} · #{tags}"
+
+[library]
+title = "Minha Biblioteca"
+favourites = "Favoritas"
+recent = "Tocadas recentemente"
+favourites_hint = "Estações que você marcou com estrela para acesso rápido — salvas localmente neste computador."
+empty = "Nenhuma estação salva ainda. Toque na ☆ de qualquer estação para salvá-la aqui."
+recent_hint = "Estações que você ouviu ultimamente — as mais recentes primeiro."
+recent_empty = "Nada tocado ainda."
+
+[browse]
+tags_title = "Tags"
+tags_hint = "Explore gêneros e climas — escolha um para ver as estações."
+countries_title = "Países"
+countries_hint = "Explore estações por país, de A a Z."
+map_hint = "O tamanho das bolhas indica o número de estações — clique numa ou escolha um país abaixo."
+
+[browse.map_tip]
+one = "{name} — {n} estação"
+other = "{name} — {n} estações"
+
+[mood]
+dance = "Dance"
+trance = "Trance"
+chill = "Chill"
+easy = "Suave"
+80s = "Anos 80"
+90s = "Anos 90"
+
+[moods]
+missing = "Esse clima não existe mais no moods.json."
+surprise = "Me surpreenda ({mood})"
+surprise_tip = "Tocar uma estação bem avaliada ou popular deste clima"
+mapping_tip = "As associações entre climas e tags ficam em {path}; edite o arquivo e reinicie o app para alterá-las."
+
+[moods.talk_hidden]
+one = "{n} estação de fala oculta"
+other = "{n} estações de fala ocultas"
+
+[rail]
+moods = "CLIMAS"
+stars_tip = "Todas as estações que você avaliou, de qualquer categoria"
+show_talk = "Mostrar fala"
+show_talk_tip = "Mostrar estações de notícias, programas falados, esporte, religião, humor e podcasts"
+advanced = "AVANÇADO"
+advanced_tip = "Formato do stream e taxa de bits mínima"
+format = "Formato"
+min_bitrate = "Taxa de bits mínima"
+
+[filter]
+any_format = "Qualquer formato"
+any_bitrate = "Qualquer taxa"
+kbps_or_more = "{kbps} kbps ou mais"
+
+[stars]
+title = "Suas Estrelas"
+subtitle = "Todas as estações que você avaliou, de qualquer categoria. Avalie uma estação no painel de informações à direita enquanto ela toca."
+empty = "Nada avaliado ainda. Toque uma estação e dê estrelas a ela no painel de informações."
+fetching = "Buscando suas estações avaliadas…"
+level_empty = "Nenhuma estação neste nível."
+all = "Todas avaliadas"
+
+[cards]
+loading = "Carregando…"
+only_talk = "Só há estações de fala aqui — marque Mostrar fala no painel esquerdo para vê-las."
+empty = "Nenhuma estação para mostrar."
+
+[cards.votes]
+one = "{n} voto"
+other = "{n} votos"
+
+[player]
+pick = "Escolha uma estação para começar a ouvir"
+save_library = "Salvar na Minha Biblioteca"
+remove_library = "Remover da Minha Biblioteca"
+surprise = "SURPRESA"
+prev = "ANTERIOR"
+play = "TOCAR"
+pause = "PAUSAR"
+stop = "PARAR"
+next = "PRÓXIMA"
+
+[info]
+now_playing = "Tocando agora"
+your_rating = "SUA AVALIAÇÃO"
+format = "Formato"
+bitrate = "Taxa de bits"
+votes = "Votos"
+clicks = "Cliques"
+tags = "Tags"
+tag_tip = "Mais estações com a tag #{tag}"
+more_like = "Mais como esta"
+more_like_tip = "Estações com as mesmas tags desta, ajustadas pelas suas avaliações"
+website = "Site da estação"
+copy_url = "Copiar URL do stream"
+surprise = "Me surpreenda"
+surprise_tip = "Tocar uma estação bem avaliada ou popular dos seus climas"
+
+[info.rate]
+one = "Dar {n} estrela"
+other = "Dar {n} estrelas"
+
+[settings]
+title = "Configurações"
+language = "Idioma"
+language_system = "Sistema · {lang}"
+language_hint = "Aplica-se na hora. Sistema segue o idioma do seu computador."
+theme = "Tema"
+match_system = "Igual ao sistema"
+light = "Claro"
+dark = "Escuro"
+highlight = "Cor de destaque"
+quality = "Qualidade do stream"
+min_bitrate = "Taxa de bits mínima:"
+format = "Formato:"
+quality_hint = "Vale para tudo: listas do Descobrir, busca, tags, países e Me surpreenda."
+cards = "Cartões das estações"
+compact = "Compacto"
+comfortable = "Confortável"
+cards_hint = "O modo compacto mostra cerca do dobro de estações na tela."
+behaviour = "Comportamento"
+check_updates = "Procurar atualizações ao iniciar"
+check_updates_tip = "Discretamente, no máximo uma vez por dia. Mostra um pequeno aviso quando sai uma nova versão."
+tray = "Continuar tocando na bandeja ao fechar a janela"
+tray_hint = "Quando ativado, fechar a janela esconde o BigWave Radio na bandeja — a música continua e uma notificação mostra onde ele foi parar. O Windows 11 coloca o ícone da onda na lista oculta ^ ao lado do relógio até você arrastá-lo para fora uma vez; Ctrl+Alt+B também traz a janela de volta. Minimizar sempre mantém o botão na barra de tarefas."
+idle = "Visions em repouso"
+idle_start = "Iniciar o visualizador Visions quando o app ficar sem uso"
+idle_after = "Depois de"
+idle_hint = "Qualquer movimento do mouse ou tecla fecha o visualizador. Vale só para as sessões do Visions iniciadas pelo temporizador — as que você inicia continuam rodando."
+
+[settings.minutes]
+one = "{n} minuto"
+other = "{n} minutos"
+
+[plugins]
+title = "Plugins"
+intro = "Plugins são pastas com plugin.toml + main.rhai em {dir}. Coloque uma pasta ali ou importe um .zip (você também pode arrastar um .zip para a janela). As alterações são recarregadas automaticamente."
+import_dialog = "Importar .zip…"
+import = "Importar .zip"
+import_path_hint = "caminho/para/plugin.zip"
+archive = "Arquivo de plugin"
+open_folder = "Abrir pasta"
+reload_all = "Recarregar todos"
+browse = "Ver plugins da comunidade"
+browse_tip = "O hub de plugins da comunidade no GitHub: baixe o .zip de um plugin lá e importe-o aqui."
+none = "Nenhum plugin instalado ainda."
+writing_hint = "Vai criar um plugin (ou pedir a uma IA)? Veja o PLUGIN_GUIDE.md na pasta de plugins e teste com: BigWaveRadio.exe --check-plugin <pasta>"
+flash_safety = "SEGURANÇA CONTRA FLASHES"
+flash_intro = "O app limita a frequência com que qualquer plugin pode piscar a tela. 3 por segundo é a recomendação de acessibilidade (WCAG)."
+allow_fast = "Permitir flashes mais rápidos (até 12 por segundo). Aceito o risco de convulsões."
+flash_cap = "Limite de flashes"
+status_enabled = "ATIVADO"
+status_disabled = "DESATIVADO"
+status_needs_approval = "AGUARDA APROVAÇÃO"
+status_error = "ERRO"
+by = "por {author}"
+reload = "Recarregar"
+disable = "Desativar"
+enable = "Ativar"
+allow_enable = "Permitir e ativar"
+wants_to = "Quer: {list}"
+can = "Pode: {list}"
+settings = "Configurações"
+log = "Registro ({count})"
+page_gone = "Esta página do plugin não está mais disponível."
+imported = "Plugin \"{id}\" importado. Ative-o na página Plugins."
+import_failed = "Falha na importação: {error}"
+
+[perm]
+audio = "ler níveis de áudio e batidas"
+now_playing = "ver a estação e a música que estão tocando"
+player_control = "controlar a reprodução e o volume"
+overlay = "desenhar sobre a janela do app"
+fullscreen = "entrar em tela cheia"
+hotkeys = "usar atalhos de teclado"
+panel = "mostrar um painel na página Plugins"
+page = "adicionar páginas à barra lateral"
+storage = "salvar pequenas quantidades de dados"
+
+[warning]
+title = "Aviso de fotossensibilidade"
+body = "\"{name}\" exibe luzes piscantes. Luzes piscantes podem provocar convulsões em pessoas com epilepsia fotossensível. Pare imediatamente se não se sentir bem.\n\nOs flashes são limitados a {cap} por segundo. Esc sempre sai."
+accept = "Entendi, iniciar (Enter)"
+cancel = "Cancelar (Esc)"
+
+[update]
+available = "Há uma atualização disponível"
+installed = "Versão instalada"
+latest = "Versão mais recente"
+no_notes = "Sem notas da versão."
+how_macos = "Baixar traz a imagem de disco; arraste o BigWave Radio para Aplicativos para atualizar. Sua biblioteca e suas configurações são mantidas."
+how_linux = "Baixar traz o pacote para o seu sistema (ou use o seu gerenciador de pacotes). Sua biblioteca e suas configurações são mantidas."
+how_windows = "Baixar traz o instalador; execute-o para atualizar. Sua biblioteca e suas configurações são mantidas."
+how_page = "Baixar abre a página da versão."
+download = "Baixar"
+view_page = "Ver página da versão"
+not_now = "Agora não"
+skip = "Pular esta versão"
+skip_tip = "Não me lembrar desta versão ao iniciar"
+up_to_date_title = "Tudo atualizado"
+up_to_date = "Você já tem a versão mais recente (v{version})."
+failed_title = "Não foi possível procurar atualizações"
+reason = "Motivo: {reason}."
+open_releases = "Abrir página de versões"
+banner = "BigWave Radio v{version} está disponível"
+details = "Detalhes"
+
+[about]
+title = "Sobre"
+check = "Procurar atualizações"
+checking = "Procurando atualizações…"
+blurb = "O BigWave Radio transmite estações ao vivo do diretório comunitário radio-browser.info. Sua biblioteca e suas configurações ficam salvas localmente neste computador."
+created_by = "Criado por {name}"
+inspired = "Inspirado no ShortWave do Linux, eu queria uma versão bonita e limpa para Windows."
+coffee_intro = "Se este app for útil para você, pode me pagar um café:"
+coffee = "Me pague um café"
+or_paypal = "ou PayPal:"
+demos = "Demos e vídeos promocionais:"
+thanks = "Obrigado. :)"
+
+[tray]
+show = "Mostrar o BigWave Radio"
+play_pause = "Tocar / Pausar"
+next = "Próxima estação"
+previous = "Estação anterior"
+quit = "Sair"
+toast_title = "BigWave Radio — ainda tocando"
+toast_body = "Abra a lista ^ ao lado do relógio para achar o ícone da onda (arraste-o para fora uma vez para fixá-lo) ou pressione Ctrl+Alt+B para trazer a janela de volta."
+
+[quote]
+q01 = "Uma vida sem exame não vale a pena ser vivida. — Sócrates"
+q02 = "Nem todos os que vagueiam estão perdidos. — J.R.R. Tolkien"
+q03 = "No meio da dificuldade encontra-se a oportunidade. — Albert Einstein"
+q04 = "Seja o que for, seja um bom. — Abraham Lincoln"
+q05 = "Não importa o quão devagar você vá, desde que não pare. — Confúcio"
+q06 = "A melhor maneira de prever o futuro é inventá-lo. — Alan Kay"
+q07 = "Quem tem um porquê para viver suporta quase qualquer como. — Friedrich Nietzsche"
+q08 = "Não tente ser uma pessoa de sucesso, mas sim uma pessoa de valor. — Albert Einstein"
+q09 = "A felicidade depende de nós mesmos. — Aristóteles"
+q10 = "Sonhe grande e ouse falhar. — Norman Vaughan"
+q11 = "Transforme suas feridas em sabedoria. — Oprah Winfrey"
+q12 = "Um bom começo é metade do caminho. — Aristóteles"
+q13 = "A única sabedoria verdadeira está em saber que nada se sabe. — Sócrates"
+q14 = "A vida encolhe ou se expande na proporção da coragem de cada um. — Anaïs Nin"
