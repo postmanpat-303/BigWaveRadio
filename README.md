@@ -323,3 +323,7 @@ Created by Derek Heasley. Inspired by ShortWave on Linux — I wanted a nice cle
 <a href="https://buymeacoffee.com/postmanpat"><img src="https://img.shields.io/badge/%E2%98%95%20Buy%20me%20a%20coffee-postmanpat-FFDD00?style=for-the-badge&logo=buymeacoffee&logoColor=black" alt="Buy me a coffee" height="36"></a>
 
 Station data from [radio-browser.info](https://www.radio-browser.info). Released under the **MIT** license.
+
+## 💛 Thank you
+
+A big thank you to [storytold](https://github.com/storytold/), whose open-source [PhotoCraft](https://github.com/storytold/photocraft) inspired the look of the Wave family icons, and whose [ArtCraft Launcher](https://github.com/storytold/craft-launcher) inspired the upcoming Wave Hub. Open source at its best. Go give them a ⭐!
