@@ -50,4 +50,5 @@ if [ -n "$MAKENSIS" ]; then
 else
   echo "makensis not found: setup exe skipped" >&2
 fi
-(cd dist && sha256sum "${OUT[@]}" > SHA256SUMS-windows.txt && cat SHA256SUMS-windows.txt)
+# "<hash>  <name>" like the release's SHA256SUMS.txt (Git Bash sha256sum adds a "*" binary marker)
+(cd dist && sha256sum "${OUT[@]}" | sed 's/ \*/  /' > SHA256SUMS-windows.txt && cat SHA256SUMS-windows.txt)
