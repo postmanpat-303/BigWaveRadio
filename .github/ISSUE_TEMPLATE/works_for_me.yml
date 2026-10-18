@@ -1,0 +1,55 @@
+name: ✅ It works on my system
+description: A quick "it works here" report. Especially useful for macOS and Linux!
+title: "Works on: "
+labels: ["works-for-me"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you! Telling us what works is just as useful as telling us what doesn't, especially for the new macOS and Linux builds.
+  - type: input
+    id: system
+    attributes:
+      label: System
+      description: OS, version and desktop, e.g. "macOS 14.6 on an M2", "Fedora 41, GNOME", "CachyOS, KDE"
+    validations:
+      required: true
+  - type: dropdown
+    id: install
+    attributes:
+      label: How did you install it?
+      options:
+        - Windows setup (.exe)
+        - Windows portable (.zip)
+        - macOS .dmg
+        - macOS .zip
+        - .deb
+        - .rpm
+        - Arch package (.pkg.tar.zst / PKGBUILD)
+        - AppImage
+        - tar.gz
+        - Built from source
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: BigWave Radio version
+      placeholder: "0.9.6"
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: What did you try?
+      options:
+        - label: It installs and starts
+        - label: Stations play with sound
+        - label: The wolf icon shows in the menu / dock / taskbar
+        - label: Visualisers (Visions / Beat Strobe) run
+        - label: Favourites and settings are kept after a restart
+  - type: textarea
+    id: notes
+    attributes:
+      label: Anything else?
+      description: Little glitches, things that felt odd, or just a hello.

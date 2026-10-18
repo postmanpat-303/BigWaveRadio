@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: 💬 Questions, ideas and chat
+    url: https://github.com/postmanpat-303/BigWaveRadio/discussions
+    about: Ask a question or share an idea in Discussions
+  - name: 🧩 Plugins
+    url: https://github.com/postmanpat-303/BigWaveRadio-Plugins
+    about: Share and find community plugins
