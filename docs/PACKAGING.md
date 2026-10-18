@@ -1,23 +1,46 @@
 # Packaging
 
-Windows is built on Linux with `scripts/package-windows.sh` (below). macOS and Linux
-packages are built by GitHub Actions; see [macOS](#macos) and [Linux](#linux) at the end.
+Windows, macOS and Linux packages are all built by GitHub Actions: Windows by
+[`windows.yml`](../.github/workflows/windows.yml) (below), macOS and Linux see
+[macOS](#macos) and [Linux](#linux) at the end.
 
 ## Windows
 
 BigWave Radio is packaged the same way as
 [ChipWave Tracker](https://github.com/postmanpat-303/ChipWaveTracker)
 (`installer/chipwave.nsi` + `scripts/package-windows.sh`): an **NSIS** setup and a
-portable zip, both cross-built on Linux. ChipWave's release assets come from that
-script, not from GitHub Actions (its tag-triggered `cargo packager` CI job fails),
-so the Windows assets are still built locally with that script. (macOS and Linux, which can't be cross-built
-here, have their own workflows: see the end of this file.) Building on Linux needs neither
-Windows nor Wine; Wine is only used to smoke-test the setup.
+portable zip.
+
+The exe is now built with Microsoft's toolchain (`x86_64-pc-windows-msvc`,
+`RUSTFLAGS=-C target-feature=+crt-static`) on `windows-latest`. The original 0.9.6 and earlier assets were
+cross-built on Linux with llvm-mingw (`x86_64-pc-windows-gnullvm`) and needed
+`libunwind.dll` next to the exe; that unusual toolchain/DLL combination, together with
+the exe being unsigned and new, got it flagged by Microsoft Defender as a false positive.
+The MSVC exe needs no DLLs beyond Windows' own.
+
+`crates/bwr-app/build.rs` (winresource, `rc.exe` from the Windows SDK) embeds:
+- the wolf icon `assets/bigwave.ico`
+- version info: CompanyName `Derek Heasley`, ProductName `BigWave Radio`, version = Cargo version
+- the manifest `crates/bwr-app/bigwave.exe.manifest`: `asInvoker`, Windows 10/11
+  `supportedOS`, PerMonitorV2 DPI awareness, Common Controls v6
 
 ## Build
 
+CI: run the **Windows** workflow (Actions tab, *Run workflow*, version optional) or push a
+`v*` tag. It runs the tests, `scripts/package-windows.sh`, then verifies the result:
+- `dumpbin /dependents`: only Windows system DLLs; the job **fails** if `libunwind`,
+  `vcruntime`, `msvcp`, `ucrtbase`/`api-ms-win-crt-*` or any MinGW runtime is referenced
+- `mt.exe -inputresource`: the manifest is embedded (asInvoker, PerMonitorV2, Common Controls)
+- the icon and version resources are present
+- `BigWaveRadio.exe --version` and `--check-plugin` on every bundled plugin
+- the zip contents and a silent install / uninstall of the setup exe
+
+The outputs are uploaded as a **workflow artifact only**; the workflow never touches a
+GitHub release, so assets are published by hand after review.
+
+Locally (Git Bash on Windows with VS Build Tools, Python and NSIS):
+
 ```bash
-# needs: rustup target x86_64-pc-windows-gnullvm, llvm-mingw (LLVM_MINGW=...), makensis (NSIS 3), zip
 scripts/package-windows.sh 0.9.6      # version must match [workspace.package] in Cargo.toml
 ```
 
@@ -26,7 +49,8 @@ Output (`dist/` is git-ignored apart from `dist/README.txt`):
 | File | What |
 |---|---|
 | `dist/BigWaveRadio-<ver>-setup-x64.exe` | NSIS installer |
-| `dist/BigWaveRadio-<ver>-windows-x64.zip` | portable: `BigWaveRadio.exe`, `libunwind.dll`, `README.txt`, `LICENSE.txt`, `THIRD_PARTY_LICENSES.txt` |
+| `dist/BigWaveRadio-<ver>-windows-x64.zip` | portable: `BigWaveRadio.exe`, `README.txt`, `LICENSE.txt`, `THIRD_PARTY_LICENSES.txt` |
+| `dist/SHA256SUMS-windows.txt` | `sha256sum` lines for the two files above (merge into the release's `SHA256SUMS.txt`) |
 | `dist/pkg/` | staging folder both are built from |
 
 `bwr-plugin-check-linux-x64` (`cargo build --release -p bwr-plugins --bin bwr-plugin-check`)

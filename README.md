@@ -274,30 +274,24 @@ fn on_overlay(ctx, draw) {
 <br>
 
 
-Requires the `x86_64-pc-windows-gnullvm` host toolchain (a self-contained
-MinGW-flavoured Rust toolchain that links with the bundled rust-lld, so no
-external MSVC or MinGW linker is needed) plus [llvm-mingw](https://github.com/mstorsjo/llvm-mingw)
-on `PATH` for the C dependencies and the icon resource:
+Windows builds use Microsoft's toolchain: [Visual Studio Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/)
+("Desktop development with C++": MSVC + Windows SDK) and the default
+`stable-x86_64-pc-windows-msvc` Rust toolchain. Link the C runtime statically
+so the exe needs no extra DLLs:
 
 ```powershell
-rustup toolchain install stable-x86_64-pc-windows-gnullvm
-rustup override set stable-x86_64-pc-windows-gnullvm   # in this directory
-$env:PATH = "C:\path\to\llvm-mingw-20261006-ucrt-x86_64\bin;$env:PATH"
-cargo build --release
+$env:RUSTFLAGS = "-C target-feature=+crt-static"
+cargo build --release -p bwr-app
 ```
 
-The executable is `target\release\bwr-app.exe` (~8 MB). The toolchain ships
-`libunwind.dll`, which the exe links against — copy that DLL next to the exe
-when distributing, or run with the toolchain's `bin` directory on `PATH`.
+The executable is `target\release\bwr-app.exe`. It is self-contained (no
+`libunwind.dll`, no Visual C++ redistributable) and carries the wolf icon,
+version info and an application manifest (`crates/bwr-app/build.rs`).
 
-**Release packaging** (same flow as [ChipWave Tracker](https://github.com/postmanpat-303/ChipWaveTracker)):
-on Linux with llvm-mingw and NSIS (`makensis`) installed, run
-
-```bash
-scripts/package-windows.sh 0.9.6
-```
-
-It writes `dist/BigWaveRadio-<ver>-windows-x64.zip` (portable) and
+**Release packaging** (same NSIS setup + portable zip as [ChipWave Tracker](https://github.com/postmanpat-303/ChipWaveTracker)):
+[`.github/workflows/windows.yml`](.github/workflows/windows.yml) runs
+`scripts/package-windows.sh <ver>` on `windows-latest` (Git Bash; also works locally
+with NSIS installed). It writes `dist/BigWaveRadio-<ver>-windows-x64.zip` (portable) and
 `dist/BigWaveRadio-<ver>-setup-x64.exe` (NSIS installer, built from
 `installer/bigwave.nsi`). See [docs/PACKAGING.md](docs/PACKAGING.md).
 

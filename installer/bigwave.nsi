@@ -1,7 +1,7 @@
-; BigWave Radio - Windows x64 setup (NSIS 3, cross-buildable with makensis on Linux)
+; BigWave Radio - Windows x64 setup (NSIS 3; built on windows-latest by .github/workflows/windows.yml)
 ; Same layout as postmanpat-303/ChipWaveTracker installer/chipwave.nsi.
-; Build: scripts/package-windows.sh 0.9.5
-;   (makensis -DVERSION=0.9.5 -DVIVERSION=0.9.5.0 -DPKGDIR=../dist/pkg -DOUTFILE=../dist/BigWaveRadio-0.9.5-setup-x64.exe installer/bigwave.nsi)
+; Build: scripts/package-windows.sh 0.9.6
+;   (makensis -DVERSION=0.9.6 -DVIVERSION=0.9.6.0 -DPKGDIR=../dist/pkg -DOUTFILE=../dist/BigWaveRadio-0.9.6-setup-x64.exe installer/bigwave.nsi)
 ; Silent install: BigWaveRadio-<ver>-setup-x64.exe /S   (desktop shortcut included by default)
 Unicode true
 !include "MUI2.nsh"
@@ -170,7 +170,8 @@ Section "BigWave Radio (required)" SecCore
   SetOutPath "$INSTDIR"
   SetOverwrite on
   File "${PKGDIR}\${EXE}"
-  File "${PKGDIR}\libunwind.dll"
+  ; 0.9.6 and older (llvm-mingw builds) shipped libunwind.dll; the MSVC build does not need it
+  Delete "$INSTDIR\libunwind.dll"
   File "${PKGDIR}\README.txt"
   File "${PKGDIR}\LICENSE.txt"
   File "${PKGDIR}\THIRD_PARTY_LICENSES.txt"

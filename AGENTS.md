@@ -44,5 +44,6 @@ Working examples: `plugins/strobe/` (bundled) and `docs/plugin-examples/*`.
   `crates/bwr-plugins/tests/loader.rs`. Breaking changes need `API_VERSION` + 1.
 * `cargo test` must pass (it also checks every example plugin and that the
   guide inlines the example files verbatim).
-* Target is Windows (`x86_64-pc-windows-gnullvm`); the crates also build and
+* Target is Windows (`x86_64-pc-windows-msvc`, static CRT; built by
+  `.github/workflows/windows.yml`); the crates also build and
   test on Linux, which is how CI-less agents can verify changes.

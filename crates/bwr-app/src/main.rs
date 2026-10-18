@@ -23,8 +23,14 @@ mod widgets;
 use app::BigWaveApp;
 
 fn main() -> eframe::Result<()> {
-    // `--check-plugin <dir>`: validate a plugin and exit (no window).
     let args: Vec<String> = std::env::args().collect();
+    // `--version`: print "BigWave Radio <ver>" and exit (CI smoke test).
+    if args.iter().any(|a| a == "--version" || a == "-V") {
+        attach_parent_console();
+        println!("BigWave Radio {}", env!("CARGO_PKG_VERSION"));
+        return Ok(());
+    }
+    // `--check-plugin <dir>`: validate a plugin and exit (no window).
     if let Some(i) = args.iter().position(|a| a == "--check-plugin") {
         std::process::exit(check_plugin_cli(args.get(i + 1)));
     }
@@ -63,16 +69,20 @@ fn window_icon() -> egui::IconData {
     }
 }
 
-/// Prints a report and returns the process exit code (0 = OK, 1 = problems,
-/// 2 = usage error).
-fn check_plugin_cli(dir: Option<&String>) -> i32 {
-    // Release builds use the GUI subsystem; reattach to the calling console
-    // so the report is visible when run from a terminal.
+/// Release builds use the GUI subsystem; reattach to the calling console so
+/// CLI output is visible when run from a terminal.
+fn attach_parent_console() {
     #[cfg(windows)]
     unsafe {
         use windows::Win32::System::Console::{AttachConsole, ATTACH_PARENT_PROCESS};
         let _ = AttachConsole(ATTACH_PARENT_PROCESS);
     }
+}
+
+/// Prints a report and returns the process exit code (0 = OK, 1 = problems,
+/// 2 = usage error).
+fn check_plugin_cli(dir: Option<&String>) -> i32 {
+    attach_parent_console();
     let Some(dir) = dir else {
         eprintln!("usage: BigWaveRadio --check-plugin <plugin folder>");
         return 2;

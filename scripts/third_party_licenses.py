@@ -4,7 +4,7 @@ the Windows exe, its licence expression, and the licence files it ships.
 Usage: python3 scripts/third_party_licenses.py [target] > THIRD_PARTY_LICENSES.txt"""
 import glob, json, os, subprocess, sys
 
-target = sys.argv[1] if len(sys.argv) > 1 else "x86_64-pc-windows-gnullvm"
+target = sys.argv[1] if len(sys.argv) > 1 else "x86_64-pc-windows-msvc"
 meta = json.loads(subprocess.check_output(
     ["cargo", "metadata", "--format-version", "1", "--filter-platform", target]))
 nodes = {n["id"]: n for n in meta["resolve"]["nodes"]}
@@ -27,7 +27,7 @@ out = sys.stdout
 out.write("BigWave Radio - third-party software\n")
 out.write("=" * 60 + "\n\n")
 out.write("BigWave Radio is MIT-licensed (see LICENSE.txt). It includes the crates\n"
-          "below, plus libunwind.dll from llvm-mingw (Apache-2.0 WITH LLVM-exception).\n"
+          "below.\n"
           "Source: https://github.com/postmanpat-303/BigWaveRadio\n\n")
 for p in pkgs:
     out.write(f"- {p['name']} {p['version']}: {p.get('license') or 'see files'}\n")
