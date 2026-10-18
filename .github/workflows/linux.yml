@@ -113,7 +113,11 @@ jobs:
             dnf install -y /w/dist/$N.rpm
             rpm -qi bigwave-radio
             test -f /usr/share/applications/bigwave-radio.desktop
-            for p in plugins/*/; do bigwave-radio --check-plugin \$p; done"
+            for p in plugins/*/; do bigwave-radio --check-plugin \$p; done
+            dnf install -y xorg-x11-server-Xvfb xorg-x11-xauth mesa-dri-drivers
+            export LOCALAPPDATA=/tmp/bwr
+            rc=0; timeout 8 xvfb-run -a bigwave-radio || rc=\$?
+            [ \$rc -eq 124 ] && echo 'GUI still running after 8 s'"
 
       - name: Arch package (makepkg + pacman -U in an archlinux container)
         if: matrix.arch == 'x86_64'
@@ -132,6 +136,10 @@ jobs:
             pacman -U --noconfirm /build/bigwave-radio-bin-$VER-*-x86_64.pkg.tar.zst
             pacman -Qi bigwave-radio-bin
             for p in /plugins/*/; do bigwave-radio --check-plugin \$p; done
+            pacman -S --noconfirm --needed xorg-server-xvfb xorg-xauth mesa
+            export LOCALAPPDATA=/tmp/bwr
+            rc=0; timeout 8 xvfb-run -a bigwave-radio || rc=\$?
+            [ \$rc -eq 124 ] && echo 'GUI still running after 8 s'
             namcap /build/PKGBUILD 2>/dev/null || true"
           cp "$B"/bigwave-radio-bin-$VER-*-x86_64.pkg.tar.zst dist/BigWaveRadio-$VER-linux-x86_64.pkg.tar.zst
           cp target/release/bwr-plugin-check dist/bwr-plugin-check-linux-x64

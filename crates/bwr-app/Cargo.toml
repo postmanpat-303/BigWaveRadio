@@ -53,7 +53,8 @@ extended-description = """BigWave Radio streams live stations from the community
 radio-browser.info directory: mood chips, star ratings, plugins and visualisers."""
 section = "sound"
 priority = "optional"
-depends = "$auto"
+# $auto only sees linked libraries; winit/glutin dlopen the windowing and GL ones.
+depends = "$auto, libxkbcommon0, libxkbcommon-x11-0, libx11-6, libxcursor1, libxrandr2, libxi6, libgl1, libegl1, libwayland-client0, libwayland-cursor0, libwayland-egl1"
 assets = [
     ["target/release/bwr-app", "usr/bin/bigwave-radio", "755"],
     ["../../packaging/linux/bigwave-radio.desktop", "usr/share/applications/", "644"],
@@ -91,3 +92,17 @@ winresource = "0.1"
 
 [dev-dependencies]
 tempfile = "3"
+
+# Loaded with dlopen at run time, so automatic requires can't see them.
+[package.metadata.generate-rpm.requires]
+libxkbcommon = "*"
+libxkbcommon-x11 = "*"
+libX11 = "*"
+libXcursor = "*"
+libXrandr = "*"
+libXi = "*"
+libglvnd-glx = "*"
+libglvnd-egl = "*"
+libwayland-client = "*"
+libwayland-cursor = "*"
+libwayland-egl = "*"
