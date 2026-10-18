@@ -36,7 +36,12 @@
   <a href="https://github.com/postmanpat-303/BigWaveRadio/releases/latest">
     <img src="https://img.shields.io/badge/%E2%AC%87%20Download-Latest%20release-3cd23c?style=for-the-badge&labelColor=03120a" alt="Download the latest release" height="44">
   </a>
+  <a href="https://postmanpat-303.github.io/BigWaveRadio/">
+    <img src="https://img.shields.io/badge/%F0%9F%8C%90%20Website-BigWave%20Radio-1fb5c9?style=for-the-badge&labelColor=03120a" alt="Visit the BigWave Radio website" height="44">
+  </a>
 </p>
+
+<p align="center">🌐 <b>Website:</b> <a href="https://postmanpat-303.github.io/BigWaveRadio/">postmanpat-303.github.io/BigWaveRadio</a></p>
 
 <p align="center"><img src="docs/media/station-grid.png" alt="Discover page with the station grid" width="880"></p>
 
