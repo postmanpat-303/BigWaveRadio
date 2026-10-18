@@ -1,4 +1,4 @@
-//! About page: logo, version, credits and donation link.
+//! About page: logo, version, credits, donation links and the YouTube channel.
 
 use eframe::egui::{self, CornerRadius, Stroke, Ui};
 
@@ -9,6 +9,8 @@ use crate::pages::plugins::Btn;
 pub const DONATE_URL: &str = "https://buymeacoffee.com/postmanpat";
 /// Secondary donation link (PayPal.me).
 pub const PAYPAL_URL: &str = "https://paypal.me/derekh100";
+/// Derek's YouTube channel (demos and promos).
+pub const YOUTUBE_URL: &str = "https://www.youtube.com/@whatgoesaround1551";
 use crate::theme;
 
 /// Card styled like the transport buttons: rounded corners, base fill and a
@@ -131,6 +133,28 @@ pub fn ui(ui: &mut Ui, app: &mut BigWaveApp) {
                             egui::RichText::new("paypal.me/derekh100").size(12.5),
                             PAYPAL_URL,
                         );
+                    });
+                    ui.add_space(4.0);
+                    ui.horizontal(|ui| {
+                        // Centre the "Demos and promos" line like the PayPal one.
+                        let w = ui.fonts(|f| {
+                            f.layout_no_wrap(
+                                "Demos and promos: ▶ YouTube".into(),
+                                egui::FontId::proportional(12.5),
+                                egui::Color32::WHITE,
+                            )
+                            .size()
+                            .x
+                        }) + ui.spacing().item_spacing.x;
+                        ui.add_space(((ui.available_width() - w) / 2.0).max(0.0));
+                        ui.label(egui::RichText::new("Demos and promos:").size(12.5).weak());
+                        ui.hyperlink_to(
+                            egui::RichText::new("▶ YouTube")
+                                .size(12.5)
+                                .color(egui::Color32::from_rgb(0xff, 0x40, 0x40)),
+                            YOUTUBE_URL,
+                        )
+                        .on_hover_text(YOUTUBE_URL);
                     });
                     ui.add_space(4.0);
                     ui.label(egui::RichText::new("Thank you. :)").weak());

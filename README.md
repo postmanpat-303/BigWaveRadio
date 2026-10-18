@@ -18,6 +18,7 @@
   <img src="https://img.shields.io/badge/plugins-Rhai-784ba0?style=for-the-badge" alt="Rhai plugins">
   <img src="https://img.shields.io/badge/license-MIT-ffcc00?style=for-the-badge" alt="MIT">
   <a href="https://buymeacoffee.com/postmanpat"><img src="https://img.shields.io/badge/%E2%98%95%20Buy%20me%20a%20coffee-postmanpat-FFDD00?style=for-the-badge&logo=buymeacoffee&logoColor=black" alt="Buy me a coffee"></a>
+  <a href="https://www.youtube.com/@whatgoesaround1551"><img src="https://img.shields.io/badge/YouTube-demos%20%26%20promos-FF0000?style=for-the-badge&logo=youtube&logoColor=white" alt="YouTube: demos and promos"></a>
 </p>
 
 <h3 align="center">A tiny, native internet radio player for Windows, macOS and Linux — with a demo-scene heart.</h3>
@@ -94,8 +95,8 @@ The app checks for updates (About → **Check for updates**) and offers the down
 ## 📺 Watch the promo
 
 <p align="center">
-  <video src="docs/media/promo.mp4" width="880" controls muted playsinline></video><br>
-  <sub>45-second tour: Discover, mood chips, Your Stars, Visions, Beat Strobe and plugins — with narration. <a href="docs/media/promo.mp4">Open the video file</a>.</sub>
+  <a href="https://youtu.be/IxJTYOrA_0c"><img src="https://img.youtube.com/vi/IxJTYOrA_0c/maxresdefault.jpg" width="880" alt="Watch the BigWave Radio promo on YouTube"></a><br>
+  <sub>45-second tour: Discover, mood chips, Your Stars, Visions, Beat Strobe and plugins — with narration. <a href="https://youtu.be/IxJTYOrA_0c">Watch on YouTube</a> · <a href="docs/media/promo.mp4">open the video file</a> · more demos on <a href="https://www.youtube.com/@whatgoesaround1551">my YouTube channel</a>.</sub>
 </p>
 
 ---
@@ -314,9 +315,9 @@ or your distro's equivalents). The release packages come from GitHub Actions:
 
 ## 💜 Credits
 
-Created by Derek Heasley. Inspired by ShortWave on Linux — I wanted a nice clean version for Windows (and now it runs on macOS and Linux too). If you find this app useful, you can [buy me a coffee](https://buymeacoffee.com/postmanpat) or donate via PayPal at [paypal.me/derekh100](https://paypal.me/derekh100). Thank you. :)
+Created by Derek Heasley. Inspired by ShortWave on Linux — I wanted a nice clean version for Windows (and now it runs on macOS and Linux too). If you find this app useful, you can [buy me a coffee](https://buymeacoffee.com/postmanpat) or donate via PayPal at [paypal.me/derekh100](https://paypal.me/derekh100). Demos and promos are on my [YouTube channel](https://www.youtube.com/@whatgoesaround1551). Thank you. :)
 
-<a href="https://buymeacoffee.com/postmanpat"><img src="https://img.shields.io/badge/%E2%98%95%20Buy%20me%20a%20coffee-postmanpat-FFDD00?style=for-the-badge&logo=buymeacoffee&logoColor=black" alt="Buy me a coffee" height="36"></a>
+<a href="https://buymeacoffee.com/postmanpat"><img src="https://img.shields.io/badge/%E2%98%95%20Buy%20me%20a%20coffee-postmanpat-FFDD00?style=for-the-badge&logo=buymeacoffee&logoColor=black" alt="Buy me a coffee" height="36"></a> <a href="https://www.youtube.com/@whatgoesaround1551"><img src="https://img.shields.io/badge/YouTube-demos%20%26%20promos-FF0000?style=for-the-badge&logo=youtube&logoColor=white" alt="YouTube: demos and promos" height="36"></a>
 
 Station data from [radio-browser.info](https://www.radio-browser.info). Released under the **MIT** license.
 
