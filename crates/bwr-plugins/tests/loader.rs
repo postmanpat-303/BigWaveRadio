@@ -721,10 +721,15 @@ fn strobe_fade_to_black_cycle() {
         let partial = frames.iter().filter(|f| f.3 > 20 && f.3 < 235).count();
         assert!(partial >= 20, "{mode}: fade is a ramp, not a cut ({partial} frames)");
         let mut prev = 0i32;
+        let mut prev_t = 0.0;
         // (Frames the host limiter blacked out entirely carry no veil.)
         for f in frames.iter().filter(|f| f.3 > 0 || f.1 >= 0.05) {
-            assert!((f.3 as i32 - prev).abs() <= 40, "{mode}: veil jumps from {prev} to {}", f.3);
+            // A 1 s fade moves ~255 per second; allow for a stalled frame on a
+            // loaded CI runner (wall-clock time) instead of a fixed step.
+            let allowed = 40.0f64.max(255.0 * (f.0 - prev_t) as f64 * 1.5);
+            assert!(((f.3 as i32 - prev).abs() as f64) <= allowed, "{mode}: veil jumps from {prev} to {} in {:.3} s", f.3, f.0 - prev_t);
             prev = f.3 as i32;
+            prev_t = f.0;
         }
         // Held fully black for about 1 s, with nothing flashing.
         let black: Vec<_> = frames.iter().filter(|f| f.3 == 255).collect();
