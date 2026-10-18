@@ -54,7 +54,11 @@ jobs:
       - name: NSIS
         run: |
           if ! command -v makensis >/dev/null && [ ! -x "/c/Program Files (x86)/NSIS/makensis.exe" ]; then
-            choco install nsis -y --no-progress
+            # community.chocolatey.org sometimes times out (504): retry
+            for i in 1 2 3 4 5; do
+              choco install nsis -y --no-progress && break
+              echo "choco failed (attempt $i), retrying in 30 s"; sleep 30
+            done
           fi
           ls "/c/Program Files (x86)/NSIS/makensis.exe"
 
