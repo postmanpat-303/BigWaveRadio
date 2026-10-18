@@ -35,7 +35,7 @@ body:
     id: version
     attributes:
       label: BigWave Radio version
-      placeholder: "0.9.6"
+      placeholder: "0.9.7"
     validations:
       required: true
   - type: checkboxes

@@ -12,7 +12,7 @@ BigWave Radio is packaged the same way as
 portable zip.
 
 The exe is now built with Microsoft's toolchain (`x86_64-pc-windows-msvc`,
-`RUSTFLAGS=-C target-feature=+crt-static`) on `windows-latest`. The original 0.9.6 and earlier assets were
+`RUSTFLAGS=-C target-feature=+crt-static`) on `windows-latest`. 0.9.6 and earlier were
 cross-built on Linux with llvm-mingw (`x86_64-pc-windows-gnullvm`) and needed
 `libunwind.dll` next to the exe; that unusual toolchain/DLL combination, together with
 the exe being unsigned and new, got it flagged by Microsoft Defender as a false positive.
@@ -41,7 +41,7 @@ GitHub release, so assets are published by hand after review.
 Locally (Git Bash on Windows with VS Build Tools, Python and NSIS):
 
 ```bash
-scripts/package-windows.sh 0.9.6      # version must match [workspace.package] in Cargo.toml
+scripts/package-windows.sh 0.9.7      # version must match [workspace.package] in Cargo.toml
 ```
 
 Output (`dist/` is git-ignored apart from `dist/README.txt`):

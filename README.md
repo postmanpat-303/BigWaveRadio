@@ -43,7 +43,7 @@
 
 ## ⬇️ Downloads
 
-Get them from the [latest release](https://github.com/postmanpat-303/BigWaveRadio/releases/latest) (`<ver>` is the version, e.g. `0.9.6`):
+Get them from the [latest release](https://github.com/postmanpat-303/BigWaveRadio/releases/latest) (`<ver>` is the version, e.g. `0.9.7`):
 
 > [!IMPORTANT]
 > **🗣️ Feedback highly recommended!** The macOS and Linux builds are brand new and haven't been tested on real machines yet (only on build servers). If you try one, please tell me how it went, good or bad: [report a problem](https://github.com/postmanpat-303/BigWaveRadio/issues/new?template=bug_report.yml) or say [it works on my system](https://github.com/postmanpat-303/BigWaveRadio/issues/new?template=works_for_me.yml). Questions and ideas are welcome in [Discussions](https://github.com/postmanpat-303/BigWaveRadio/discussions). Thank you!
