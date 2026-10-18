@@ -14,6 +14,7 @@ cd "$(dirname "$0")/.."
 TARGET=x86_64-pc-windows-msvc
 export RUSTFLAGS="${RUSTFLAGS:--C target-feature=+crt-static}"
 PY=$(command -v python3 || command -v python)
+export PYTHONUTF8=1   # licence texts are UTF-8 (Windows Python defaults to cp1252)
 # [workspace.package] version (shared by every crate; the update checker compares it with the tag)
 grep -q "^version = \"$VER\"" Cargo.toml || { echo "Cargo.toml [workspace.package] version is not $VER" >&2; exit 1; }
 cargo build --release --locked --target "$TARGET" -p bwr-app

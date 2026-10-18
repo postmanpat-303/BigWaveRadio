@@ -23,6 +23,7 @@ while todo:
             todo.append(d["pkg"])
 pkgs = sorted((p for p in meta["packages"] if p["id"] in keep and p["id"] not in ours),
               key=lambda p: (p["name"], p["version"]))
+sys.stdout.reconfigure(encoding="utf-8")
 out = sys.stdout
 out.write("BigWave Radio - third-party software\n")
 out.write("=" * 60 + "\n\n")
