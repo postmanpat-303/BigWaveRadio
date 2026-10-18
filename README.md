@@ -50,7 +50,7 @@ Get them from the [latest release](https://github.com/postmanpat-303/BigWaveRadi
 | **macOS 11+** (Apple Silicon + Intel) | `BigWaveRadio-<ver>-macos-universal.dmg` | Open it, drag **BigWave Radio** to **Applications** |
 | | `BigWaveRadio-<ver>-macos-universal.zip` | The same `.app`, zipped |
 | **Ubuntu / Debian / Mint / Pop!_OS** | `BigWaveRadio-<ver>-linux-x86_64.deb` (or `-aarch64.deb`) | `sudo apt install ./BigWaveRadio-<ver>-linux-x86_64.deb` |
-| **Fedora / RHEL / openSUSE** | `BigWaveRadio-<ver>-linux-x86_64.rpm` (or `-aarch64.rpm`) | `sudo dnf install ./BigWaveRadio-<ver>-linux-x86_64.rpm` |
+| **Fedora 36+** (RHEL 9 is too old: glibc 2.34) | `BigWaveRadio-<ver>-linux-x86_64.rpm` (or `-aarch64.rpm`) | `sudo dnf install ./BigWaveRadio-<ver>-linux-x86_64.rpm` |
 | **Arch / CachyOS / Manjaro / EndeavourOS** | `BigWaveRadio-<ver>-linux-x86_64.pkg.tar.zst` | `sudo pacman -U ./BigWaveRadio-<ver>-linux-x86_64.pkg.tar.zst`, or build it yourself with [`packaging/arch`](packaging/arch) (`makepkg -si`) |
 | **Any Linux** (glibc 2.35+) | `BigWaveRadio-<ver>-linux-x86_64.AppImage` (or `-aarch64`) | `chmod +x` it and run it. Needs `libfuse2`, or set `APPIMAGE_EXTRACT_AND_RUN=1` |
 | | `BigWaveRadio-<ver>-linux-x86_64.tar.gz` (or `-aarch64`) | Unpack and run `./bigwave-radio`, or `./install.sh` to add it to your menu (per user, no root) |
