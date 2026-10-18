@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BigWave Radio – Free Internet Radio Player for Windows, Mac &amp; Linux</title>
+<meta name="description" content="BigWave Radio is a free, open-source internet radio player for Windows, macOS and Linux. Stream thousands of stations from radio-browser.info with mood chips, star ratings, plugins and a MilkDrop-style visualiser. About 8 MB.">
+<meta name="keywords" content="BigWave Radio, free internet radio player, internet radio app, radio player for Linux, radio player for Windows, Mac radio app, radio-browser, MilkDrop visualiser, open source">
+<link rel="canonical" href="https://postmanpat-303.github.io/BigWaveRadio/">
+<meta name="theme-color" content="#3cd23c">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="The Wave Family">
+<meta property="og:title" content="BigWave Radio – Free Internet Radio Player for Windows, Mac &amp; Linux">
+<meta property="og:description" content="BigWave Radio is a free, open-source internet radio player for Windows, macOS and Linux. Stream thousands of stations from radio-browser.info with mood chips, star ratings, plugins and a MilkDrop-style visualiser. About 8 MB.">
+<meta property="og:url" content="https://postmanpat-303.github.io/BigWaveRadio/">
+<meta property="og:image" content="https://postmanpat-303.github.io/BigWaveRadio/assets/og.png">
+<meta property="og:image:alt" content="BigWave Radio: free internet radio player for Windows, Mac and Linux">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="BigWave Radio – Free Internet Radio Player for Windows, Mac &amp; Linux">
+<meta name="twitter:description" content="BigWave Radio is a free, open-source internet radio player for Windows, macOS and Linux. Stream thousands of stations from radio-browser.info with mood chips, star ratings, plugins and a MilkDrop-style visualiser. About 8 MB.">
+<meta name="twitter:image" content="https://postmanpat-303.github.io/BigWaveRadio/assets/og.png">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "SoftwareApplication", "name": "BigWave Radio", "description": "BigWave Radio is a free, open-source internet radio player for Windows, macOS and Linux. Stream thousands of stations from radio-browser.info with mood chips, star ratings, plugins and a MilkDrop-style visualiser. About 8 MB.", "applicationCategory": "MultimediaApplication", "applicationSubCategory": "Internet radio player", "operatingSystem": "Windows, macOS, Linux", "softwareVersion": "v0.9.6", "url": "https://postmanpat-303.github.io/BigWaveRadio/", "downloadUrl": "https://github.com/postmanpat-303/BigWaveRadio/releases/latest", "image": "https://postmanpat-303.github.io/BigWaveRadio/assets/og.png", "screenshot": ["https://postmanpat-303.github.io/BigWaveRadio/assets/station-grid.webp", "https://postmanpat-303.github.io/BigWaveRadio/assets/moods.webp", "https://postmanpat-303.github.io/BigWaveRadio/assets/your-stars.webp"], "license": "https://opensource.org/licenses/MIT", "isAccessibleForFree": true, "codeRepository": "https://github.com/postmanpat-303/BigWaveRadio", "programmingLanguage": "Rust", "offers": {"@type": "Offer", "price": "0", "priceCurrency": "EUR"}, "author": {"@type": "Person", "name": "Derek Heasley", "url": "https://github.com/postmanpat-303"}}</script>
+<style>
+:root{--bg:#07090f;--card:#0f141d;--line:#1e2633;--text:#e8edf5;--mute:#9aa6b8;--acc:#3cd23c;--acc2:#1fb5c9;--accink:#03120a}
+*{box-sizing:border-box}html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans",Ubuntu,sans-serif}
+a{color:var(--acc)}img{max-width:100%;height:auto;display:block}
+.wrap{max-width:1120px;margin:0 auto;padding:0 20px}
+header.nav{position:sticky;top:0;z-index:10;background:rgba(7,9,15,.85);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+header.nav .wrap{display:flex;align-items:center;gap:14px;height:60px}
+header.nav img{width:34px;height:34px;border-radius:8px}header.nav b{font-size:18px}
+header.nav nav{margin-left:auto;display:flex;gap:18px;flex-wrap:wrap}header.nav nav a{color:var(--mute);text-decoration:none;font-size:15px}header.nav nav a:hover{color:var(--text)}
+.hero{padding:64px 0 40px;background:radial-gradient(900px 420px at 15% 0%,color-mix(in srgb,var(--acc) 22%,transparent),transparent 70%)}
+.hero .wrap{display:grid;grid-template-columns:1.05fr 1fr;gap:40px;align-items:center}
+.badge{display:inline-block;background:var(--acc);color:var(--accink);font-weight:800;border-radius:999px;padding:4px 14px;font-size:14px;letter-spacing:.04em}
+h1{font-size:clamp(32px,4.6vw,52px);line-height:1.1;margin:16px 0}
+h1 span{color:var(--acc)}
+.lead{font-size:19px;color:#cfd7e3;margin:0 0 22px}
+.btns{display:flex;flex-wrap:wrap;gap:10px;margin:18px 0}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:12px 18px;border-radius:12px;font-weight:700;text-decoration:none;border:1px solid var(--line);color:var(--text);background:var(--card)}
+.btn.primary{background:var(--acc);color:var(--accink);border-color:transparent}
+.btn:hover{filter:brightness(1.12)}
+.small{color:var(--mute);font-size:14px}
+.shot{border-radius:14px;border:1px solid var(--line);box-shadow:0 20px 60px rgba(0,0,0,.5)}
+section{padding:48px 0;border-top:1px solid var(--line)}
+h2{font-size:clamp(26px,3vw,34px);margin:0 0 8px}h2+p{color:var(--mute);margin-top:0}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:24px}
+.f{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px}
+.f h3{margin:0 0 6px;font-size:17px}.f p{margin:0;color:#c3ccd9;font-size:15px}
+.gallery{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-top:24px}
+figure{margin:0}figcaption{color:var(--mute);font-size:14px;margin-top:6px}
+.dl{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:24px}
+.dl .f .btn{margin-top:10px;width:100%;justify-content:center}
+.video{position:relative;aspect-ratio:16/9;border-radius:14px;overflow:hidden;border:1px solid var(--line);background:#000;cursor:pointer;max-width:880px;margin:24px auto 0}
+.video img{width:100%;height:100%;object-fit:cover;opacity:.85}
+.video .play{position:absolute;inset:0;display:grid;place-items:center}
+.video .play i{width:86px;height:60px;border-radius:16px;background:var(--acc);display:grid;place-items:center;box-shadow:0 8px 30px rgba(0,0,0,.5)}
+.video .play i:after{content:"";border-left:24px solid var(--accink);border-top:15px solid transparent;border-bottom:15px solid transparent;margin-left:6px}
+.video iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.cta{text-align:center}
+footer{padding:30px 0 50px;color:var(--mute);font-size:14px;border-top:1px solid var(--line)}
+footer .wrap{display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between}
+code{background:#151b26;border:1px solid var(--line);border-radius:6px;padding:1px 6px}
+pre{background:#0b1018;border:1px solid var(--line);border-radius:12px;padding:14px;overflow:auto;font-size:14px}
+@media(max-width:860px){.hero .wrap,.gallery,.dl{grid-template-columns:1fr}.grid{grid-template-columns:1fr 1fr}header.nav nav a.hide-sm{display:none}}
+@media(max-width:560px){.grid{grid-template-columns:1fr}header.nav nav a:not(.keep){display:none}header.nav b{white-space:nowrap}}
+</style>
+</head>
+<body>
+<header class="nav"><div class="wrap"><img src="assets/icon-256.png" alt="" width="34" height="34"><b>BigWave Radio</b>
+<nav><a href="#features">Features</a><a href="#screenshots" class="hide-sm">Screenshots</a><a href="#video" class="hide-sm">Video</a><a href="#download" class="keep">Download</a><a href="#community">Community</a><a href="https://github.com/postmanpat-303/BigWaveRadio">GitHub</a></nav></div></header>
+<main>
+<div class="hero"><div class="wrap"><div>
+<span class="badge">100% FREE · OPEN SOURCE</span>
+<h1>BigWave Radio: the <span>free internet radio player</span> for Windows, Mac and Linux</h1>
+<p class="lead">Thousands of stations from the community-powered radio-browser.info directory in a tiny native app, with one-click mood chips, your own star ratings, plugins and a MilkDrop-style visualiser.</p>
+<div class="btns"><a class="btn primary" href="#download">⬇ Download free</a><a class="btn" href="https://github.com/postmanpat-303/BigWaveRadio">★ View on GitHub</a></div>
+<p class="small">Free and open source (MIT) · no account, no ads · written in Rust · a single ~8 MB download</p>
+</div><img src="assets/station-grid.webp" alt="The Discover page with the compact station grid" width="1100" height="720" class="shot" fetchpriority="high"></div></div>
+<section id="features"><div class="wrap"><h2>Everything you want from a radio app</h2><p>Tiny, fast and made for music lovers.</p><div class="grid"><div class="f"><h3>📻 Discover</h3><p>Trending, popular and recently added stations, tag browsing and a world map with station bubbles for each country.</p></div><div class="f"><h3>🎧 Mood chips</h3><p>One click for Dance, Trance, Chill, Easy, 80s or 90s. Each mood searches several tags at once, and you can edit the mappings.</p></div><div class="f"><h3>⭐ Your Stars</h3><p>Rate stations 1 to 5 from the now-playing panel and find every station you rated in one list.</p></div><div class="f"><h3>🔎 Music-first search</h3><p>Working streams come first, near-duplicates are merged, and talk, news and sport stay hidden unless you want them.</p></div><div class="f"><h3>✨ More like this · 🎲 Surprise me</h3><p>Find stations like the one playing, weighted by your ratings, or get a well-rated pick within your moods.</p></div><div class="f"><h3>🌌 Visions</h3><p>A smooth MilkDrop-style visualiser with eight music-reactive scenes and crossfades.</p></div><div class="f"><h3>⚡ Beat Strobe</h3><p>Beat-synced strobe with Amiga interference rings, a photosensitivity warning and an app-enforced flash cap.</p></div><div class="f"><h3>🧩 Plugins</h3><p>Rhai scripts with permissions, hot reload and zip import, plus a community plugin hub.</p></div><div class="f"><h3>🔄 Update checker</h3><p>Check for updates from the About page, plus an optional quiet daily check. Nothing installs by itself.</p></div></div></div></section>
+<section id="screenshots"><div class="wrap"><h2>Screenshots</h2><p>Real captures of the app, no mock-ups.</p><div class="gallery"><figure><img src="assets/moods.webp" alt="Mood chips: Trance results, talk stations hidden" width="1100" height="720" loading="lazy" class="shot"><figcaption>Mood chips: Trance results, talk stations hidden</figcaption></figure><figure><img src="assets/your-stars.webp" alt="Your Stars: every station you rated, by level" width="1100" height="720" loading="lazy" class="shot"><figcaption>Your Stars: every station you rated, by level</figcaption></figure><figure><img src="assets/rating-card.webp" alt="Now-playing panel with your star rating" width="1100" height="720" loading="lazy" class="shot"><figcaption>Now-playing panel with your star rating</figcaption></figure><figure><img src="assets/visions-page.webp" alt="Visions, the MilkDrop-style visualiser" width="1100" height="720" loading="lazy" class="shot"><figcaption>Visions, the MilkDrop-style visualiser</figcaption></figure><figure><img src="assets/plugins-page.webp" alt="The Plugins page with permissions and flash safety" width="1100" height="720" loading="lazy" class="shot"><figcaption>The Plugins page with permissions and flash safety</figcaption></figure><figure><img src="assets/strobe-rings.webp" alt="Amiga interference rings in the Beat Strobe" width="880" height="576" loading="lazy" class="shot"><figcaption>Amiga interference rings in the Beat Strobe</figcaption></figure></div></div></section>
+<section id="video"><div class="wrap"><h2>Watch the wolf film</h2><p>A lone wolf finds his pack, and BigWave Radio finds your station.</p>
+<div class="video" data-id="IxJTYOrA_0c" data-title="BigWave Radio promo video" role="button" aria-label="Play the BigWave Radio promo video"><img src="https://i.ytimg.com/vi/IxJTYOrA_0c/hqdefault.jpg" alt="BigWave Radio promo video" width="480" height="360" loading="lazy"><div class="play"><i></i></div></div>
+<p class="small" style="text-align:center">Or watch it <a href="https://youtu.be/IxJTYOrA_0c">on YouTube</a> · more on <a href="https://www.youtube.com/@whatgoesaround1551">the channel</a></p></div></section>
+<section id="download"><div class="wrap"><h2>Download BigWave Radio free</h2><p>Latest release: <b data-ver>v0.9.6</b> · <a href="https://github.com/postmanpat-303/BigWaveRadio/releases/latest">all files and checksums</a> · MIT licence</p><div class="dl"><div class="f"><h3>🪟 Windows</h3><p>Windows 10 and later, 64-bit. Installer with tray icon and media keys, or a portable zip.</p><a class="btn primary" data-asset="setup-x64\.exe$" href="https://github.com/postmanpat-303/BigWaveRadio/releases/download/v0.9.6/BigWaveRadio-0.9.6-setup-x64.exe">Installer (.exe)</a><a class="btn" data-asset="windows-x64\.zip$" href="https://github.com/postmanpat-303/BigWaveRadio/releases/download/v0.9.6/BigWaveRadio-0.9.6-windows-x64.zip">Portable .zip</a></div><div class="f"><h3>🍎 macOS</h3><p>macOS 11 or later, one universal app for Apple silicon and Intel.</p><a class="btn primary" data-asset="macos-universal\.dmg$" href="https://github.com/postmanpat-303/BigWaveRadio/releases/download/v0.9.6/BigWaveRadio-0.9.6-macos-universal.dmg">Download .dmg</a><a class="btn" data-asset="macos-universal\.zip$" href="https://github.com/postmanpat-303/BigWaveRadio/releases/download/v0.9.6/BigWaveRadio-0.9.6-macos-universal.zip">.zip</a></div><div class="f"><h3>🐧 Linux</h3><p>x86_64 and aarch64. Ubuntu/Debian, Fedora, Arch, or any distro with the AppImage.</p><a class="btn primary" data-asset="linux-x86_64\.AppImage$" href="https://github.com/postmanpat-303/BigWaveRadio/releases/download/v0.9.6/BigWaveRadio-0.9.6-linux-x86_64.AppImage">AppImage (x86_64)</a><a class="btn" data-asset="linux-x86_64\.deb$" href="https://github.com/postmanpat-303/BigWaveRadio/releases/download/v0.9.6/BigWaveRadio-0.9.6-linux-x86_64.deb">.deb</a><a class="btn" data-asset="linux-x86_64\.rpm$" href="https://github.com/postmanpat-303/BigWaveRadio/releases/download/v0.9.6/BigWaveRadio-0.9.6-linux-x86_64.rpm">.rpm</a><a class="btn" data-asset="linux-x86_64\.pkg\.tar\.zst$" href="https://github.com/postmanpat-303/BigWaveRadio/releases/download/v0.9.6/BigWaveRadio-0.9.6-linux-x86_64.pkg.tar.zst">Arch .pkg</a></div></div><p class="small">The macOS and Linux builds are brand new. Please tell us how they run on your machine. The Windows installer isn't code-signed yet, so if SmartScreen warns you, click “More info” then “Run anyway”.</p></div></section>
+<section id="community"><div class="wrap"><h2>Join the community</h2><p>BigWave Radio is built with its users. Ideas, questions, bug reports and show-and-tell are all welcome.</p>
+<div class="grid">
+<div class="f"><h3>💬 Discussions</h3><p>Share ideas, ask questions and show what you made.</p><a class="btn" href="https://github.com/postmanpat-303/BigWaveRadio/discussions">Open Discussions</a></div>
+<div class="f"><h3>🐞 Feedback</h3><p>Tried it on your system? Tell us what works and what doesn't.</p><a class="btn" href="https://github.com/postmanpat-303/BigWaveRadio/issues/new?template=works_for_me.yml">✅ It works for me</a> <a class="btn" href="https://github.com/postmanpat-303/BigWaveRadio/issues/new?template=bug_report.yml">Report a problem</a></div>
+<div class="f"><h3>☕ Support it</h3><p>It's free and always will be. If you enjoy it, a coffee keeps it going.</p><a class="btn primary" href="https://buymeacoffee.com/postmanpat">Buy me a coffee</a> <a class="btn" href="https://paypal.me/derekh100">PayPal</a></div>
+</div></div></section>
+<section class="cta"><div class="wrap"><h2>Find your station. Find your pack.</h2><p>BigWave Radio is free for Windows, Mac and Linux.</p><div class="btns" style="justify-content:center"><a class="btn primary" href="#download">⬇ Download free</a></div>
+<p class="small">Part of the Wave family: <a href="https://github.com/postmanpat-303/BigWaveRadio">BigWave Radio</a> · <a href="https://github.com/postmanpat-303/ChipWaveTracker">ChipWave Tracker</a> · <a href="https://github.com/postmanpat-303/StreamWave">StreamWave</a></p></div></section>
+</main>
+<footer><div class="wrap"><span>© 2026 Derek Heasley (postmanpat-303) · MIT licence</span><span><a href="https://github.com/postmanpat-303/BigWaveRadio">GitHub</a> · <a href="https://github.com/postmanpat-303/BigWaveRadio/releases/latest">Releases</a> · <a href="https://buymeacoffee.com/postmanpat">Buy me a coffee</a></span></div></footer>
+<script>
+document.querySelectorAll('.video').forEach(v=>v.addEventListener('click',()=>{v.innerHTML='<iframe src="https://www.youtube-nocookie.com/embed/'+v.dataset.id+'?autoplay=1&rel=0" title="'+v.dataset.title+'" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>'},{once:true}));
+// Keep download buttons pointing at the newest release (falls back to the static links).
+fetch('https://api.github.com/repos/postmanpat-303/BigWaveRadio/releases/latest').then(r=>r.ok?r.json():null).then(j=>{if(!j)return;
+ document.querySelectorAll('[data-asset]').forEach(a=>{const re=new RegExp(a.dataset.asset);const m=(j.assets||[]).find(x=>re.test(x.name));if(m)a.href=m.browser_download_url});
+ document.querySelectorAll('[data-ver]').forEach(e=>e.textContent=j.tag_name)}).catch(()=>{});
+</script>
+</body></html>
