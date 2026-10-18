@@ -16,7 +16,7 @@
   <key>LSApplicationCategoryType</key><string>public.app-category.music</string>
   <key>LSUIElement</key><false/>
   <key>NSHighResolutionCapable</key><true/>
-  <key>NSHumanReadableCopyright</key><string>© 2026 Derek Heasley. MIT licence.</string>
+  <key>NSHumanReadableCopyright</key><string>© 2026 Del (postmanpat). MIT licence.</string>
   <!-- No NSMicrophoneUsageDescription: BigWave only plays streams, it never records audio. -->
 </dict>
 </plist>

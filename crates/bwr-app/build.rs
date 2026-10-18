@@ -1,5 +1,5 @@
 //! Windows resources for BigWaveRadio.exe: the wolf icon, version info
-//! (Derek Heasley / BigWave Radio) and the application manifest (asInvoker,
+//! (Del (postmanpat) / BigWave Radio) and the application manifest (asInvoker,
 //! Windows 10/11, PerMonitorV2 DPI, Common Controls v6).
 //! Release builds use MSVC (x86_64-pc-windows-msvc, see
 //! .github/workflows/windows.yml): winresource finds rc.exe in the Windows SDK.
@@ -23,12 +23,12 @@ fn main() {
     let mut res = winresource::WindowsResource::new();
     res.set_icon("../../assets/bigwave.ico")
         .set_manifest_file("bigwave.exe.manifest")
-        .set("CompanyName", "Derek Heasley")
+        .set("CompanyName", "Del (postmanpat)")
         .set("ProductName", "BigWave Radio")
         .set("FileDescription", "BigWave Radio")
         .set("InternalName", "BigWaveRadio")
         .set("OriginalFilename", "BigWaveRadio.exe")
-        .set("LegalCopyright", "MIT, (c) 2026 Derek Heasley")
+        .set("LegalCopyright", "MIT, (c) 2026 Del (postmanpat)")
         .set("ProductVersion", &ver)
         .set("FileVersion", &ver);
     if let Err(e) = res.compile() {

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <!-- Embedded in BigWaveRadio.exe by build.rs (RT_MANIFEST, id 1). -->
 <assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
-  <assemblyIdentity type="win32" name="DerekHeasley.BigWaveRadio" version="0.0.0.0" processorArchitecture="amd64"/>
+  <assemblyIdentity type="win32" name="postmanpat.BigWaveRadio" version="0.0.0.0" processorArchitecture="amd64"/>
   <description>BigWave Radio</description>
   <dependency>
     <dependentAssembly>

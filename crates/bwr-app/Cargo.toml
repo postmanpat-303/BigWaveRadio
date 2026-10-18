@@ -49,8 +49,8 @@ rfd = "0.15"
 # --- Linux packages (CI: cargo deb / cargo generate-rpm, see .github/workflows/linux.yml)
 [package.metadata.deb]
 name = "bigwave-radio"
-maintainer = "Derek Heasley <https://github.com/postmanpat-303>"
-copyright = "2026 Derek Heasley"
+maintainer = "Del (postmanpat) <326151156+postmanpat-303@users.noreply.github.com>"
+copyright = "2026 Del (postmanpat)"
 license-file = ["../../LICENSE", "0"]
 extended-description = """BigWave Radio streams live stations from the community-powered \
 radio-browser.info directory: mood chips, star ratings, plugins and visualisers."""
@@ -76,6 +76,8 @@ assets = [
 name = "bigwave-radio"
 summary = "Internet radio player (radio-browser.info)"
 license = "MIT"
+vendor = "Del (postmanpat)"
+packager = "Del (postmanpat) <326151156+postmanpat-303@users.noreply.github.com>"
 assets = [
     { source = "target/release/bwr-app", dest = "/usr/bin/bigwave-radio", mode = "755" },
     { source = "../../packaging/linux/bigwave-radio.desktop", dest = "/usr/share/applications/bigwave-radio.desktop", mode = "644" },

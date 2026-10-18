@@ -9,7 +9,7 @@ use crate::pages::plugins::Btn;
 pub const DONATE_URL: &str = "https://buymeacoffee.com/postmanpat";
 /// Secondary donation link (PayPal.me).
 pub const PAYPAL_URL: &str = "https://paypal.me/derekh100";
-/// Derek's YouTube channel (demos and promos).
+/// Del's YouTube channel (demos and promos).
 pub const YOUTUBE_URL: &str = "https://www.youtube.com/@whatgoesaround1551";
 use crate::theme;
 
@@ -96,7 +96,7 @@ pub fn ui(ui: &mut Ui, app: &mut BigWaveApp) {
                     ui.label(t!("about.blurb"));
                     ui.add_space(14.0);
                     ui.label(
-                        egui::RichText::new(t!("about.created_by", name = "Derek Heasley"))
+                        egui::RichText::new(t!("about.created_by", name = "Del (postmanpat)"))
                             .strong()
                             .size(16.0),
                     );

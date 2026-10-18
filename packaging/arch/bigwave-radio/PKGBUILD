@@ -1,4 +1,4 @@
-# Maintainer: Derek Heasley <https://github.com/postmanpat-303>
+# Maintainer: Del (postmanpat) <326151156+postmanpat-303@users.noreply.github.com>
 # BigWave Radio built from source (the release tag).
 # Build:  makepkg -si      (CachyOS / Arch / Manjaro / EndeavourOS)
 pkgname=bigwave-radio

@@ -1,7 +1,7 @@
 BigWave Radio VERSION - Linux
 ==============================================================
 MIT - https://github.com/postmanpat-303/BigWaveRadio
-Created by Derek Heasley. Buy me a coffee: https://buymeacoffee.com/postmanpat
+Created by Del (postmanpat). Buy me a coffee: https://buymeacoffee.com/postmanpat
 
 Run:     ./bigwave-radio
 Install: ./install.sh          (for your user: ~/.local/bin + applications menu)

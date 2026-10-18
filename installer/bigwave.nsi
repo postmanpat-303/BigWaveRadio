@@ -20,7 +20,7 @@ Unicode true
 
 !define APPNAME "BigWave Radio"
 !define EXE "BigWaveRadio.exe"
-!define PUBLISHER "Derek Heasley"
+!define PUBLISHER "Del (postmanpat)"
 !define UNINSTKEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\BigWaveRadio"
 !define ICON "..\assets\bigwave.ico"
 ; Inno Setup per-user installs (0.9.3 and older) used this AppId.
@@ -42,7 +42,7 @@ VIAddVersionKey "ProductName" "${APPNAME}"
 VIAddVersionKey "ProductVersion" "${VERSION}"
 VIAddVersionKey "FileVersion" "${VERSION}"
 VIAddVersionKey "FileDescription" "${APPNAME} setup"
-VIAddVersionKey "LegalCopyright" "MIT, (c) 2026 Derek Heasley"
+VIAddVersionKey "LegalCopyright" "MIT, (c) 2026 Del (postmanpat)"
 VIAddVersionKey "CompanyName" "${PUBLISHER}"
 
 !define MUI_ICON "${ICON}"

@@ -11,4 +11,4 @@ Your library, ratings, settings and plugins live in
 ~/Library/Application Support/BigWaveRadio
 There is no menu-bar icon yet: closing the window quits.
 
-Created by Derek Heasley - https://buymeacoffee.com/postmanpat
+Created by Del (postmanpat) - https://buymeacoffee.com/postmanpat

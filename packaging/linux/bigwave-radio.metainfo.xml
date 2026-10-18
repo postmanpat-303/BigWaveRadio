@@ -5,7 +5,7 @@
   <project_license>MIT</project_license>
   <name>BigWave Radio</name>
   <summary>Internet radio player with moods, star ratings and visualisers</summary>
-  <developer id="ie.derekheasley"><name>Derek Heasley</name></developer>
+  <developer id="io.github.postmanpat-303"><name>Del (postmanpat)</name></developer>
   <description>
     <p>BigWave Radio streams live stations from the community-powered radio-browser.info
     directory: mood chips, star ratings, "More like this", plugins and a MilkDrop-style visualiser.</p>

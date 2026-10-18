@@ -20,7 +20,7 @@ The MSVC exe needs no DLLs beyond Windows' own.
 
 `crates/bwr-app/build.rs` (winresource, `rc.exe` from the Windows SDK) embeds:
 - the wolf icon `assets/bigwave.ico`
-- version info: CompanyName `Derek Heasley`, ProductName `BigWave Radio`, version = Cargo version
+- version info: CompanyName `Del (postmanpat)`, ProductName `BigWave Radio`, version = Cargo version
 - the manifest `crates/bwr-app/bigwave.exe.manifest`: `asInvoker`, Windows 10/11
   `supportedOS`, PerMonitorV2 DPI awareness, Common Controls v6
 

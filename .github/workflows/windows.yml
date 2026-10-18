@@ -102,7 +102,7 @@ jobs:
           }
           $v = (Get-Item $exe).VersionInfo
           $v | Format-List CompanyName, ProductName, FileDescription, ProductVersion, FileVersion, OriginalFilename
-          if ($v.CompanyName -ne 'Derek Heasley' -or $v.ProductName -ne 'BigWave Radio' -or $v.ProductVersion -ne '${{ steps.ver.outputs.ver }}') { "::error::version info wrong"; exit 1 }
+          if ($v.CompanyName -ne 'Del (postmanpat)' -or $v.ProductName -ne 'BigWave Radio' -or $v.ProductVersion -ne '${{ steps.ver.outputs.ver }}') { "::error::version info wrong"; exit 1 }
           Add-Type -AssemblyName System.Drawing
           $icon = [System.Drawing.Icon]::ExtractAssociatedIcon($exe)
           $bmp = $icon.ToBitmap(); $bmp.Save("$env:RUNNER_TEMP\exe-icon.png")

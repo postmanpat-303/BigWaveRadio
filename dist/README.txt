@@ -3,7 +3,7 @@ BigWave Radio VERSION - Windows x64
 MIT - https://github.com/postmanpat-303/BigWaveRadio
 Licence: LICENSE.txt (MIT). Third-party notices: THIRD_PARTY_LICENSES.txt
 
-Created by Derek Heasley. If you find this app useful you can buy me a coffee:
+Created by Del (postmanpat). If you find this app useful you can buy me a coffee:
 https://buymeacoffee.com/postmanpat  (or PayPal: https://paypal.me/derekh100)
 Thank you. :)
 
