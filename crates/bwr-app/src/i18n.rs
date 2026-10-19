@@ -24,18 +24,27 @@ use std::sync::OnceLock;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Lang {
     En,
+    Es,
+    ZhCn,
+    Hi,
+    Ar,
     PtBr,
     It,
 }
 
 impl Lang {
-    /// Every language, in the order shown in Settings.
-    pub const ALL: [Lang; 3] = [Lang::En, Lang::PtBr, Lang::It];
+    /// Every language, in the order shown in Settings: the five most-used
+    /// worldwide first, then the earlier additions.
+    pub const ALL: [Lang; 7] = [Lang::En, Lang::Es, Lang::ZhCn, Lang::Hi, Lang::Ar, Lang::PtBr, Lang::It];
 
     /// BCP 47 code: stored in ui.json and passed to plugins as `ctx.lang`.
     pub fn code(self) -> &'static str {
         match self {
             Lang::En => "en",
+            Lang::Es => "es",
+            Lang::ZhCn => "zh-CN",
+            Lang::Hi => "hi",
+            Lang::Ar => "ar",
             Lang::PtBr => "pt-BR",
             Lang::It => "it",
         }
@@ -45,6 +54,10 @@ impl Lang {
     pub fn native_name(self) -> &'static str {
         match self {
             Lang::En => "English",
+            Lang::Es => "Español",
+            Lang::ZhCn => "中文（简体）",
+            Lang::Hi => "हिन्दी",
+            Lang::Ar => "العربية",
             Lang::PtBr => "Português (Brasil)",
             Lang::It => "Italiano",
         }
@@ -54,8 +67,8 @@ impl Lang {
         Lang::ALL.into_iter().find(|l| l.code().eq_ignore_ascii_case(code.trim()))
     }
 
-    /// Map an OS locale ("pt-BR", "pt_PT.UTF-8", "it-IT", "en-IE", ...) to a
-    /// supported language: pt-* -> pt-BR, it-* -> it, anything else -> en.
+    /// Map an OS locale ("pt-BR", "es-MX", "zh-Hans", "hi-IN", "ar_EG",
+    /// "it-IT", "en-IE", ...) to a supported language.
     pub fn from_locale(locale: &str) -> Lang {
         let primary = locale
             .trim()
@@ -64,6 +77,10 @@ impl Lang {
             .unwrap_or("")
             .to_ascii_lowercase();
         match primary.as_str() {
+            "es" => Lang::Es,
+            "zh" => Lang::ZhCn,
+            "hi" => Lang::Hi,
+            "ar" => Lang::Ar,
             "pt" => Lang::PtBr,
             "it" => Lang::It,
             _ => Lang::En,
@@ -77,6 +94,10 @@ impl Lang {
     fn source(self) -> &'static str {
         match self {
             Lang::En => include_str!("../locales/en.toml"),
+            Lang::Es => include_str!("../locales/es.toml"),
+            Lang::ZhCn => include_str!("../locales/zh-CN.toml"),
+            Lang::Hi => include_str!("../locales/hi.toml"),
+            Lang::Ar => include_str!("../locales/ar.toml"),
             Lang::PtBr => include_str!("../locales/pt-BR.toml"),
             Lang::It => include_str!("../locales/it.toml"),
         }
@@ -87,7 +108,10 @@ impl Lang {
         match self {
             // Portuguese (Brazil): 0 and 1 are both singular ("0 estação").
             Lang::PtBr => n == 0 || n == 1,
-            Lang::En | Lang::It => n == 1,
+            // Chinese: no plural distinction — the catalog's .one text is the
+            // same as .other, so always take .other.
+            Lang::ZhCn => false,
+            Lang::En | Lang::Es | Lang::Hi | Lang::Ar | Lang::It => n == 1,
         }
     }
 }
@@ -138,11 +162,8 @@ pub fn set(lang: Lang) {
 }
 
 pub fn current() -> Lang {
-    match CURRENT.load(Ordering::Relaxed) {
-        1 => Lang::PtBr,
-        2 => Lang::It,
-        _ => Lang::En,
-    }
+    let idx = CURRENT.load(Ordering::Relaxed) as usize;
+    Lang::ALL.get(idx).copied().unwrap_or(Lang::En)
 }
 
 type Catalog = HashMap<String, &'static str>;
@@ -169,8 +190,8 @@ pub fn parse_catalog(src: &str) -> Result<Catalog, String> {
     Ok(out)
 }
 
-fn catalogs() -> &'static [Catalog; 3] {
-    static CATS: OnceLock<[Catalog; 3]> = OnceLock::new();
+fn catalogs() -> &'static [Catalog; 7] {
+    static CATS: OnceLock<[Catalog; 7]> = OnceLock::new();
     CATS.get_or_init(|| {
         Lang::ALL.map(|l| {
             parse_catalog(l.source()).unwrap_or_else(|e| {
@@ -219,6 +240,41 @@ pub fn tr_plural(one: &'static str, other: &'static str, n: i64, args: &[(&str, 
     let mut all: Vec<(&str, &dyn std::fmt::Display)> = vec![("n", &n)];
     all.extend_from_slice(args);
     fill(lookup(lang, key), &all)
+}
+
+/// egui's bundled fonts cover Latin, Greek and Cyrillic only. Chinese,
+/// Devanagari and Arabic text needs a system font, loaded on first use of a
+/// language that requires it (one `set_fonts` call, then a cheap flag check
+/// per frame). Missing files are skipped gracefully.
+pub fn ensure_script_fonts(ctx: &egui::Context) {
+    let lang = current();
+    let (name, path) = match lang {
+        Lang::ZhCn => ("bwr-zh", r"C:\Windows\Fonts\msyh.ttc"),
+        Lang::Hi => ("bwr-hi", r"C:\Windows\Fonts\Nirmala.ttc"),
+        Lang::Ar => ("bwr-ar", r"C:\Windows\Fonts\arial.ttf"),
+        _ => return,
+    };
+    static LOADED: AtomicU8 = AtomicU8::new(0);
+    let bit = 1u8 << lang.index();
+    if LOADED.load(Ordering::Relaxed) & bit != 0 {
+        return;
+    }
+    let bytes = std::fs::read(path).ok();
+    LOADED.fetch_or(bit, Ordering::Relaxed);
+    let Some(bytes) = bytes else { return };
+    let mut fonts = egui::FontDefinitions::default();
+    fonts.font_data.insert(
+        name.to_owned(),
+        std::sync::Arc::new(egui::FontData {
+            font: std::borrow::Cow::Owned(bytes),
+            index: 0,
+            tweak: Default::default(),
+        }),
+    );
+    for family in [egui::FontFamily::Proportional, egui::FontFamily::Monospace] {
+        fonts.families.entry(family).or_default().push(name.to_owned());
+    }
+    ctx.set_fonts(fonts);
 }
 
 /// Translate a text by key; with `name = value` pairs it fills `{name}`.

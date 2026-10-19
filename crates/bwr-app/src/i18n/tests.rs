@@ -114,7 +114,7 @@ fn no_orphan_english_keys() {
 #[test]
 fn translations_cover_english_exactly() {
     let en = catalog(Lang::En);
-    for lang in [Lang::PtBr, Lang::It] {
+    for lang in Lang::ALL.into_iter().filter(|l| *l != Lang::En) {
         let cat = catalog(lang);
         let missing: BTreeSet<_> = en.keys().filter(|k| !cat.contains_key(*k)).collect();
         let extra: BTreeSet<_> = cat.keys().filter(|k| !en.contains_key(*k)).collect();
@@ -140,11 +140,19 @@ fn locale_mapping() {
     assert_eq!(Lang::from_locale("pt_PT.UTF-8"), Lang::PtBr);
     assert_eq!(Lang::from_locale("it-IT"), Lang::It);
     assert_eq!(Lang::from_locale("it_CH"), Lang::It);
+    assert_eq!(Lang::from_locale("es-MX"), Lang::Es);
+    assert_eq!(Lang::from_locale("es-ES"), Lang::Es);
+    assert_eq!(Lang::from_locale("zh-CN"), Lang::ZhCn);
+    assert_eq!(Lang::from_locale("zh-Hant-TW"), Lang::ZhCn);
+    assert_eq!(Lang::from_locale("hi-IN"), Lang::Hi);
+    assert_eq!(Lang::from_locale("ar-EG"), Lang::Ar);
+    assert_eq!(Lang::from_locale("ar_SA"), Lang::Ar);
     assert_eq!(Lang::from_locale("en-IE"), Lang::En);
     assert_eq!(Lang::from_locale("de-DE"), Lang::En);
     assert_eq!(Lang::from_locale(""), Lang::En);
     assert_eq!(Choice::parse("system"), Choice::System);
     assert_eq!(Choice::parse("pt-br"), Choice::Fixed(Lang::PtBr));
+    assert_eq!(Choice::parse("zh-cn"), Choice::Fixed(Lang::ZhCn));
     assert_eq!(Choice::parse("klingon"), Choice::System);
     for l in Lang::ALL {
         assert_eq!(Choice::parse(Choice::Fixed(l).code()), Choice::Fixed(l));

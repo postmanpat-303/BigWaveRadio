@@ -1,0 +1,300 @@
+# BigWave Radio：简体中文（zh-CN）。参见 docs/TRANSLATING.md。
+# {name} 占位符由应用填充，请原样保留。
+# 复数使用 .one / .other 子键，{n} 为数字（中文两种形式相同）。
+
+[common]
+back = "返回"
+clear = "清除"
+dismiss = "忽略"
+ok = "确定"
+
+[format]
+thousands_sep = ","
+
+[status]
+ready = "就绪"
+connecting = "正在连接…"
+connected = "已连接"
+stopped = "已停止"
+paused = "已暂停"
+finding = "正在为你寻找电台…"
+no_tags = "此电台没有可用于匹配的标签"
+no_match = "没有符合筛选条件的电台——试试放宽条件"
+error = "错误：{error}"
+playback_error = "播放错误：{error}"
+
+[top]
+search_hint = "搜索电台…"
+surprise_tip = "随便听听——随机播放一个电台"
+recent = "最近搜索"
+remove = "从历史记录中移除"
+clear_history = "清除历史记录"
+
+[nav]
+discover = "发现"
+search = "搜索"
+library = "我的收藏"
+tags = "标签"
+countries = "国家/地区"
+plugins = "插件"
+settings = "设置"
+about = "关于"
+plugin_tip = "{title} —— 双击启动"
+
+[discover]
+title = "发现"
+subtitle = "来自社区维护的 radio-browser.info 目录的直播电台"
+trending = "热门趋势"
+popular = "最受欢迎"
+recent = "最新收录"
+
+[search]
+title = "搜索"
+hint = "按名称搜索电台…"
+recent = "最近搜索"
+cloud_hint = "从词云中挑个心情——点击词语即可收听。"
+more_like = "更多类似 {name} · #{tags}"
+
+[library]
+title = "我的收藏"
+favourites = "收藏"
+recent = "最近播放"
+favourites_hint = "你加星收藏的电台，方便快速访问——保存在本机上。"
+empty = "还没有保存任何电台。点击电台卡片上的 ☆ 即可保存到这里。"
+recent_hint = "你最近听过的电台——最新的排在最前。"
+recent_empty = "还没有播放过任何电台。"
+
+[browse]
+tags_title = "标签"
+tags_hint = "浏览流派和心情——选择一个即可查看相关电台。"
+countries_title = "国家/地区"
+countries_hint = "按国家/地区浏览电台，从 A 到 Z。"
+map_hint = "气泡大小代表电台数量——点击气泡，或在下方选择国家/地区。"
+
+[browse.map_tip]
+one = "{name} —— {n} 个电台"
+other = "{name} —— {n} 个电台"
+
+[mood]
+dance = "舞曲"
+trance = "迷幻"
+chill = "舒缓"
+easy = "轻松"
+80s = "80 年代"
+90s = "90 年代"
+
+[moods]
+missing = "该心情已不在 moods.json 中。"
+surprise = "随便听听（{mood}）"
+surprise_tip = "播放该心情下评分高或受欢迎的电台"
+mapping_tip = "心情 → 标签的映射保存在 {path}；编辑后重启即可生效。"
+
+[moods.talk_hidden]
+one = "已隐藏 {n} 个谈话类电台"
+other = "已隐藏 {n} 个谈话类电台"
+
+[rail]
+moods = "心情"
+stars_tip = "你评分过的所有电台，来自任何分类"
+show_talk = "显示谈话类"
+show_talk_tip = "显示新闻、谈话、体育、宗教、喜剧和播客电台"
+advanced = "高级"
+advanced_tip = "流格式和最低比特率"
+format = "格式"
+min_bitrate = "最低比特率"
+
+[filter]
+any_format = "任何格式"
+any_bitrate = "任何比特率"
+kbps_or_more = "{kbps} kbps 及以上"
+
+[stars]
+title = "我的评分"
+subtitle = "你评分过的所有电台，来自任何分类。播放时可在右侧信息面板中为电台打分。"
+empty = "还没有评分。播放一个电台，然后在信息面板中为它打星。"
+fetching = "正在获取你评分的电台…"
+level_empty = "此等级没有电台。"
+all = "所有已评分"
+
+[cards]
+loading = "加载中…"
+only_talk = "这里只有谈话类电台——在左侧栏勾选「显示谈话类」即可查看。"
+empty = "没有可显示的电台。"
+
+[cards.votes]
+one = "{n} 票"
+other = "{n} 票"
+
+[player]
+pick = "选择一个电台开始收听"
+save_library = "保存到我的收藏"
+remove_library = "从我的收藏中移除"
+surprise = "随便听听"
+prev = "上一台"
+play = "播放"
+pause = "暂停"
+stop = "停止"
+next = "下一台"
+
+[info]
+now_playing = "正在播放"
+your_rating = "我的评分"
+format = "格式"
+bitrate = "比特率"
+votes = "票数"
+clicks = "点击数"
+tags = "标签"
+tag_tip = "更多带有 #{tag} 标签的电台"
+more_like = "更多类似的"
+more_like_tip = "与该电台标签相同的其他电台，并根据你的星级评分优化"
+website = "电台网站"
+copy_url = "复制流地址"
+surprise = "随便听听"
+surprise_tip = "播放你的心情中评分高或受欢迎的电台"
+
+[info.rate]
+one = "评为 {n} 星"
+other = "评为 {n} 星"
+
+[settings]
+title = "设置"
+language = "语言"
+language_system = "跟随系统 · {lang}"
+language_hint = "立即生效。跟随系统即使用你电脑的语言。"
+theme = "主题"
+match_system = "跟随系统"
+light = "浅色"
+dark = "深色"
+highlight = "高亮颜色"
+quality = "流媒体质量"
+min_bitrate = "最低比特率："
+format = "格式："
+quality_hint = "全局生效：发现列表、搜索、标签、国家/地区和随便听听。"
+cards = "电台卡片"
+compact = "紧凑"
+comfortable = "舒适"
+cards_hint = "紧凑模式屏幕上的电台数量约多一倍。"
+behaviour = "行为"
+check_updates = "启动时检查更新"
+check_updates_tip = "静默检查，每天最多一次。有新版本时显示小提示。"
+tray = "关闭窗口时最小化到托盘并继续播放"
+tray_hint = "开启后，关闭窗口会隐藏到系统托盘——播放继续，并有通知告知去向。Windows 11 会把波浪图标放在时钟旁的隐藏 ^ 列表中，拖出一次即可固定；Ctrl+Alt+B 也可唤回窗口。最小化时任务栏按钮始终保留。"
+idle = "空闲时启动 Visions"
+idle_start = "应用闲置一段时间后自动启动 Visions 可视化"
+idle_after = "闲置"
+idle_hint = "任何鼠标移动或按键都会关闭可视化。仅对定时器启动的 Visions 会话生效——你手动启动的不受影响。"
+
+[settings.minutes]
+one = "{n} 分钟"
+other = "{n} 分钟"
+
+[plugins]
+title = "插件"
+intro = "插件是 {dir} 中包含 plugin.toml + main.rhai 的文件夹。放入文件夹或导入 .zip（也可以把 .zip 拖进窗口）。修改会自动重新加载。"
+import_dialog = "导入 .zip…"
+import = "导入 .zip"
+import_path_hint = "路径/插件.zip"
+archive = "插件压缩包"
+open_folder = "打开文件夹"
+reload_all = "全部重新加载"
+browse = "浏览社区插件"
+browse_tip = "GitHub 上的社区插件中心：在那里下载插件的 .zip，然后在这里导入。"
+none = "尚未安装任何插件。"
+writing_hint = "想写插件（或让 AI 帮你写）？查看插件文件夹中的 PLUGIN_GUIDE.md，并用 BigWaveRadio.exe --check-plugin <文件夹> 测试。"
+flash_safety = "闪烁安全"
+flash_intro = "应用限制插件使屏幕闪烁的频率。每秒 3 次是无障碍指南（WCAG）的建议值。"
+allow_fast = "允许更快的闪烁（最高每秒 12 次）。我了解并接受癫痫发作风险。"
+flash_cap = "闪烁上限"
+status_enabled = "已启用"
+status_disabled = "已禁用"
+status_needs_approval = "待批准"
+status_error = "错误"
+by = "作者：{author}"
+reload = "重新加载"
+disable = "禁用"
+enable = "启用"
+allow_enable = "允许并启用"
+wants_to = "请求权限：{list}"
+can = "可：{list}"
+settings = "设置"
+log = "日志（{count}）"
+page_gone = "该插件页面已不可用。"
+imported = "已导入插件「{id}」。请在插件页面启用它。"
+import_failed = "导入失败：{error}"
+
+[perm]
+audio = "读取音量和节拍"
+now_playing = "查看正在播放的电台和歌曲"
+player_control = "控制播放和音量"
+overlay = "在应用窗口上绘制"
+fullscreen = "进入全屏"
+hotkeys = "使用键盘快捷键"
+panel = "在插件页面显示面板"
+page = "在侧边栏添加页面"
+storage = "保存少量数据"
+
+[warning]
+title = "光敏性癫痫警告"
+body = "「{name}」包含闪烁灯光。闪烁可能诱发光敏性癫痫患者发作。如感不适请立即停止。\n\n闪烁频率限制为每秒 {cap} 次。按 Esc 可随时退出。"
+accept = "我已了解，开始（回车）"
+cancel = "取消（Esc）"
+
+[update]
+available = "有可用更新"
+installed = "已安装版本"
+latest = "最新版本"
+no_notes = "没有版本说明。"
+how_macos = "下载得到磁盘映像；将 BigWave Radio 拖入「应用程序」即可升级。你的收藏和设置会被保留。"
+how_linux = "下载适合你系统的软件包（或使用包管理器）。你的收藏和设置会被保留。"
+how_windows = "下载得到安装程序；运行即可升级。你的收藏和设置会被保留。"
+how_page = "下载将打开发布页面。"
+download = "下载"
+view_page = "查看发布页面"
+not_now = "稍后"
+skip = "跳过此版本"
+skip_tip = "启动时不再提醒此版本"
+up_to_date_title = "已是最新"
+up_to_date = "你已是最新版本（v{version}）。"
+failed_title = "无法检查更新"
+reason = "原因：{reason}。"
+open_releases = "打开发布页面"
+banner = "BigWave Radio v{version} 已发布"
+details = "详情"
+
+[about]
+title = "关于"
+check = "检查更新"
+checking = "正在检查更新…"
+blurb = "BigWave Radio 播放来自社区维护的 radio-browser.info 目录的直播电台。你的收藏和设置保存在本机上。"
+created_by = "开发者：{name}"
+inspired = "受 Linux 上的 ShortWave 启发，我想为 Windows 做一个干净好用的版本。"
+coffee_intro = "如果这个应用对你有用，可以请我喝杯咖啡："
+coffee = "请我喝咖啡"
+or_paypal = "或 PayPal："
+demos = "演示与宣传："
+thanks = "谢谢。:)"
+
+[tray]
+show = "显示 BigWave Radio"
+play_pause = "播放 / 暂停"
+next = "下一个电台"
+previous = "上一个电台"
+quit = "退出"
+toast_title = "BigWave Radio —— 仍在播放"
+toast_body = "打开时钟旁的 ^ 列表找到波浪图标（拖出一次即可固定），或按 Ctrl+Alt+B 唤回窗口。"
+
+[quote]
+q01 = "未经省察的人生不值得过。—— 苏格拉底"
+q02 = "不是所有流浪的人都迷失了方向。—— J.R.R. 托尔金"
+q03 = "困难之中蕴藏着机遇。—— 阿尔伯特·爱因斯坦"
+q04 = "无论你做什么，都要做好。—— 亚伯拉罕·林肯"
+q05 = "不怕慢，就怕站。—— 孔子"
+q06 = "预测未来最好的方式就是创造它。—— 艾伦·凯"
+q07 = "知道为什么而活的人，便能生存。—— 弗里德里希·尼采"
+q08 = "不要追求成功，而要追求价值。—— 阿尔伯特·爱因斯坦"
+q09 = "幸福取决于我们自己。—— 亚里士多德"
+q10 = "敢于梦想，敢于失败。—— 诺曼·沃恩"
+q11 = "把伤痕变成智慧。—— 奥普拉·温弗瑞"
+q12 = "好的开始是成功的一半。—— 亚里士多德"
+q13 = "真正的智慧在于知道自己一无所知。—— 苏格拉底"
+q14 = "人生因勇气而收缩或舒展。—— 阿娜伊斯·宁"

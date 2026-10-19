@@ -1046,6 +1046,7 @@ impl eframe::App for BigWaveApp {
     }
 
     fn update(&mut self, ctx: &Context, frame: &mut eframe::Frame) {
+        crate::i18n::ensure_script_fonts(ctx);
         if self.first_frame {
             self.first_frame = false;
             self.loading = true;
