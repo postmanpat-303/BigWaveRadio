@@ -7,7 +7,7 @@ Windows, macOS and Linux packages are all built by GitHub Actions: Windows by
 ## Windows
 
 BigWave Radio is packaged the same way as
-[ChipWave Tracker](https://github.com/postmanpat-303/ChipWaveTracker)
+[ChipWave Studio](https://github.com/postmanpat-303/ChipWaveStudio)
 (`installer/chipwave.nsi` + `scripts/package-windows.sh`): an **NSIS** setup and a
 portable zip.
 

@@ -29,7 +29,7 @@
 </p>
 
 <p align="center">
-  🐺 Part of the Wave family: <b>BigWave Radio</b> · <a href="https://github.com/postmanpat-303/ChipWaveTracker"><b>ChipWave Tracker</b></a> (an OctaMED-inspired music tracker) · <a href="https://github.com/postmanpat-303/StreamWave"><b>StreamWave</b></a> (an audio recorder and editor for streamers and podcasters)
+  🐺 Part of the Wave family: <b>BigWave Radio</b> · <a href="https://github.com/postmanpat-303/ChipWaveStudio"><b>ChipWave Studio</b></a> (an OctaMED-inspired music tracker) · <a href="https://github.com/postmanpat-303/StreamWave"><b>StreamWave</b></a> (an audio recorder and editor for streamers and podcasters)
 </p>
 
 <p align="center">
@@ -294,7 +294,7 @@ The executable is `target\release\bwr-app.exe`. It is self-contained (no
 `libunwind.dll`, no Visual C++ redistributable) and carries the wolf icon,
 version info and an application manifest (`crates/bwr-app/build.rs`).
 
-**Release packaging** (same NSIS setup + portable zip as [ChipWave Tracker](https://github.com/postmanpat-303/ChipWaveTracker)):
+**Release packaging** (same NSIS setup + portable zip as [ChipWave Studio](https://github.com/postmanpat-303/ChipWaveStudio)):
 [`.github/workflows/windows.yml`](.github/workflows/windows.yml) runs
 `scripts/package-windows.sh <ver>` on `windows-latest` (Git Bash; also works locally
 with NSIS installed). It writes `dist/BigWaveRadio-<ver>-windows-x64.zip` (portable) and

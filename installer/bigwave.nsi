@@ -1,5 +1,5 @@
 ; BigWave Radio - Windows x64 setup (NSIS 3; built on windows-latest by .github/workflows/windows.yml)
-; Same layout as postmanpat-303/ChipWaveTracker installer/chipwave.nsi.
+; Same layout as postmanpat-303/ChipWaveStudio installer/chipwave.nsi.
 ; Build: scripts/package-windows.sh 0.9.8
 ;   (makensis -DVERSION=0.9.8 -DVIVERSION=0.9.8.0 -DPKGDIR=../dist/pkg -DOUTFILE=../dist/BigWaveRadio-0.9.8-setup-x64.exe installer/bigwave.nsi)
 ; Silent install: BigWaveRadio-<ver>-setup-x64.exe /S   (desktop shortcut included by default)
