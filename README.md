@@ -49,7 +49,7 @@
 
 ## ⬇️ Downloads
 
-Get them from the [latest release](https://github.com/postmanpat-303/BigWaveRadio/releases/latest) (`<ver>` is the version, e.g. `0.9.8`):
+Get them from the [latest release](https://github.com/postmanpat-303/BigWaveRadio/releases/latest) (`<ver>` is the version, e.g. `0.9.9`):
 
 > [!IMPORTANT]
 > **🗣️ Feedback highly recommended!** The macOS and Linux builds are brand new and haven't been tested on real machines yet (only on build servers). If you try one, please tell me how it went, good or bad: [report a problem](https://github.com/postmanpat-303/BigWaveRadio/issues/new?template=bug_report.yml) or say [it works on my system](https://github.com/postmanpat-303/BigWaveRadio/issues/new?template=works_for_me.yml). Questions and ideas are welcome in [Discussions](https://github.com/postmanpat-303/BigWaveRadio/discussions). Thank you!
@@ -131,7 +131,7 @@ The app checks for updates (About → **Check for updates**) and offers the down
   </tr>
   <tr>
     <td valign="top"><h4>🔄 Update checker</h4><b>Check for updates</b> on the About page shows what's new and links straight to the new installer. A quiet check at startup (at most once a day, switch it off in Settings) shows a small notice when a new version is out. Nothing installs by itself.</td>
-    <td valign="top"><h4>🌐 Languages</h4>English, <b>Português (Brasil)</b> and <b>Italiano</b>. Pick one under Settings → Language (it switches straight away), or leave it on <b>System</b> to follow your computer. Want BigWave Radio in your language? See <a href="docs/TRANSLATING.md">TRANSLATING.md</a>.</td>
+    <td valign="top"><h4>🌐 Languages</h4>English, <b>Español</b>, <b>中文（简体）</b>, <b>हिन्दी</b>, <b>العربية</b>, <b>Português (Brasil)</b> and <b>Italiano</b>. Pick one under Settings → Language (it switches straight away), or leave it on <b>System</b> to follow your computer. Want BigWave Radio in your language? See <a href="docs/TRANSLATING.md">TRANSLATING.md</a>.</td>
     <td valign="top"></td>
   </tr>
 </table>
