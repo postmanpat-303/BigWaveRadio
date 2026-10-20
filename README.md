@@ -320,7 +320,7 @@ or your distro's equivalents). The release packages come from GitHub Actions:
 
 ## 💜 Credits
 
-Created by Del (postmanpat). Inspired by ShortWave on Linux — I wanted a nice clean version for Windows (and now it runs on macOS and Linux too). If you find this app useful, you can [buy me a coffee](https://buymeacoffee.com/postmanpat) or donate via PayPal at [paypal.me/derekh100](https://paypal.me/derekh100). Demos and promos are on my [YouTube channel](https://www.youtube.com/@whatgoesaround1551). Thank you. :)
+Created by Del (postmanpat). Inspired by [Shortwave](https://apps.gnome.org/Shortwave/) on Linux, the lovely GNOME internet radio app by Felix Häcker and the [Shortwave contributors](https://gitlab.gnome.org/World/Shortwave). Thank you for the idea — I wanted a nice clean version for Windows (and now it runs on macOS and Linux too). If you find this app useful, you can [buy me a coffee](https://buymeacoffee.com/postmanpat) or donate via PayPal at [paypal.me/derekh100](https://paypal.me/derekh100). Demos and promos are on my [YouTube channel](https://www.youtube.com/@whatgoesaround1551). Thank you. :)
 
 <a href="https://buymeacoffee.com/postmanpat"><img src="https://img.shields.io/badge/%E2%98%95%20Buy%20me%20a%20coffee-postmanpat-FFDD00?style=for-the-badge&logo=buymeacoffee&logoColor=black" alt="Buy me a coffee" height="36"></a> <a href="https://www.youtube.com/@whatgoesaround1551"><img src="https://img.shields.io/badge/YouTube-demos%20%26%20promos-FF0000?style=for-the-badge&logo=youtube&logoColor=white" alt="YouTube: demos and promos" height="36"></a>
 
