@@ -42,7 +42,6 @@ plugin_tip = "{title} — clique duas vezes para iniciar"
 
 [discover]
 title = "Descobrir"
-subtitle = "Rádio ao vivo do diretório comunitário radio-browser.info"
 trending = "Em alta"
 popular = "Populares"
 recent = "Adicionadas recentemente"
@@ -93,12 +92,9 @@ one = "{n} estação de fala oculta"
 other = "{n} estações de fala ocultas"
 
 [rail]
-moods = "CLIMAS"
 stars_tip = "Todas as estações que você avaliou, de qualquer categoria"
 show_talk = "Mostrar fala"
 show_talk_tip = "Mostrar estações de notícias, programas falados, esporte, religião, humor e podcasts"
-advanced = "AVANÇADO"
-advanced_tip = "Formato do stream e taxa de bits mínima"
 format = "Formato"
 min_bitrate = "Taxa de bits mínima"
 
@@ -128,12 +124,6 @@ other = "{n} votos"
 pick = "Escolha uma estação para começar a ouvir"
 save_library = "Salvar na Minha Biblioteca"
 remove_library = "Remover da Minha Biblioteca"
-surprise = "SURPRESA"
-prev = "ANTERIOR"
-play = "TOCAR"
-pause = "PAUSAR"
-stop = "PARAR"
-next = "PRÓXIMA"
 
 [info]
 now_playing = "Tocando agora"
@@ -297,3 +287,45 @@ q11 = "Transforme suas feridas em sabedoria. — Oprah Winfrey"
 q12 = "Um bom começo é metade do caminho. — Aristóteles"
 q13 = "A única sabedoria verdadeira está em saber que nada se sabe. — Sócrates"
 q14 = "A vida encolhe ou se expande na proporção da coragem de cada um. — Anaïs Nin"
+
+[cardsui]
+# Machine-translated (card redesign, 2026-10); please review.
+browse = "Explorar"
+close = "Fechar"
+expand = "Abrir o player completo"
+filter_all = "Todas"
+filter_empty = "Nenhuma estação corresponde a este filtro"
+filter_favourites = "Favoritas"
+filter_kbps = "≥{kbps} kbps"
+kbps_codec = "{kbps} kbps {codec}"
+kbps_short = "{kbps} kbps"
+list_empty = "Nenhuma estação ainda"
+loading = "Carregando…"
+menu = "Menu"
+mini_hint = "Arraste para mover · clique duas vezes para abrir o player completo"
+mini_player = "Miniplayer"
+next = "Próxima estação"
+now_line = "♪ {song}"
+now_playing = "Tocando agora"
+open_mood = "Abrir este clima como página inteira"
+pause = "Pausar"
+pick_mood = "Escolha um clima"
+play = "Tocar"
+prev = "Estação anterior"
+see_all = "Ver todas"
+stars_empty = "Avalie estações com as estrelas e elas aparecerão aqui"
+station_info = "Info da estação"
+station_info_tip = "Mostrar ou ocultar o painel de detalhes da estação"
+stop = "Parar"
+strobe_rate = "{title} · {hz} Hz"
+tune_tip = "Sintonizar Tocando agora em {mood}"
+
+[cardsui.station_count]
+# Machine-translated (card redesign, 2026-10); please review.
+one = "{n} estação"
+other = "{n} estações"
+
+[dial]
+# Machine-translated (card redesign, 2026-10); please review.
+caption = "DIAL DE CLIMA"
+hint = "Arraste ou clique num clima"

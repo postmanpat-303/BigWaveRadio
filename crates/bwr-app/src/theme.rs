@@ -3,10 +3,14 @@
 use bwr_core::settings::{Accent, Theme};
 use eframe::egui::{self, Color32};
 
-pub const SYSTEM_ACCENT_FALLBACK: [u8; 3] = [0x00, 0x78, 0xD4];
+/// BigWave brand green: the "Follow system" accent and the default look.
+pub const SYSTEM_ACCENT_FALLBACK: [u8; 3] = [0x5c, 0xc9, 0x7b];
 
-/// Resolve the accent to a concrete colour (system accent isn't directly
-/// readable without extra crates, so System uses the Windows-blue fallback).
+/// Resolve the accent to a concrete colour. The system accent isn't
+/// readable without extra crates, so System uses the brand green, which
+/// is what the card look's primary header and play button are designed
+/// around. Picking an accent recolours those primary elements; secondary
+/// headers stay amber (see widgets/cards.rs).
 pub fn accent_color(accent: Accent) -> Color32 {
     let rgb = accent.rgb().unwrap_or(SYSTEM_ACCENT_FALLBACK);
     Color32::from_rgb(rgb[0], rgb[1], rgb[2])
@@ -41,6 +45,12 @@ pub fn apply(ctx: &egui::Context, theme: Theme, accent: Accent) {
         style.visuals.widgets.active.bg_fill = a;
         style.visuals.widgets.active.weak_bg_fill = a;
         style.visuals.widgets.inactive.weak_bg_fill = Color32::TRANSPARENT;
+        // Card look: a deep page background behind the cards.
+        style.visuals.panel_fill = if style.visuals.dark_mode {
+            Color32::from_rgb(0x1b, 0x1d, 0x21)
+        } else {
+            Color32::from_rgb(0xec, 0xee, 0xf1)
+        };
     });
 }
 

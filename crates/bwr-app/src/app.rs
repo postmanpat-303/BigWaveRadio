@@ -13,10 +13,13 @@ use eframe::egui::{self, Context};
 
 use crate::pages;
 use crate::theme;
-use crate::widgets::now_playing_bar;
+use crate::pages::player::ListFilter;
+use crate::widgets::{mini_player, side_nav};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Page {
+    /// Now Playing: the player card and the dial mood's station list.
+    Player,
     Discover,
     Search,
     Library,
@@ -132,8 +135,20 @@ pub struct BigWaveApp {
     pub updater: crate::update_ui::Updater,
     /// Your Stars level filter: 0 = all rated, sorted by stars.
     pub stars_level: u8,
-    /// The rail's Advanced (format / bitrate) section is expanded.
-    pub advanced_open: bool,
+    /// Mood the Now Playing dial is tuned to (index into `moods.moods`).
+    pub dial_mood: usize,
+    /// Fetched mood lists (filters applied server-side), keyed by mood index.
+    pub mood_cache: std::collections::HashMap<usize, Vec<Station>>,
+    /// Mood lists requested and not yet answered.
+    pub mood_pending: std::collections::HashSet<usize>,
+    /// Browse page asked for every tile's list already.
+    moods_prefetched: bool,
+    /// Stations card filter pill on Now Playing.
+    pub list_filter: ListFilter,
+    /// Right-hand station info panel shown.
+    pub show_info: bool,
+    /// Mini player open.
+    pub mini_open: bool,
     /// Rated uuids already requested from the network (dedupe fetches).
     pub rated_inflight: std::collections::HashSet<String>,
     pub player: Player,
@@ -453,7 +468,7 @@ impl BigWaveApp {
         let tray = crate::tray::Tray::new();
 
         let plugins = crate::plugin_bridge::PluginBridge::new(crate::i18n::current().code());
-        let app = Self {
+        let mut app = Self {
             settings,
             ui_prefs,
             quote: session_quote(),
@@ -463,10 +478,16 @@ impl BigWaveApp {
             discovery: bwr_core::DiscoveryState::load(),
             updater: crate::update_ui::Updater::new(),
             stars_level: 0,
-            advanced_open: false,
+            dial_mood: 0,
+            mood_cache: std::collections::HashMap::new(),
+            mood_pending: std::collections::HashSet::new(),
+            moods_prefetched: false,
+            list_filter: ListFilter::default(),
+            show_info: false,
+            mini_open: false,
             rated_inflight: std::collections::HashSet::new(),
             player,
-            page: Page::Discover,
+            page: Page::Player,
             discover_tab: DiscoverTab::Trending,
             library_tab: LibraryTab::Favourites,
             stations: Vec::new(),
@@ -514,7 +535,9 @@ impl BigWaveApp {
             first_frame: true,
             plugins,
         };
+        app.dial_mood = app.moods.moods.iter().position(|m| m.id == "chill").unwrap_or(0);
         theme::apply(&app.ctx, app.settings.theme, app.settings.accent);
+        crate::i18n::ensure_fonts(&app.ctx);
         // Per-session motivational quote in the window title, after the app name.
         cc.egui_ctx
             .send_viewport_cmd(egui::ViewportCommand::Title(window_title(app.quote)));
@@ -527,6 +550,9 @@ impl BigWaveApp {
         self.status = t!("status.connecting").into();
         self.song_title = None;
         self.current = Some(station.clone());
+        if let Page::Mood(i) = self.page {
+            self.dial_mood = i;
+        }
         self.player.play(&station.stream_url);
         self.is_playing = true;
         self.discovery.note_played(&station);
@@ -558,29 +584,130 @@ impl BigWaveApp {
         }
     }
 
+    // Used by the Windows tray and media flyout.
+    #[cfg_attr(not(windows), allow(dead_code))]
     pub fn can_go_previous(&self) -> bool {
         self.queue_index().is_some_and(|i| i > 0)
     }
 
+    #[cfg_attr(not(windows), allow(dead_code))]
     pub fn can_go_next(&self) -> bool {
-        self.queue_index().is_some_and(|i| i + 1 < self.stations.len())
+        self.queue_index().is_some_and(|i| i + 1 < self.play_queue().len())
     }
 
     pub fn previous_station(&mut self) {
         if let Some(i) = self.queue_index() {
             if i > 0 {
-                let station = self.stations[i - 1].clone();
+                let station = self.play_queue()[i - 1].clone();
                 self.play_station(station);
             }
         }
     }
 
     pub fn next_station(&mut self) {
+        let queue = self.play_queue();
         if let Some(i) = self.queue_index() {
-            if i + 1 < self.stations.len() {
-                let station = self.stations[i + 1].clone();
-                self.play_station(station);
+            if i + 1 < queue.len() {
+                self.play_station(queue[i + 1].clone());
             }
+        }
+    }
+
+    /// The list prev/next walk: what's on screen, plus the Stations card
+    /// filter pill on Now Playing.
+    pub fn play_queue(&self) -> Vec<Station> {
+        let list = self.visible_stations();
+        if self.page == Page::Player {
+            let f = self.list_filter;
+            list.into_iter().filter(|s| f.accepts(self, s)).collect()
+        } else {
+            list
+        }
+    }
+
+    /// The player card's arrows: step through the queue, wrapping round;
+    /// starts at the top when the current station isn't in it.
+    pub fn step_station(&mut self, forward: bool) {
+        let queue = self.play_queue();
+        if queue.is_empty() {
+            return;
+        }
+        let n = queue.len();
+        let next = match self.queue_index() {
+            Some(i) if forward => (i + 1) % n,
+            Some(i) => (i + n - 1) % n,
+            None => 0,
+        };
+        self.play_station(queue[next].clone());
+    }
+
+    /// Tune the Now Playing dial to a mood: its list comes from the cache,
+    /// or is fetched.
+    pub fn tune_mood(&mut self, idx: usize) {
+        if idx >= self.moods.moods.len() {
+            return;
+        }
+        self.dial_mood = idx;
+        if self.page != Page::Player {
+            return;
+        }
+        if let Some(list) = self.mood_cache.get(&idx) {
+            self.stations = list.clone();
+            self.loading = !self.mood_pending.is_empty();
+        } else {
+            self.stations.clear();
+            self.fetch_mood(idx);
+        }
+    }
+
+    /// Request a mood list unless one is already in flight.
+    fn fetch_mood(&mut self, idx: usize) {
+        let Some(mood) = self.moods.moods.get(idx).cloned() else { return };
+        if self.mood_pending.insert(idx) {
+            self.loading = true;
+            let _ = self.job_tx.send(NetJob::Mood { idx, mood });
+        }
+    }
+
+    /// Ask for every mood tile's list once (Browse page).
+    pub fn prefetch_moods(&mut self) {
+        if self.moods_prefetched {
+            return;
+        }
+        self.moods_prefetched = true;
+        for idx in crate::widgets::mood_dial::slots(&self.moods.moods) {
+            if !self.mood_cache.contains_key(&idx) {
+                self.fetch_mood(idx);
+            }
+        }
+    }
+
+    /// A cached mood list with the talk filter applied (None until fetched).
+    pub fn mood_stations(&self, idx: usize) -> Option<Vec<Station>> {
+        let list = self.mood_cache.get(&idx)?;
+        Some(
+            list.iter()
+                .filter(|s| self.discovery.show_talk || !self.moods.is_talk(s))
+                .cloned()
+                .collect(),
+        )
+    }
+
+    /// Codec / bitrate filter changed: cached mood lists are stale.
+    pub fn filters_changed(&mut self) {
+        self.mood_cache.clear();
+        self.mood_pending.clear();
+        self.moods_prefetched = false;
+        match self.page {
+            Page::Player => {
+                let idx = self.dial_mood;
+                self.tune_mood(idx);
+            }
+            Page::Discover => {
+                self.reload_current_list();
+                self.prefetch_moods();
+            }
+            _ => self.reload_current_list(),
         }
     }
 
@@ -622,6 +749,7 @@ impl BigWaveApp {
         self.status = t!("status.finding").into();
         let tags = match self.page {
             Page::Mood(i) if i < self.moods.moods.len() => self.moods.moods[i].tags.clone(),
+            Page::Player if self.dial_mood < self.moods.moods.len() => self.moods.moods[self.dial_mood].tags.clone(),
             _ => self.moods.all_mood_tags(),
         };
         let mood_tags: std::collections::HashSet<String> =
@@ -682,13 +810,18 @@ impl BigWaveApp {
 
     /// Open a mood chip's results.
     pub fn open_mood(&mut self, idx: usize) {
-        let Some(mood) = self.moods.moods.get(idx) else { return };
-        let mood = mood.clone();
+        if idx >= self.moods.moods.len() {
+            return;
+        }
         self.page = Page::Mood(idx);
+        self.dial_mood = idx;
         self.browse_selection = None;
-        self.stations.clear();
-        self.loading = true;
-        let _ = self.job_tx.send(NetJob::Mood { idx, mood });
+        if let Some(list) = self.mood_cache.get(&idx) {
+            self.stations = list.clone();
+        } else {
+            self.stations.clear();
+            self.fetch_mood(idx);
+        }
     }
 
     /// Talk/news/sport stations are hidden unless "Show talk" is on.
@@ -802,7 +935,7 @@ impl BigWaveApp {
 
     fn queue_index(&self) -> Option<usize> {
         let current = self.current.as_ref()?;
-        self.stations.iter().position(|s| s.uuid == current.uuid)
+        self.play_queue().iter().position(|s| s.uuid == current.uuid)
     }
 
     fn apply_result(&mut self, result: NetResult) {
@@ -814,7 +947,7 @@ impl BigWaveApp {
                 // results with Trending).
                 if matches!(
                     self.page,
-                    Page::Mood(_) | Page::Stars | Page::Library | Page::Plugins | Page::PluginPage(_) | Page::Settings | Page::About
+                    Page::Player | Page::Mood(_) | Page::Stars | Page::Library | Page::Plugins | Page::PluginPage(_) | Page::Settings | Page::About
                 ) {
                     self.search_pending = false;
                     return;
@@ -834,8 +967,11 @@ impl BigWaveApp {
                 }
             }
             NetResult::Mood(idx, stations) => {
-                // Ignore a late result for a mood the user already left.
-                if self.page == Page::Mood(idx) {
+                // Cache every answer (Browse tiles, the dial); show it only
+                // where that mood is still on screen.
+                self.mood_pending.remove(&idx);
+                self.mood_cache.insert(idx, stations.clone());
+                if self.page == Page::Mood(idx) || (self.page == Page::Player && self.dial_mood == idx) {
                     self.stations = stations;
                 }
             }
@@ -877,12 +1013,19 @@ impl BigWaveApp {
                 }
             }
             NetResult::Failed(message) => {
+                // Can't tell which request failed: let any mood be asked again.
+                self.mood_pending.clear();
+                self.moods_prefetched = false;
                 if self.stations.is_empty() {
                     self.status = t!("status.error", error = message);
                 } else if self.status == t!("status.finding") {
                     self.status = t!("status.no_match").into();
                 }
             }
+        }
+        // Other mood lists are still on their way.
+        if !self.mood_pending.is_empty() {
+            self.loading = true;
         }
     }
 }
@@ -1046,11 +1189,19 @@ impl eframe::App for BigWaveApp {
     }
 
     fn update(&mut self, ctx: &Context, frame: &mut eframe::Frame) {
-        crate::i18n::ensure_script_fonts(ctx);
+        crate::i18n::ensure_fonts(ctx);
         if self.first_frame {
             self.first_frame = false;
-            self.loading = true;
-            let _ = self.job_tx.send(NetJob::Discover(self.discover_tab));
+            match self.page {
+                Page::Player => {
+                    let idx = self.dial_mood;
+                    self.tune_mood(idx);
+                }
+                _ => {
+                    self.loading = true;
+                    let _ = self.job_tx.send(NetJob::Discover(self.discover_tab));
+                }
+            }
         }
 
         // --- Network results -------------------------------------------------
@@ -1284,175 +1435,22 @@ impl eframe::App for BigWaveApp {
         crate::plugin_bridge::pre_frame(self, ctx);
 
         // --- Layout ---------------------------------------------------------------
-        egui::TopBottomPanel::top("title-search").show(ctx, |ui| {
-            ui.painter().rect_filled(
-                ui.max_rect(),
-                0.0,
-                theme::chrome_fill(ui.ctx(), self.settings.theme),
-            );
-            ui.add_space(4.0);
-            ui.horizontal(|ui| {
-                ui.label(egui::RichText::new("🔍").size(16.0));
-                let width = (ui.available_width() - 56.0)
-                    .clamp(200.0, 560.0);
-                let response = ui.add(
-                    egui::TextEdit::singleline(&mut self.query)
-                        .hint_text(t!("top.search_hint"))
-                        .desired_width(width),
-                );
-                if response.changed() {
-                    self.page = Page::Search;
-                    self.last_keystroke = Some(Instant::now());
-                }
-
-                // 🎲 Surprise me — random station, honouring the quality filter.
-                if ui
-                    .button(egui::RichText::new("🎲").size(16.0))
-                    .on_hover_text(t!("top.surprise_tip"))
-                    .clicked()
-                {
-                    self.surprise();
-                }
-
-                // Recent searches popup under the field.
-                let popup_id = ui.make_persistent_id("search-history");
-                // Focus opens the popup; it then stays open until a pick,
-                // typing or a click outside (see search_history.rs for the
-                // root cause of the old "click does nothing" bug).
-                let was_open = ui.memory(|mem| mem.is_popup_open(popup_id));
-                let show_history = crate::search_history::popup_open(
-                    was_open,
-                    response.has_focus(),
-                    self.query.is_empty(),
-                    !self.settings.search_history.is_empty(),
-                );
-                ui.memory_mut(|mem| {
-                    if show_history {
-                        mem.open_popup(popup_id);
-                    } else if mem.is_popup_open(popup_id) {
-                        mem.close_popup();
-                    }
-                });
-                let history = self.settings.search_history.clone();
-                egui::popup::popup_below_widget(
-                    ui,
-                    popup_id,
-                    &response,
-                    egui::popup::PopupCloseBehavior::CloseOnClickOutside,
-                    |ui| {
-                        ui.set_min_width(240.0);
-                        ui.label(egui::RichText::new(t!("top.recent")).small().weak());
-                        for q in history {
-                            let mut remove = false;
-                            let picked = ui
-                                .horizontal(|ui| {
-                                    let picked = ui
-                                        .selectable_label(false, format!("🕘  {q}"))
-                                        .clicked();
-                                    if ui
-                                        .add(egui::Button::new("🗙").small().frame(false))
-                                        .on_hover_text(t!("top.remove"))
-                                        .clicked()
-                                    {
-                                        remove = true;
-                                    }
-                                    picked
-                                })
-                                .inner;
-                            if remove {
-                                self.settings
-                                    .search_history
-                                    .retain(|h| !h.eq_ignore_ascii_case(&q));
-                                self.settings.save();
-                            }
-                            if picked {
-                                let pick = crate::search_history::pick(
-                                    &q,
-                                    &mut self.settings.search_history,
-                                    bwr_core::settings::MAX_SEARCH_HISTORY,
-                                );
-                                self.settings.save();
-                                self.run_search_now(pick.query);
-                                ui.memory_mut(|m| m.close_popup());
-                            }
-                        }
-                        if ui.add(egui::Button::new(t!("top.clear_history")).small()).clicked() {
-                            self.settings.search_history.clear();
-                            self.settings.save();
-                            ui.memory_mut(|m| m.close_popup());
-                        }
-                    },
-                );
-            });
-            ui.add_space(2.0);
-        });
-
+        let pal = crate::widgets::cards::Pal::new(ctx, self);
         egui::SidePanel::left("nav")
             .resizable(false)
-            .exact_width(188.0)
-            .show(ctx, |ui| {
-                ui.painter().rect_filled(
-                    ui.max_rect(),
-                    0.0,
-                    theme::chrome_fill(ui.ctx(), self.settings.theme),
-                );
-                ui.add_space(8.0);
-                // Nav scrolls when the window is short so the filter block
-                // below (which is bottom-anchored) never gets pushed out.
-                let reserve = crate::widgets::mood_rail::reserved_height(self);
-                egui::ScrollArea::vertical()
-                    .id_salt("nav-scroll")
-                    .auto_shrink([false, false])
-                    .max_height((ui.available_height() - reserve).max(72.0))
-                    .show(ui, |ui| {
-                        nav_button(ui, self, Page::Discover, &format!("🏠  {}", t!("nav.discover")));
-                        nav_button(ui, self, Page::Search, &format!("🔎  {}", t!("nav.search")));
-                        nav_button(ui, self, Page::Library, &format!("★  {}", t!("nav.library")));
-                        ui.add_space(4.0);
-                        ui.separator();
-                        ui.add_space(4.0);
-                        nav_button(ui, self, Page::Tags, &format!("🏷  {}", t!("nav.tags")));
-                        nav_button(ui, self, Page::Countries, &format!("🗺  {}", t!("nav.countries")));
-                        ui.add_space(4.0);
-                        ui.separator();
-                        ui.add_space(4.0);
-                        for (i, (pid, pg)) in self.plugins.pages.clone().into_iter().enumerate() {
-                            let icon = if pg.icon.is_empty() { "🔌".to_string() } else { pg.icon.clone() };
-                            let hint = self.plugins.hotkey_hint(&pid).map(|k| format!("   {k}")).unwrap_or_default();
-                            let title = pg.title_for(crate::i18n::current().code()).to_string();
-                            let resp = nav_button(ui, self, Page::PluginPage(i), &format!("{icon}  {title}{hint}"));
-                            resp.clone().on_hover_text(t!("nav.plugin_tip", title = title));
-                            // Double-click a plugin in the side menu to start it
-                            // (prefers an action named "start", else its first action).
-                            if resp.double_clicked() {
-                                let actions: Vec<String> = self.plugins.host.hotkeys()
-                                    .into_iter()
-                                    .filter(|(id, _)| id == &pid)
-                                    .map(|(_, h)| h.action)
-                                    .collect();
-                                let action = actions.iter().find(|a| *a == "start").cloned()
-                                    .or_else(|| actions.first().cloned());
-                                if let Some(a) = action {
-                                    self.plugins.host.trigger_action(&pid, &a);
-                                }
-                            }
-                        }
-                        nav_button(ui, self, Page::Plugins, &format!("🔌  {}", t!("nav.plugins")));
-                        nav_button(ui, self, Page::Settings, &format!("⚙  {}", t!("nav.settings")));
-                        nav_button(ui, self, Page::About, &format!("ℹ  {}", t!("nav.about")));
-                    });
+            .exact_width(side_nav::WIDTH)
+            .frame(egui::Frame::NONE.fill(pal.nav).inner_margin(egui::Margin::symmetric(10, 0)))
+            .show(ctx, |ui| side_nav::show(ui, self));
 
-                ui.add_space(6.0);
-                crate::widgets::mood_rail::rail(ui, self);
-            });
+        // The compact strip stands in for the player card on other pages.
+        if self.page != Page::Player {
+            egui::TopBottomPanel::bottom("now-playing")
+                .exact_height(mini_player::STRIP_H)
+                .frame(egui::Frame::NONE.fill(pal.card))
+                .show(ctx, |ui| mini_player::strip(ui, self));
+        }
 
-        egui::TopBottomPanel::bottom("now-playing")
-            .exact_height(92.0)
-            .show(ctx, |ui| {
-                now_playing_bar::bar(ui, self);
-            });
-
-        if self.current.is_some() {
+        if self.current.is_some() && self.show_info {
             egui::SidePanel::right("station-info")
                 .resizable(false)
                 .default_width(250.0)
@@ -1471,12 +1469,20 @@ impl eframe::App for BigWaveApp {
                 });
         }
 
-        egui::CentralPanel::default().show(ctx, |ui| {
+        // Card pages paint edge to edge on the page background.
+        let card_page = matches!(self.page, Page::Player | Page::Discover);
+        let central = if card_page {
+            egui::Frame::NONE.fill(pal.bg)
+        } else {
+            egui::Frame::central_panel(&ctx.style())
+        };
+        egui::CentralPanel::default().frame(central).show(ctx, |ui| {
             // Mica-style material behind the page content (Windows 11).
-            if theme::win11_material() {
+            if !card_page && theme::win11_material() {
                 theme::paint_material(ui.ctx(), self.settings.theme, self.settings.accent, ui.max_rect());
             }
             match self.page {
+                Page::Player => pages::player::ui(ui, self),
                 Page::Discover => pages::discover::ui(ui, self),
                 Page::Search => pages::search::ui(ui, self),
                 Page::Library => pages::library::ui(ui, self),
@@ -1490,6 +1496,7 @@ impl eframe::App for BigWaveApp {
                 Page::Stars => pages::moods::stars_page(ui, self),
             }
         });
+        mini_player::show(ctx, self);
         self.updater.poll(ctx);
         crate::update_ui::show(ctx, &mut self.updater, theme::accent_color(self.settings.accent));
         crate::plugin_bridge::post_frame(self, ctx);
@@ -1508,48 +1515,4 @@ impl eframe::App for BigWaveApp {
             ctx.request_repaint();
         }
     }
-}
-
-fn nav_button(ui: &mut egui::Ui, app: &mut BigWaveApp, page: Page, label: &str) -> egui::Response {
-    let selected = app.page == page;    let button = egui::Button::new(egui::RichText::new(label).size(14.0))
-        .selected(selected)
-        .min_size(egui::vec2(ui.available_width(), 30.0));
-    let response = ui.add(button);
-    if response.clicked() && !selected {
-        app.page = page;
-        app.browse_selection = None;
-        match page {
-            Page::Discover => app.reload_current_list(),
-            Page::Library | Page::Settings => {
-                app.stations.clear();
-            }
-            Page::Plugins | Page::PluginPage(_) => {}
-            Page::Mood(i) => app.open_mood(i),
-            Page::Stars => app.stations.clear(),
-            Page::Search => {
-                // Tags back the idle "pick a vibe" chips — fetch on first visit
-                // rather than at startup so they never block playback actions.
-                if app.tags.is_empty() {
-                    app.loading = true;
-                    let _ = app.job_tx.send(NetJob::Tags);
-                }
-            }
-            Page::Tags => {
-                app.stations.clear();
-                if app.tags.is_empty() {
-                    app.loading = true;
-                    let _ = app.job_tx.send(NetJob::Tags);
-                }
-            }
-            Page::Countries => {
-                app.stations.clear();
-                if app.countries.is_empty() {
-                    app.loading = true;
-                    let _ = app.job_tx.send(NetJob::Countries);
-                }
-            }
-            Page::About => app.stations.clear(),
-        }
-    }
-    response
 }

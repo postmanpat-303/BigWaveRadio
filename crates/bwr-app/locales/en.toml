@@ -46,7 +46,6 @@ plugin_tip = "{title} — double-click to start"
 
 [discover]
 title = "Discover"
-subtitle = "Live radio from the community-powered radio-browser.info directory"
 trending = "Trending"
 popular = "Popular"
 recent = "Recently added"
@@ -97,12 +96,9 @@ one = "{n} talk station hidden"
 other = "{n} talk stations hidden"
 
 [rail]
-moods = "MOODS"
 stars_tip = "Every station you rated, from any category"
 show_talk = "Show talk"
 show_talk_tip = "Show news, talk, sport, religion, comedy and podcast stations"
-advanced = "ADVANCED"
-advanced_tip = "Stream format and minimum bitrate"
 format = "Format"
 min_bitrate = "Minimum bitrate"
 
@@ -133,12 +129,6 @@ pick = "Pick a station to start listening"
 save_library = "Save to My Library"
 remove_library = "Remove from My Library"
 # Captions under the transport buttons: keep them short (about 8 letters).
-surprise = "SURPRISE"
-prev = "PREV"
-play = "PLAY"
-pause = "PAUSE"
-stop = "STOP"
-next = "NEXT"
 
 [info]
 now_playing = "Now playing"
@@ -305,3 +295,43 @@ q11 = "Turn your wounds into wisdom. — Oprah Winfrey"
 q12 = "Well begun is half done. — Aristotle"
 q13 = "The only true wisdom is in knowing you know nothing. — Socrates"
 q14 = "Life shrinks or expands in proportion to one's courage. — Anaïs Nin"
+
+[cardsui]
+# Card redesign: Now Playing, Browse, the compact strip and the mini player.
+browse = "Browse"
+close = "Close"
+expand = "Open the full player"
+filter_all = "All"
+filter_empty = "No stations match this filter"
+filter_favourites = "Favourites"
+filter_kbps = "≥{kbps} kbps"
+kbps_codec = "{kbps} kbps {codec}"
+kbps_short = "{kbps} kbps"
+list_empty = "No stations yet"
+loading = "Loading…"
+menu = "Menu"
+mini_hint = "Drag to move · double-click to open the full player"
+mini_player = "Mini player"
+next = "Next station"
+now_line = "♪ {song}"
+now_playing = "Now Playing"
+open_mood = "Open this mood as a full page"
+pause = "Pause"
+pick_mood = "Pick a mood"
+play = "Play"
+prev = "Previous station"
+see_all = "See all"
+stars_empty = "Rate stations with the stars and they'll show up here"
+station_info = "Station info"
+station_info_tip = "Show or hide the station details panel"
+stop = "Stop"
+strobe_rate = "{title} · {hz} Hz"
+tune_tip = "Tune Now Playing to {mood}"
+
+[cardsui.station_count]
+one = "{n} station"
+other = "{n} stations"
+
+[dial]
+caption = "MOOD DIAL"
+hint = "Drag or click a mood"

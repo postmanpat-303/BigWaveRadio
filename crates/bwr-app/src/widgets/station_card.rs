@@ -220,7 +220,7 @@ fn card(ui: &mut Ui, station: &Station, app: &mut BigWaveApp, m: &Metrics, width
 
 /// "Country · Language · MP3 · 128 kbps · 42 votes" card subtitle (the
 /// translated twin of `Station::summary_line`).
-fn summary_line(s: &bwr_core::Station) -> String {
+pub(crate) fn summary_line(s: &bwr_core::Station) -> String {
     let mut parts: Vec<String> = [s.country.trim(), s.language.trim()]
         .into_iter()
         .filter(|p| !p.is_empty())

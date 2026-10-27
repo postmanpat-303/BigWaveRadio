@@ -242,38 +242,96 @@ pub fn tr_plural(one: &'static str, other: &'static str, n: i64, args: &[(&str, 
     fill(lookup(lang, key), &all)
 }
 
-/// egui's bundled fonts cover Latin, Greek and Cyrillic only. Chinese,
-/// Devanagari and Arabic text needs a system font, loaded on first use of a
-/// language that requires it (one `set_fonts` call, then a cheap flag check
-/// per frame). Missing files are skipped gracefully.
-pub fn ensure_script_fonts(ctx: &egui::Context) {
+/// Font family of the big station-name readout (bundled Inter Light,
+/// SIL OFL 1.1 — see assets/fonts/Inter-OFL.txt). It falls back to the UI
+/// fonts, so names in other scripts still render.
+pub const READOUT_FAMILY: &str = "readout";
+
+const INTER_LIGHT: &[u8] = include_bytes!("../../../assets/fonts/Inter-Light.ttf");
+
+/// Candidate system fonts per script: Windows first, then common Linux and
+/// macOS locations. `(path, face index in a collection)`.
+fn script_font_candidates(lang: Lang) -> &'static [(&'static str, u32)] {
+    match lang {
+        Lang::ZhCn => &[
+            (r"C:\Windows\Fonts\msyh.ttc", 0),
+            ("/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc", 2),
+            ("/usr/share/fonts/noto-cjk/NotoSansCJK-Regular.ttc", 2),
+            ("/usr/share/fonts/google-noto-cjk/NotoSansCJK-Regular.ttc", 2),
+            ("/usr/share/fonts/truetype/wqy/wqy-microhei.ttc", 0),
+            ("/System/Library/Fonts/PingFang.ttc", 0),
+        ],
+        Lang::Hi => &[
+            (r"C:\Windows\Fonts\Nirmala.ttc", 0),
+            ("/usr/share/fonts/truetype/noto/NotoSansDevanagari-Regular.ttf", 0),
+            ("/usr/share/fonts/noto/NotoSansDevanagari-Regular.ttf", 0),
+            ("/usr/share/fonts/truetype/sand-box/google/Noto Sans Devanagari/NotoSansDevanagari-VariableFont_wdth,wght.ttf", 0),
+            ("/usr/share/fonts/truetype/lohit-devanagari/Lohit-Devanagari.ttf", 0),
+            ("/System/Library/Fonts/Supplemental/DevanagariMT.ttc", 0),
+        ],
+        Lang::Ar => &[
+            (r"C:\Windows\Fonts\arial.ttf", 0),
+            ("/usr/share/fonts/truetype/noto/NotoSansArabic-Regular.ttf", 0),
+            ("/usr/share/fonts/noto/NotoSansArabic-Regular.ttf", 0),
+            ("/usr/share/fonts/truetype/sand-box/google/Noto Sans Arabic/NotoSansArabic-VariableFont_wdth,wght.ttf", 0),
+            ("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 0),
+            ("/System/Library/Fonts/Supplemental/Arial.ttf", 0),
+        ],
+        _ => &[],
+    }
+}
+
+static FONT_MASK: AtomicU8 = AtomicU8::new(0);
+static SCRIPT_FONTS: std::sync::Mutex<Vec<(String, std::sync::Arc<egui::FontData>)>> =
+    std::sync::Mutex::new(Vec::new());
+
+/// Install the app fonts: egui's defaults, the bundled readout face and —
+/// because egui's bundled fonts cover Latin, Greek and Cyrillic only — a
+/// system font for Chinese, Devanagari or Arabic once a language needing
+/// it is chosen. Rebuilds only when that set grows (a cheap flag check per
+/// frame otherwise). Missing files are skipped gracefully.
+pub fn ensure_fonts(ctx: &egui::Context) {
     let lang = current();
-    let (name, path) = match lang {
-        Lang::ZhCn => ("bwr-zh", r"C:\Windows\Fonts\msyh.ttc"),
-        Lang::Hi => ("bwr-hi", r"C:\Windows\Fonts\Nirmala.ttc"),
-        Lang::Ar => ("bwr-ar", r"C:\Windows\Fonts\arial.ttf"),
-        _ => return,
+    let script_bit = match lang {
+        Lang::ZhCn | Lang::Hi | Lang::Ar => 1u8 << lang.index(),
+        _ => 0,
     };
-    static LOADED: AtomicU8 = AtomicU8::new(0);
-    let bit = 1u8 << lang.index();
-    if LOADED.load(Ordering::Relaxed) & bit != 0 {
+    let need = 0x80 | script_bit;
+    let have = FONT_MASK.load(Ordering::Relaxed);
+    if have & need == need {
         return;
     }
-    let bytes = std::fs::read(path).ok();
-    LOADED.fetch_or(bit, Ordering::Relaxed);
-    let Some(bytes) = bytes else { return };
-    let mut fonts = egui::FontDefinitions::default();
-    fonts.font_data.insert(
-        name.to_owned(),
-        std::sync::Arc::new(egui::FontData {
-            font: std::borrow::Cow::Owned(bytes),
-            index: 0,
-            tweak: Default::default(),
-        }),
-    );
-    for family in [egui::FontFamily::Proportional, egui::FontFamily::Monospace] {
-        fonts.families.entry(family).or_default().push(name.to_owned());
+    FONT_MASK.fetch_or(need, Ordering::Relaxed);
+    let mut loaded = SCRIPT_FONTS.lock().unwrap_or_else(|e| e.into_inner());
+    if script_bit != 0 {
+        let found = script_font_candidates(lang)
+            .iter()
+            .find_map(|(path, index)| std::fs::read(path).ok().map(|b| (b, *index)));
+        if let Some((bytes, index)) = found {
+            loaded.push((
+                format!("bwr-script-{}", lang.code()),
+                std::sync::Arc::new(egui::FontData {
+                    font: std::borrow::Cow::Owned(bytes),
+                    index,
+                    tweak: Default::default(),
+                }),
+            ));
+        }
     }
+    let mut fonts = egui::FontDefinitions::default();
+    for (name, data) in loaded.iter() {
+        fonts.font_data.insert(name.clone(), data.clone());
+        for family in [egui::FontFamily::Proportional, egui::FontFamily::Monospace] {
+            fonts.families.entry(family).or_default().push(name.clone());
+        }
+    }
+    fonts.font_data.insert(
+        "bwr-inter-light".to_owned(),
+        std::sync::Arc::new(egui::FontData::from_static(INTER_LIGHT)),
+    );
+    let mut readout = vec!["bwr-inter-light".to_owned()];
+    readout.extend(fonts.families.get(&egui::FontFamily::Proportional).cloned().unwrap_or_default());
+    fonts.families.insert(egui::FontFamily::Name(READOUT_FAMILY.into()), readout);
     ctx.set_fonts(fonts);
 }
 

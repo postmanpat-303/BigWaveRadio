@@ -43,7 +43,6 @@ plugin_tip = "{title} — انقر نقرًا مزدوجًا للبدء"
 
 [discover]
 title = "اكتشف"
-subtitle = "راديو مباشر من دليل radio-browser.info الذي يديره المجتمع"
 trending = "الرائج"
 popular = "الأكثر شهرة"
 recent = "أُضيفت مؤخرًا"
@@ -94,12 +93,9 @@ one = "{n} محطة حوارية مخفية"
 other = "{n} محطات حوارية مخفية"
 
 [rail]
-moods = "المزاجيات"
 stars_tip = "كل محطة قيّمتها، من أي فئة"
 show_talk = "إظهار الحوارية"
 show_talk_tip = "إظهار محطات الأخبار والحوارات والرياضة والدين والكوميديا والبودكاست"
-advanced = "متقدم"
-advanced_tip = "صيغة البث وأدنى معدل بت"
 format = "الصيغة"
 min_bitrate = "أدنى معدل بت"
 
@@ -129,12 +125,6 @@ other = "{n} أصوات"
 pick = "اختر محطة لتبدأ الاستماع"
 save_library = "حفظ في مكتبتي"
 remove_library = "إزالة من مكتبتي"
-surprise = "فاجئني"
-prev = "السابق"
-play = "تشغيل"
-pause = "إيقاف مؤقت"
-stop = "إيقاف"
-next = "التالي"
 
 [info]
 now_playing = "يُشغَّل الآن"
@@ -298,3 +288,45 @@ q11 = "حوّل جراحك إلى حكمة. — أوبرا وينفري"
 q12 = "البداية الحسنة نصف العمل. — أرسطو"
 q13 = "الحكمة الحقيقية الوحيدة هي أن تعرف أنك لا تعرف شيئًا. — سقراط"
 q14 = "تنكمش الحياة أو تتسع بقدر شجاعتك. — أنيس نين"
+
+[cardsui]
+# Machine-translated (card redesign, 2026-10); please review.
+browse = "تصفّح"
+close = "إغلاق"
+expand = "فتح المشغّل الكامل"
+filter_all = "الكل"
+filter_empty = "لا توجد محطات تطابق هذا المرشّح"
+filter_favourites = "المفضّلة"
+filter_kbps = "≥{kbps} kbps"
+kbps_codec = "{kbps} kbps {codec}"
+kbps_short = "{kbps} kbps"
+list_empty = "لا توجد محطات بعد"
+loading = "جارٍ التحميل…"
+menu = "القائمة"
+mini_hint = "اسحب للتحريك · انقر نقرًا مزدوجًا لفتح المشغّل الكامل"
+mini_player = "المشغّل المصغّر"
+next = "المحطة التالية"
+now_line = "♪ {song}"
+now_playing = "يُشغَّل الآن"
+open_mood = "فتح هذا المزاج في صفحة كاملة"
+pause = "إيقاف مؤقت"
+pick_mood = "اختر مزاجًا"
+play = "تشغيل"
+prev = "المحطة السابقة"
+see_all = "عرض الكل"
+stars_empty = "قيّم المحطات بالنجوم وستظهر هنا"
+station_info = "معلومات المحطة"
+station_info_tip = "إظهار لوحة تفاصيل المحطة أو إخفاؤها"
+stop = "إيقاف"
+strobe_rate = "{title} · {hz} Hz"
+tune_tip = "اضبط «يُشغَّل الآن» على {mood}"
+
+[cardsui.station_count]
+# Machine-translated (card redesign, 2026-10); please review.
+one = "{n} محطة"
+other = "{n} محطات"
+
+[dial]
+# Machine-translated (card redesign, 2026-10); please review.
+caption = "قرص المزاج"
+hint = "اسحب مزاجًا أو انقر عليه"

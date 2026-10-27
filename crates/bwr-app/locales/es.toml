@@ -43,7 +43,6 @@ plugin_tip = "{title} — doble clic para iniciar"
 
 [discover]
 title = "Descubrir"
-subtitle = "Radio en directo desde el directorio radio-browser.info, mantenido por la comunidad"
 trending = "Tendencias"
 popular = "Popular"
 recent = "Añadidas recientemente"
@@ -94,12 +93,9 @@ one = "{n} emisora de charla oculta"
 other = "{n} emisoras de charla ocultas"
 
 [rail]
-moods = "AMBIENTES"
 stars_tip = "Todas las emisoras que valoraste, de cualquier categoría"
 show_talk = "Mostrar charla"
 show_talk_tip = "Mostrar emisoras de noticias, charla, deporte, religión, comedia y pódcast"
-advanced = "AVANZADO"
-advanced_tip = "Formato de transmisión y bitrate mínimo"
 format = "Formato"
 min_bitrate = "Bitrate mínimo"
 
@@ -129,12 +125,6 @@ other = "{n} votos"
 pick = "Elige una emisora para empezar a escuchar"
 save_library = "Guardar en Mi biblioteca"
 remove_library = "Quitar de Mi biblioteca"
-surprise = "SORPRÉNDEME"
-prev = "ANTERIOR"
-play = "REPRODUCIR"
-pause = "PAUSAR"
-stop = "DETENER"
-next = "SIGUIENTE"
 
 [info]
 now_playing = "Sonando ahora"
@@ -298,3 +288,45 @@ q11 = "Convierte tus heridas en sabiduría. — Oprah Winfrey"
 q12 = "El buen comienzo es la mitad del trabajo. — Aristóteles"
 q13 = "La única verdadera sabiduría es saber que no sabes nada. — Sócrates"
 q14 = "La vida se encoge o se expande en proporción a tu coraje. — Anaïs Nin"
+
+[cardsui]
+# Machine-translated (card redesign, 2026-10); please review.
+browse = "Explorar"
+close = "Cerrar"
+expand = "Abrir el reproductor completo"
+filter_all = "Todas"
+filter_empty = "Ninguna emisora coincide con este filtro"
+filter_favourites = "Favoritas"
+filter_kbps = "≥{kbps} kbps"
+kbps_codec = "{kbps} kbps {codec}"
+kbps_short = "{kbps} kbps"
+list_empty = "Aún no hay emisoras"
+loading = "Cargando…"
+menu = "Menú"
+mini_hint = "Arrastra para mover · doble clic para abrir el reproductor completo"
+mini_player = "Minirreproductor"
+next = "Emisora siguiente"
+now_line = "♪ {song}"
+now_playing = "Sonando ahora"
+open_mood = "Abrir este ambiente como página completa"
+pause = "Pausa"
+pick_mood = "Elige un ambiente"
+play = "Reproducir"
+prev = "Emisora anterior"
+see_all = "Ver todas"
+stars_empty = "Valora emisoras con las estrellas y aparecerán aquí"
+station_info = "Info de la emisora"
+station_info_tip = "Mostrar u ocultar el panel de detalles de la emisora"
+stop = "Detener"
+strobe_rate = "{title} · {hz} Hz"
+tune_tip = "Sintonizar Sonando ahora en {mood}"
+
+[cardsui.station_count]
+# Machine-translated (card redesign, 2026-10); please review.
+one = "{n} emisora"
+other = "{n} emisoras"
+
+[dial]
+# Machine-translated (card redesign, 2026-10); please review.
+caption = "DIAL DE AMBIENTE"
+hint = "Arrastra o haz clic en un ambiente"

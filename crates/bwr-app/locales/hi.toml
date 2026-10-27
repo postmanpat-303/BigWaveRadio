@@ -43,7 +43,6 @@ plugin_tip = "{title} — शुरू करने के लिए डबल-�
 
 [discover]
 title = "खोज"
-subtitle = "समुदाय-संचालित radio-browser.info निर्देशिका से लाइव रेडियो"
 trending = "ट्रेंडिंग"
 popular = "लोकप्रिय"
 recent = "हाल ही में जुड़े"
@@ -94,12 +93,9 @@ one = "{n} टॉक स्टेशन छिपाया गया"
 other = "{n} टॉक स्टेशन छिपाए गए"
 
 [rail]
-moods = "मूड"
 stars_tip = "आपके द्वारा रेट किए गए सभी स्टेशन, किसी भी श्रेणी से"
 show_talk = "टॉक दिखाएँ"
 show_talk_tip = "समाचार, टॉक, खेल, धर्म, कॉमेडी और पॉडकास्ट स्टेशन दिखाएँ"
-advanced = "एडवांस्ड"
-advanced_tip = "स्ट्रीम फ़ॉर्मेट और न्यूनतम बिटरेट"
 format = "फ़ॉर्मेट"
 min_bitrate = "न्यूनतम बिटरेट"
 
@@ -129,12 +125,6 @@ other = "{n} वोट"
 pick = "सुनना शुरू करने के लिए एक स्टेशन चुनें"
 save_library = "मेरे संग्रह में सहेजें"
 remove_library = "मेरे संग्रह से हटाएँ"
-surprise = "सरप्राइज़"
-prev = "पिछला"
-play = "चलाएँ"
-pause = "रोकें"
-stop = "बंद करें"
-next = "अगला"
 
 [info]
 now_playing = "अभी चल रहा है"
@@ -298,3 +288,45 @@ q11 = "अपने ज़ख़्मों को ज्ञान में �
 q12 = "अच्छी शुरुआत आधा काम है। — अरस्तू"
 q13 = "सच्ची बुद्धि यही है कि हमें पता है कि हम कुछ नहीं जानते। — सुकरात"
 q14 = "जीवन साहस के अनुपात में सिकुड़ता या फैलता है। — अनेस निन"
+
+[cardsui]
+# Machine-translated (card redesign, 2026-10); please review.
+browse = "ब्राउज़ करें"
+close = "बंद करें"
+expand = "पूरा प्लेयर खोलें"
+filter_all = "सभी"
+filter_empty = "इस फ़िल्टर से कोई स्टेशन मेल नहीं खाता"
+filter_favourites = "पसंदीदा"
+filter_kbps = "≥{kbps} kbps"
+kbps_codec = "{kbps} kbps {codec}"
+kbps_short = "{kbps} kbps"
+list_empty = "अभी कोई स्टेशन नहीं"
+loading = "लोड हो रहा है…"
+menu = "मेनू"
+mini_hint = "खिसकाने के लिए खींचें · पूरा प्लेयर खोलने के लिए डबल-क्लिक करें"
+mini_player = "मिनी प्लेयर"
+next = "अगला स्टेशन"
+now_line = "♪ {song}"
+now_playing = "अभी चल रहा है"
+open_mood = "इस मूड को पूरे पेज में खोलें"
+pause = "रोकें"
+pick_mood = "मूड चुनें"
+play = "चलाएँ"
+prev = "पिछला स्टेशन"
+see_all = "सभी देखें"
+stars_empty = "सितारों से स्टेशनों को रेट करें, वे यहाँ दिखेंगे"
+station_info = "स्टेशन जानकारी"
+station_info_tip = "स्टेशन विवरण पैनल दिखाएँ या छिपाएँ"
+stop = "बंद करें"
+strobe_rate = "{title} · {hz} Hz"
+tune_tip = "अभी चल रहा है को {mood} पर ट्यून करें"
+
+[cardsui.station_count]
+# Machine-translated (card redesign, 2026-10); please review.
+one = "{n} स्टेशन"
+other = "{n} स्टेशन"
+
+[dial]
+# Machine-translated (card redesign, 2026-10); please review.
+caption = "मूड डायल"
+hint = "किसी मूड को खींचें या क्लिक करें"

@@ -43,7 +43,6 @@ plugin_tip = "{title} —— 双击启动"
 
 [discover]
 title = "发现"
-subtitle = "来自社区维护的 radio-browser.info 目录的直播电台"
 trending = "热门趋势"
 popular = "最受欢迎"
 recent = "最新收录"
@@ -94,12 +93,9 @@ one = "已隐藏 {n} 个谈话类电台"
 other = "已隐藏 {n} 个谈话类电台"
 
 [rail]
-moods = "心情"
 stars_tip = "你评分过的所有电台，来自任何分类"
 show_talk = "显示谈话类"
 show_talk_tip = "显示新闻、谈话、体育、宗教、喜剧和播客电台"
-advanced = "高级"
-advanced_tip = "流格式和最低比特率"
 format = "格式"
 min_bitrate = "最低比特率"
 
@@ -129,12 +125,6 @@ other = "{n} 票"
 pick = "选择一个电台开始收听"
 save_library = "保存到我的收藏"
 remove_library = "从我的收藏中移除"
-surprise = "随便听听"
-prev = "上一台"
-play = "播放"
-pause = "暂停"
-stop = "停止"
-next = "下一台"
 
 [info]
 now_playing = "正在播放"
@@ -298,3 +288,45 @@ q11 = "把伤痕变成智慧。—— 奥普拉·温弗瑞"
 q12 = "好的开始是成功的一半。—— 亚里士多德"
 q13 = "真正的智慧在于知道自己一无所知。—— 苏格拉底"
 q14 = "人生因勇气而收缩或舒展。—— 阿娜伊斯·宁"
+
+[cardsui]
+# Machine-translated (card redesign, 2026-10); please review.
+browse = "浏览"
+close = "关闭"
+expand = "打开完整播放器"
+filter_all = "全部"
+filter_empty = "没有符合此筛选的电台"
+filter_favourites = "收藏"
+filter_kbps = "≥{kbps} kbps"
+kbps_codec = "{kbps} kbps {codec}"
+kbps_short = "{kbps} kbps"
+list_empty = "暂无电台"
+loading = "正在加载…"
+menu = "菜单"
+mini_hint = "拖动可移动 · 双击打开完整播放器"
+mini_player = "迷你播放器"
+next = "下一个电台"
+now_line = "♪ {song}"
+now_playing = "正在播放"
+open_mood = "以整页打开此心情"
+pause = "暂停"
+pick_mood = "选择心情"
+play = "播放"
+prev = "上一个电台"
+see_all = "查看全部"
+stars_empty = "用星级为电台评分，它们就会出现在这里"
+station_info = "电台信息"
+station_info_tip = "显示或隐藏电台详情面板"
+stop = "停止"
+strobe_rate = "{title} · {hz} Hz"
+tune_tip = "将正在播放调到{mood}"
+
+[cardsui.station_count]
+# Machine-translated (card redesign, 2026-10); please review.
+one = "{n} 个电台"
+other = "{n} 个电台"
+
+[dial]
+# Machine-translated (card redesign, 2026-10); please review.
+caption = "心情旋钮"
+hint = "拖动或点击一个心情"

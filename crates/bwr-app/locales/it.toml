@@ -42,7 +42,6 @@ plugin_tip = "{title} — doppio clic per avviare"
 
 [discover]
 title = "Scopri"
-subtitle = "Radio in diretta dalla directory comunitaria radio-browser.info"
 trending = "Di tendenza"
 popular = "Popolari"
 recent = "Aggiunte di recente"
@@ -93,12 +92,9 @@ one = "{n} stazione parlata nascosta"
 other = "{n} stazioni parlate nascoste"
 
 [rail]
-moods = "ATMOSFERE"
 stars_tip = "Tutte le stazioni che hai valutato, di qualsiasi categoria"
 show_talk = "Mostra parlato"
 show_talk_tip = "Mostra stazioni di notizie, talk, sport, religione, comicità e podcast"
-advanced = "AVANZATE"
-advanced_tip = "Formato dello stream e bitrate minimo"
 format = "Formato"
 min_bitrate = "Bitrate minimo"
 
@@ -128,12 +124,6 @@ other = "{n} voti"
 pick = "Scegli una stazione da ascoltare"
 save_library = "Salva nella mia libreria"
 remove_library = "Rimuovi dalla mia libreria"
-surprise = "SORPRESA"
-prev = "PREC."
-play = "PLAY"
-pause = "PAUSA"
-stop = "STOP"
-next = "SUCC."
 
 [info]
 now_playing = "In riproduzione"
@@ -297,3 +287,45 @@ q11 = "Trasforma le tue ferite in saggezza. — Oprah Winfrey"
 q12 = "Chi ben comincia è a metà dell'opera. — Aristotele"
 q13 = "La vera saggezza sta nel sapere di non sapere. — Socrate"
 q14 = "La vita si restringe o si espande in proporzione al proprio coraggio. — Anaïs Nin"
+
+[cardsui]
+# Machine-translated (card redesign, 2026-10); please review.
+browse = "Sfoglia"
+close = "Chiudi"
+expand = "Apri il lettore completo"
+filter_all = "Tutte"
+filter_empty = "Nessuna stazione corrisponde a questo filtro"
+filter_favourites = "Preferite"
+filter_kbps = "≥{kbps} kbps"
+kbps_codec = "{kbps} kbps {codec}"
+kbps_short = "{kbps} kbps"
+list_empty = "Ancora nessuna stazione"
+loading = "Caricamento…"
+menu = "Menu"
+mini_hint = "Trascina per spostare · doppio clic per aprire il lettore completo"
+mini_player = "Mini lettore"
+next = "Stazione successiva"
+now_line = "♪ {song}"
+now_playing = "In riproduzione"
+open_mood = "Apri questo mood a pagina intera"
+pause = "Pausa"
+pick_mood = "Scegli un mood"
+play = "Riproduci"
+prev = "Stazione precedente"
+see_all = "Vedi tutte"
+stars_empty = "Vota le stazioni con le stelle e appariranno qui"
+station_info = "Info stazione"
+station_info_tip = "Mostra o nascondi il pannello dei dettagli della stazione"
+stop = "Stop"
+strobe_rate = "{title} · {hz} Hz"
+tune_tip = "Sintonizza In riproduzione su {mood}"
+
+[cardsui.station_count]
+# Machine-translated (card redesign, 2026-10); please review.
+one = "{n} stazione"
+other = "{n} stazioni"
+
+[dial]
+# Machine-translated (card redesign, 2026-10); please review.
+caption = "SELETTORE MOOD"
+hint = "Trascina o fai clic su un mood"
