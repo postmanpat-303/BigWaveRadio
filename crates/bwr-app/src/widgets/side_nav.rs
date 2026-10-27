@@ -194,7 +194,7 @@ fn language_picker(ui: &mut Ui, app: &mut BigWaveApp, pal: &Pal) {
     let system = crate::i18n::system_lang();
     let name = |c: Choice| match c {
         Choice::System => t!("settings.language_system", lang = system.native_name()),
-        Choice::Fixed(l) => l.native_name().to_string(),
+        Choice::Fixed(l) => crate::rtl::visual(l.native_name()).into_owned(),
     };
     ui.horizontal(|ui| {
         ui.add_space(10.0);

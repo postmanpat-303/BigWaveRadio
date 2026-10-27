@@ -125,20 +125,36 @@ pub fn readout_font(size: f32) -> FontId {
     FontId::new(size, egui::FontFamily::Name(crate::i18n::READOUT_FAMILY.into()))
 }
 
+/// The station name ready to paint: Arabic/Hebrew names come back joined
+/// and in visual order (see `rtl`), everything else unchanged.
+pub fn shown_name(s: &Station) -> String {
+    crate::rtl::visual(s.name.trim()).into_owned()
+}
+
+/// Join display parts with " · ", in reading order: right to left when the
+/// UI language is (so the first part sits on the right).
+pub fn join_parts(mut parts: Vec<String>, sep: &str) -> String {
+    if crate::i18n::current().is_rtl() {
+        parts.reverse();
+    }
+    parts.join(sep)
+}
+
 /// "Lounge" from "lounge,chillout,…": the station's first tag, capitalised.
 pub fn genre(s: &Station) -> String {
     let first = s.tags.split(',').map(str::trim).find(|t| !t.is_empty()).unwrap_or("");
     let mut c = first.chars();
-    match c.next() {
+    let g = match c.next() {
         Some(f) => f.to_uppercase().collect::<String>() + c.as_str(),
         None => String::new(),
-    }
+    };
+    crate::rtl::visual_string(g)
 }
 
 /// Short country label for list rows: the ISO code when the API gave one,
 /// else the country name.
 pub fn country_short(s: &Station) -> String {
-    s.country.trim().to_string()
+    crate::rtl::visual(s.country.trim()).into_owned()
 }
 
 /// "192k" for list rows.
@@ -687,7 +703,7 @@ pub fn station_row(ui: &mut Ui, app: &mut BigWaveApp, pal: &Pal, station: &Stati
     let p = ui.painter();
     p.text(Pos2::new(right, rect.center().y), Align2::RIGHT_CENTER, &br, FontId::proportional(13.5), pal.sub);
     let max_w = (right - br_w - 12.0 - x).max(20.0);
-    let name = line_galley(ui, station.name.trim(), FontId::proportional(15.5), pal.text, max_w);
+    let name = line_galley(ui, &shown_name(station), FontId::proportional(15.5), pal.text, max_w);
     let p = ui.painter();
     p.galley(Pos2::new(x, rect.top() + 7.0), name, pal.text);
     let mut sub: Vec<String> = Vec::new();
@@ -699,7 +715,7 @@ pub fn station_row(ui: &mut Ui, app: &mut BigWaveApp, pal: &Pal, station: &Stati
     if !c.is_empty() {
         sub.push(c);
     }
-    let sub_text = if sub.is_empty() { String::new() } else { sub.join(" · ") + " · " };
+    let sub_text = if sub.is_empty() { String::new() } else { join_parts(sub, " · ") + " · " };
     let stars_w = 5.0 * 2.3 * 4.6;
     let sub_g = line_galley(ui, &sub_text, FontId::proportional(11.5), pal.weak, (max_w - stars_w).max(10.0));
     let sub_w = sub_g.size().x;
@@ -826,7 +842,8 @@ pub fn meta_line(s: &Station) -> String {
         .take(2)
         .map(|t| {
             let mut c = t.chars();
-            c.next().map(|f| f.to_uppercase().collect::<String>() + c.as_str()).unwrap_or_default()
+            let t = c.next().map(|f| f.to_uppercase().collect::<String>() + c.as_str()).unwrap_or_default();
+            crate::rtl::visual_string(t)
         })
         .collect();
     parts.extend(tags);
@@ -837,7 +854,7 @@ pub fn meta_line(s: &Station) -> String {
         parts.push(s.codec.trim().to_uppercase());
     }
     if !s.country.trim().is_empty() {
-        parts.push(s.country.trim().to_string());
+        parts.push(crate::rtl::visual(s.country.trim()).into_owned());
     }
-    parts.join(" · ")
+    join_parts(parts, " · ")
 }

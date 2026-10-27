@@ -63,7 +63,7 @@ fn used_keys() -> BTreeSet<String> {
                 }
             } else if p.extension().is_some_and(|x| x == "rs") && !p.ends_with("i18n.rs") {
                 let text = std::fs::read_to_string(&p).unwrap();
-                for (mac, plural) in [("t!(\"", false), ("tn!(\"", true)] {
+                for (mac, plural) in [("t!(\"", false), ("t_raw!(\"", false), ("tn!(\"", true)] {
                     for (i, _) in text.match_indices(mac) {
                         // Whole macro names only (`format!(` also ends in "t!(").
                         if text[..i].chars().next_back().is_some_and(|c| c.is_alphanumeric() || c == '_') {
@@ -167,4 +167,21 @@ fn lookup_falls_back_and_fills() {
     assert_eq!(fill("{a} and {b}", &[("a", &1), ("b", &"x")]), "1 and x");
     assert!(Lang::PtBr.is_one(0) && Lang::PtBr.is_one(1) && !Lang::PtBr.is_one(2));
     assert!(!Lang::It.is_one(0) && Lang::It.is_one(1));
+}
+
+/// Arabic UI text is handed out in display form (joined presentation forms,
+/// visual order); other languages are untouched.
+#[test]
+fn arabic_catalog_is_converted_for_display() {
+    let raw = lookup(Lang::Ar, "cardsui.now_playing");
+    assert!(crate::rtl::has_rtl(raw));
+    let shown = visual_catalog(Lang::Ar)["cardsui.now_playing"];
+    assert_eq!(shown, crate::rtl::visual_ui(raw, true));
+    assert!(shown.chars().any(|c| ('\u{FE70}'..='\u{FEFF}').contains(&c)), "{shown}");
+    // Every Arabic entry converts, and keys are the same set.
+    assert_eq!(visual_catalog(Lang::Ar).len(), catalogs()[Lang::Ar.index()].len());
+    // Filled templates: arguments join the bidi ordering of the sentence.
+    assert_eq!(show(Lang::En, "♪ Hello".to_string()), "♪ Hello");
+    let song = show(Lang::En, fill(lookup(Lang::En, "cardsui.now_line"), &[("song", &"سلام")]));
+    assert_eq!(song, format!("{} ♪", crate::rtl::visual("سلام")));
 }

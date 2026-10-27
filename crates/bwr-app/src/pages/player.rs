@@ -195,7 +195,7 @@ fn player_card(ui: &mut Ui, app: &mut BigWaveApp, pal: &Pal, rect: Rect) {
         let label = if pid == "strobe" {
             t!("cardsui.strobe_rate", title = title, hz = hz_label(app.plugins.host.flash_cap()))
         } else {
-            title.clone()
+            crate::rtl::visual_string(title.clone())
         };
         let w = cards::pill_width(ui, &label, Some(icon));
         let r = Rect::from_min_size(Pos2::new(x - w, pills_y - PILL_H / 2.0), Vec2::new(w, PILL_H));
@@ -272,7 +272,7 @@ pub fn fit_readout(ui: &Ui, name: &str, max: f32, min: f32, max_w: f32, color: C
 
 fn readout(ui: &mut Ui, app: &mut BigWaveApp, pal: &Pal, region: Rect, current: Option<&Station>, id: egui::Id) {
     let name = current
-        .map(|s| s.name.trim().to_string())
+        .map(cards::shown_name)
         .unwrap_or_else(|| "BigWave Radio".to_string());
     let arrows_w = 44.0;
     let text_w = region.width() - 2.0 * arrows_w;
@@ -285,7 +285,7 @@ fn readout(ui: &mut Ui, app: &mut BigWaveApp, pal: &Pal, region: Rect, current: 
                 .map(str::trim)
                 .filter(|t| !t.is_empty())
                 .take(3)
-                .map(|t| format!("#{t}"))
+                .map(|t| crate::rtl::visual_string(format!("#{t}")))
                 .collect()
         })
         .unwrap_or_default();
@@ -416,9 +416,12 @@ fn stations_card(ui: &mut Ui, app: &mut BigWaveApp, pal: &Pal, rect: Rect) {
     let x0 = head.center().x - total / 2.0;
     let title_rect = Rect::from_min_size(Pos2::new(x0, head.center().y - 14.0), Vec2::new(total, 28.0));
     let tr = ui.interact(title_rect, id.with("title"), Sense::click());
-    ui.painter().galley(Pos2::new(x0, head.center().y - tg.size().y / 2.0), tg.clone(), Color32::WHITE);
+    // Right-to-left UI: the title reads first, so it sits on the right.
+    let rtl = crate::i18n::current().is_rtl();
+    let (title_x, count_x) = if rtl { (x0 + cg.size().x + 8.0, x0) } else { (x0, x0 + tg.size().x + 8.0) };
+    ui.painter().galley(Pos2::new(title_x, head.center().y - tg.size().y / 2.0), tg.clone(), Color32::WHITE);
     ui.painter().galley(
-        Pos2::new(x0 + tg.size().x + 8.0, head.center().y - cg.size().y / 2.0 + 2.0),
+        Pos2::new(count_x, head.center().y - cg.size().y / 2.0 + 2.0),
         cg,
         cards::white_a(220),
     );
@@ -435,12 +438,14 @@ fn stations_card(ui: &mut Ui, app: &mut BigWaveApp, pal: &Pal, rect: Rect) {
         (ListFilter::FourPlus, "4+", Some(Icon::Star)),
         (ListFilter::Kbps128, &kbps, None),
     ];
-    let mut x = inner.left();
+    // Pills run from the right edge in a right-to-left UI.
+    let mut x = if rtl { inner.right() } else { inner.left() };
     let py = body.top() + 16.0;
     for (f, label, ic) in pills {
         let w = cards::pill_width(ui, label, ic);
-        let r = Rect::from_min_size(Pos2::new(x, py), Vec2::new(w, PILL_H));
-        x += w + 8.0;
+        let left = if rtl { x - w } else { x };
+        let r = Rect::from_min_size(Pos2::new(left, py), Vec2::new(w, PILL_H));
+        x = if rtl { x - w - 8.0 } else { x + w + 8.0 };
         let style = if app.list_filter == f { PillStyle::active(AMBER) } else { PillStyle::normal(pal) };
         if cards::pill_at(ui, r, id.with(("filter", label)), label, ic, style).clicked() {
             app.list_filter = f;

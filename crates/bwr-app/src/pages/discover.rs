@@ -141,7 +141,7 @@ fn mood_tile(ui: &mut Ui, app: &mut BigWaveApp, pal: &Pal, rect: Rect, idx: usiz
         FontId::proportional(11.5),
         cards::white_a(225),
     );
-    if hr.on_hover_text(t!("cardsui.tune_tip", mood = name.clone())).clicked() {
+    if hr.on_hover_text(t!("cardsui.tune_tip", mood = mood_rail::mood_label_raw(&mood))).clicked() {
         app.dial_mood = idx;
         side_nav::go(app, Page::Player);
         if app.page == Page::Player {
@@ -161,7 +161,7 @@ fn mood_tile(ui: &mut Ui, app: &mut BigWaveApp, pal: &Pal, rect: Rect, idx: usiz
         if resp.hovered() {
             ui.painter().rect_filled(r, CornerRadius::same(6), pal.line.gamma_multiply(0.5));
         }
-        let g = cards::line_galley(ui, &st.name, FontId::proportional(12.5), col, r.width() - 12.0);
+        let g = cards::line_galley(ui, &cards::shown_name(st), FontId::proportional(12.5), col, r.width() - 12.0);
         ui.painter().galley(Pos2::new(r.left() + 6.0, r.center().y - g.size().y / 2.0), g, col);
         if resp.on_hover_text(cards::meta_line(st)).clicked() {
             let st = st.clone();

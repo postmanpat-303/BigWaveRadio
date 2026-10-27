@@ -15,7 +15,7 @@ pub fn mood_page(ui: &mut Ui, app: &mut BigWaveApp, idx: usize) {
         ui.heading(format!("{} {}", mood.icon, crate::widgets::mood_rail::mood_label(&mood)));
         ui.add_space(12.0);
         if ui
-            .button(egui::RichText::new(format!("🎲  {}", t!("moods.surprise", mood = crate::widgets::mood_rail::mood_label(&mood)))).size(14.0))
+            .button(egui::RichText::new(format!("🎲  {}", t!("moods.surprise", mood = crate::widgets::mood_rail::mood_label_raw(&mood)))).size(14.0))
             .on_hover_text(t!("moods.surprise_tip"))
             .clicked()
         {

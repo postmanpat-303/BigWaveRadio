@@ -305,11 +305,14 @@ pub fn post_frame(app: &mut BigWaveApp, ctx: &Context) {
                             ui.vertical_centered(|ui| {
                                 ui.label(egui::RichText::new(format!("⚠ {}", t!("warning.title"))).size(28.0).color(Color32::from_rgb(255, 200, 40)));
                                 ui.add_space(12.0);
-                                ui.label(
-                                    egui::RichText::new(t!("warning.body", name = name, cap = cap))
-                                    .size(16.0)
-                                    .color(Color32::from_gray(220)),
-                                );
+                                // RTL: break into lines before reordering (see rtl::wrapped).
+                                let body = if crate::i18n::current().is_rtl() {
+                                    let raw = crate::i18n::fill(t_raw!("warning.body"), &[("name", &name), ("cap", &cap)]);
+                                    crate::rtl::wrapped(ui, &raw, &egui::FontId::proportional(16.0), ui.available_width(), true)
+                                } else {
+                                    t!("warning.body", name = name, cap = cap)
+                                };
+                                ui.label(egui::RichText::new(body).size(16.0).color(Color32::from_gray(220)));
                                 ui.add_space(18.0);
                                 ui.horizontal(|ui| {
                                     // Centre the two buttons (their width depends on the language).

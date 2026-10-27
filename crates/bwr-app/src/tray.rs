@@ -163,11 +163,11 @@ unsafe extern "system" fn tray_wndproc(
                     Err(_) => return LRESULT(0),
                 };
                 // Built per right-click, so the menu follows the UI language.
-                let show = windows::core::HSTRING::from(t!("tray.show"));
-                let play = windows::core::HSTRING::from(t!("tray.play_pause"));
-                let next = windows::core::HSTRING::from(t!("tray.next"));
-                let prev = windows::core::HSTRING::from(t!("tray.previous"));
-                let quit = windows::core::HSTRING::from(t!("tray.quit"));
+                let show = windows::core::HSTRING::from(t_raw!("tray.show"));
+                let play = windows::core::HSTRING::from(t_raw!("tray.play_pause"));
+                let next = windows::core::HSTRING::from(t_raw!("tray.next"));
+                let prev = windows::core::HSTRING::from(t_raw!("tray.previous"));
+                let quit = windows::core::HSTRING::from(t_raw!("tray.quit"));
                 let _ = AppendMenuW(menu, MF_STRING, MENU_SHOW, PCWSTR(show.as_ptr()));
                 let _ = AppendMenuW(menu, MF_SEPARATOR, 0, PCWSTR::null());
                 let _ = AppendMenuW(menu, MF_STRING, MENU_PLAY_PAUSE, PCWSTR(play.as_ptr()));

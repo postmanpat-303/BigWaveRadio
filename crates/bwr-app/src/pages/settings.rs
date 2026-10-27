@@ -47,7 +47,7 @@ pub fn ui(ui: &mut Ui, app: &mut BigWaveApp) {
             let system = crate::i18n::system_lang();
             let name = |c: Choice| match c {
                 Choice::System => t!("settings.language_system", lang = system.native_name()),
-                Choice::Fixed(l) => l.native_name().to_string(),
+                Choice::Fixed(l) => crate::rtl::visual(l.native_name()).into_owned(),
             };
             let mut picked = None;
             egui::ComboBox::from_id_salt("ui-language")

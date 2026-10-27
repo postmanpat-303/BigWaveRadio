@@ -156,7 +156,7 @@ fn card(ui: &mut Ui, station: &Station, app: &mut BigWaveApp, m: &Metrics, width
     painter.text(
         Pos2::new(text_left, name_y),
         Align2::LEFT_CENTER,
-        station.name.clone(),
+        crate::rtl::visual_string(station.name.clone()),
         FontId::proportional(m.name_size),
         if dark { Color32::from_gray(240) } else { Color32::from_gray(20) },
     );
@@ -215,7 +215,7 @@ fn card(ui: &mut Ui, station: &Station, app: &mut BigWaveApp, m: &Metrics, width
     if response.clicked() {
         app.play_station(station.clone());
     }
-    response.on_hover_text(&station.name);
+    response.on_hover_text(crate::rtl::visual(&station.name));
 }
 
 /// "Country · Language · MP3 · 128 kbps · 42 votes" card subtitle (the
@@ -224,7 +224,7 @@ pub(crate) fn summary_line(s: &bwr_core::Station) -> String {
     let mut parts: Vec<String> = [s.country.trim(), s.language.trim()]
         .into_iter()
         .filter(|p| !p.is_empty())
-        .map(str::to_string)
+        .map(|p| crate::rtl::visual(p).into_owned())
         .collect();
     if !s.codec.trim().is_empty() {
         parts.push(s.codec.trim().to_uppercase());
@@ -235,7 +235,7 @@ pub(crate) fn summary_line(s: &bwr_core::Station) -> String {
     if s.votes > 0 {
         parts.push(tn!("cards.votes", s.votes));
     }
-    parts.join(" · ")
+    crate::widgets::cards::join_parts(parts, " · ")
 }
 
 #[cfg(test)]

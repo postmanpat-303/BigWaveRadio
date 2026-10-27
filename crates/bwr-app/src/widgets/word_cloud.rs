@@ -44,6 +44,11 @@ pub struct WordCloud {
     words: Vec<Placed>,
 }
 
+/// Brightness factor toward the rim, always within 0.6..=1.0.
+fn rim_fade(radial: f32) -> f32 {
+    if radial.is_finite() { 1.0 - 0.4 * radial.clamp(0.0, 1.0).powi(2) } else { 1.0 }
+}
+
 pub fn cloud(ui: &mut Ui, app: &mut BigWaveApp) {
     let t = ui.ctx().input(|i| i.time) as f32;
     let width = ui.available_width();
@@ -115,7 +120,10 @@ pub fn cloud(ui: &mut Ui, app: &mut BigWaveApp) {
             let base_col = Color32::from_gray(if dark { 150 } else { 96 });
             base_col
                 .lerp_to_gamma(strong, w.norm * 0.75)
-                .linear_multiply(1.0 - 0.4 * radial.powi(2))
+                // Clamped: a word can sit outside the disc for a frame after
+                // a resize (layout is cached by width), and a negative factor
+                // panics in ecolor.
+                .linear_multiply(rim_fade(radial))
         };
 
         let text_left = base.left() + PAD;

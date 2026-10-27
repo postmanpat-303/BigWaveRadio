@@ -1062,7 +1062,7 @@ fn session_quote() -> usize {
 
 /// Window title: the app name plus the session's quote in the UI language.
 fn window_title(quote: usize) -> String {
-    format!("BigWave Radio — {}", crate::i18n::tr(QUOTES[quote % QUOTES.len()]))
+    format!("BigWave Radio — {}", crate::i18n::tr_raw(QUOTES[quote % QUOTES.len()]))
 }
 
 fn send_result(tx: &mpsc::Sender<NetResult>, res: bwr_core::client::Result<Vec<Station>>) {

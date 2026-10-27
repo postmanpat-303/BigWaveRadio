@@ -78,6 +78,8 @@ pub fn ui(ui: &mut Ui, app: &mut BigWaveApp) {
 
 /// Outlined pill chip, same family as the Discover tabs.
 pub(crate) fn chip(ui: &mut Ui, app: &BigWaveApp, label: &str) -> bool {
+    // Labels are raw data (tags, countries, past searches): make RTL ones paintable.
+    let label = &*crate::rtl::visual(label);
     let accent = theme::accent_color(app.settings.accent);
     let dark = theme::is_dark(ui.ctx(), app.settings.theme);
     let font = FontId::proportional(14.0);

@@ -182,7 +182,7 @@ fn plugin_card(ui: &mut Ui, app: &mut BigWaveApp, id: &str) {
         if let Some(m) = &manifest {
             let description = m.description_for(crate::i18n::current().code());
             if !description.is_empty() {
-                ui.label(RichText::new(description).size(14.0));
+                ui.label(RichText::new(crate::rtl::visual(description)).size(14.0));
             }
             let perms: Vec<&str> = m.permission_set().into_iter().map(permission_text).collect();
             if !perms.is_empty() {
@@ -348,17 +348,18 @@ mod tests {
 }
 
 /// What a permission allows, in the UI language (lower case, for "Can: ...").
+/// Logical (unconverted) text: these are joined into `t!(…, list = …)`.
 fn permission_text(p: Permission) -> &'static str {
     match p {
-        Permission::Audio => t!("perm.audio"),
-        Permission::NowPlaying => t!("perm.now_playing"),
-        Permission::PlayerControl => t!("perm.player_control"),
-        Permission::Overlay => t!("perm.overlay"),
-        Permission::Fullscreen => t!("perm.fullscreen"),
-        Permission::Hotkeys => t!("perm.hotkeys"),
-        Permission::Panel => t!("perm.panel"),
-        Permission::Page => t!("perm.page"),
-        Permission::Storage => t!("perm.storage"),
+        Permission::Audio => t_raw!("perm.audio"),
+        Permission::NowPlaying => t_raw!("perm.now_playing"),
+        Permission::PlayerControl => t_raw!("perm.player_control"),
+        Permission::Overlay => t_raw!("perm.overlay"),
+        Permission::Fullscreen => t_raw!("perm.fullscreen"),
+        Permission::Hotkeys => t_raw!("perm.hotkeys"),
+        Permission::Panel => t_raw!("perm.panel"),
+        Permission::Page => t_raw!("perm.page"),
+        Permission::Storage => t_raw!("perm.storage"),
     }
 }
 

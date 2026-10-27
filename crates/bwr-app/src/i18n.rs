@@ -103,6 +103,12 @@ impl Lang {
         }
     }
 
+    /// Written right to left (only Arabic so far). Its UI text is converted
+    /// to display form by `tr` and friends, and some layouts mirror.
+    pub fn is_rtl(self) -> bool {
+        matches!(self, Lang::Ar)
+    }
+
     /// CLDR cardinal rule, reduced to the integer cases the UI needs.
     fn is_one(self, n: i64) -> bool {
         match self {
@@ -214,9 +220,57 @@ pub fn lookup(lang: Lang, key: &'static str) -> &'static str {
         .unwrap_or(key)
 }
 
-/// `t!("key")`: the current language's text for `key`.
+/// `t!("key")`: the current language's text for `key`, ready to paint
+/// (RTL languages come back reshaped and in visual order, see `rtl`).
 pub fn tr(key: &'static str) -> &'static str {
+    let lang = current();
+    if lang.is_rtl() {
+        if let Some(v) = visual_catalog(lang).get(key) {
+            return v;
+        }
+    }
+    lookup(lang, key)
+}
+
+/// The catalog of an RTL language converted once to display form
+/// (reshaped Arabic, visual order). Leaked like the source catalogs.
+fn visual_catalog(lang: Lang) -> &'static Catalog {
+    // Arabic is the only RTL language; one cache is enough.
+    static AR: OnceLock<Catalog> = OnceLock::new();
+    debug_assert_eq!(lang, Lang::Ar);
+    AR.get_or_init(|| {
+        catalogs()[lang.index()]
+            .iter()
+            .map(|(k, v)| {
+                let shown: &'static str = match crate::rtl::visual_ui(v, true) {
+                    std::borrow::Cow::Borrowed(b) => b,
+                    std::borrow::Cow::Owned(o) => Box::leak(o.into_boxed_str()),
+                };
+                (k.clone(), shown)
+            })
+            .collect()
+    })
+}
+
+/// The current language's text for `key` in logical order, *not*
+/// converted for painting. For text the OS draws itself (window title,
+/// tray menu) and for values passed into another `t!(…, x = …)`, which
+/// converts the whole sentence once.
+pub fn tr_raw(key: &'static str) -> &'static str {
     lookup(current(), key)
+}
+
+/// Final step for filled templates: convert to display form. Done after
+/// filling, so arguments (station names, song titles, numbers) take part in
+/// the bidi ordering of the whole sentence — callers pass them raw. In an
+/// RTL language the sentence is RTL; otherwise an Arabic song title inside
+/// an English sentence is still joined and ordered. Text without RTL
+/// characters is returned as is.
+fn show(lang: Lang, text: String) -> String {
+    match crate::rtl::visual_ui(&text, lang.is_rtl()) {
+        std::borrow::Cow::Borrowed(_) => text,
+        std::borrow::Cow::Owned(v) => v,
+    }
 }
 
 /// Replace `{name}` placeholders.
@@ -230,7 +284,8 @@ pub fn fill(template: &str, args: &[(&str, &dyn std::fmt::Display)]) -> String {
 
 /// `t!("key", a = x, ...)`.
 pub fn tr_args(key: &'static str, args: &[(&str, &dyn std::fmt::Display)]) -> String {
-    fill(tr(key), args)
+    let lang = current();
+    show(lang, fill(lookup(lang, key), args))
 }
 
 /// `tn!("key", n)`: `key.one` or `key.other` for `n`, with `{n}` filled.
@@ -239,7 +294,7 @@ pub fn tr_plural(one: &'static str, other: &'static str, n: i64, args: &[(&str, 
     let key = if lang.is_one(n) { one } else { other };
     let mut all: Vec<(&str, &dyn std::fmt::Display)> = vec![("n", &n)];
     all.extend_from_slice(args);
-    fill(lookup(lang, key), &all)
+    show(lang, fill(lookup(lang, key), &all))
 }
 
 /// Font family of the big station-name readout (bundled Inter Light,
@@ -248,6 +303,13 @@ pub fn tr_plural(one: &'static str, other: &'static str, n: i64, args: &[(&str, 
 pub const READOUT_FAMILY: &str = "readout";
 
 const INTER_LIGHT: &[u8] = include_bytes!("../../../assets/fonts/Inter-Light.ttf");
+
+/// Bundled Arabic face (Noto Sans Arabic Regular, SIL OFL 1.1 — see
+/// assets/fonts/NotoSansArabic-OFL.txt), subset to the Arabic blocks and
+/// the presentation forms that `rtl` reshapes into (~86 KB). Bundled rather
+/// than taken from the system so joined letters render the same on every
+/// OS, and always loaded so Arabic station names show in any UI language.
+const NOTO_SANS_ARABIC: &[u8] = include_bytes!("../../../assets/fonts/NotoSansArabic-Regular.ttf");
 
 /// Candidate system fonts per script: Windows first, then common Linux and
 /// macOS locations. `(path, face index in a collection)`.
@@ -269,14 +331,6 @@ fn script_font_candidates(lang: Lang) -> &'static [(&'static str, u32)] {
             ("/usr/share/fonts/truetype/lohit-devanagari/Lohit-Devanagari.ttf", 0),
             ("/System/Library/Fonts/Supplemental/DevanagariMT.ttc", 0),
         ],
-        Lang::Ar => &[
-            (r"C:\Windows\Fonts\arial.ttf", 0),
-            ("/usr/share/fonts/truetype/noto/NotoSansArabic-Regular.ttf", 0),
-            ("/usr/share/fonts/noto/NotoSansArabic-Regular.ttf", 0),
-            ("/usr/share/fonts/truetype/sand-box/google/Noto Sans Arabic/NotoSansArabic-VariableFont_wdth,wght.ttf", 0),
-            ("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 0),
-            ("/System/Library/Fonts/Supplemental/Arial.ttf", 0),
-        ],
         _ => &[],
     }
 }
@@ -286,14 +340,14 @@ static SCRIPT_FONTS: std::sync::Mutex<Vec<(String, std::sync::Arc<egui::FontData
     std::sync::Mutex::new(Vec::new());
 
 /// Install the app fonts: egui's defaults, the bundled readout face and —
-/// because egui's bundled fonts cover Latin, Greek and Cyrillic only — a
-/// system font for Chinese, Devanagari or Arabic once a language needing
-/// it is chosen. Rebuilds only when that set grows (a cheap flag check per
+/// because egui's bundled fonts cover Latin, Greek and Cyrillic only — the
+/// bundled Arabic face plus a system font for Chinese or Devanagari once a
+/// language needing it is chosen. Rebuilds only when that set grows (a cheap flag check per
 /// frame otherwise). Missing files are skipped gracefully.
 pub fn ensure_fonts(ctx: &egui::Context) {
     let lang = current();
     let script_bit = match lang {
-        Lang::ZhCn | Lang::Hi | Lang::Ar => 1u8 << lang.index(),
+        Lang::ZhCn | Lang::Hi => 1u8 << lang.index(),
         _ => 0,
     };
     let need = 0x80 | script_bit;
@@ -319,7 +373,8 @@ pub fn ensure_fonts(ctx: &egui::Context) {
         }
     }
     let mut fonts = egui::FontDefinitions::default();
-    for (name, data) in loaded.iter() {
+    let arabic = ("bwr-noto-sans-arabic".to_owned(), std::sync::Arc::new(egui::FontData::from_static(NOTO_SANS_ARABIC)));
+    for (name, data) in loaded.iter().chain(std::iter::once(&arabic)) {
         fonts.font_data.insert(name.clone(), data.clone());
         for family in [egui::FontFamily::Proportional, egui::FontFamily::Monospace] {
             fonts.families.entry(family).or_default().push(name.clone());
@@ -342,6 +397,13 @@ macro_rules! t {
     };
     ($key:literal, $($name:ident = $value:expr),+ $(,)?) => {
         $crate::i18n::tr_args($key, &[$((stringify!($name), &$value as &dyn std::fmt::Display)),+])
+    };
+}
+
+/// `t_raw!("key")`: like `t!` but unconverted logical text (see `tr_raw`).
+macro_rules! t_raw {
+    ($key:literal) => {
+        $crate::i18n::tr_raw($key)
     };
 }
 

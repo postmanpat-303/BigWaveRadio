@@ -21,12 +21,12 @@ pub fn panel(ui: &mut Ui, app: &mut BigWaveApp) {
         ui.add_space(8.0);
     }
 
-    ui.label(egui::RichText::new(&station.name).strong().size(17.0));
+    ui.label(egui::RichText::new(crate::rtl::visual(&station.name)).strong().size(17.0));
     if !station.country.is_empty() {
-        ui.label(egui::RichText::new(format!("📍 {}", station.country)).size(13.0));
+        ui.label(egui::RichText::new(format!("📍 {}", crate::rtl::visual(&station.country))).size(13.0));
     }
     if !station.language.is_empty() {
-        ui.label(egui::RichText::new(format!("🗣 {}", station.language)).size(13.0));
+        ui.label(egui::RichText::new(format!("🗣 {}", crate::rtl::visual(&station.language))).size(13.0));
     }
 
     // Your rating — click a star to set it, click the current level again to clear.
@@ -97,7 +97,7 @@ pub fn panel(ui: &mut Ui, app: &mut BigWaveApp) {
         ui.horizontal_wrapped(|ui| {
             for tag in &tag_list {
                 if ui
-                    .add(egui::Button::new(format!("#{tag}")).small())
+                    .add(egui::Button::new(crate::rtl::visual_string(format!("#{tag}"))).small())
                     .on_hover_text(t!("info.tag_tip", tag = tag))
                     .clicked()
                 {

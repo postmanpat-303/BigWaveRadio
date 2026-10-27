@@ -55,7 +55,7 @@ pub fn strip(ui: &mut Ui, app: &mut BigWaveApp) {
 
     let text_l = l.right() + 12.0;
     let max_w = (row.left() - 20.0 - text_l).max(40.0);
-    let name = app.current.as_ref().map(|s| s.name.trim().to_string()).unwrap_or_else(|| t!("player.pick").to_string());
+    let name = app.current.as_ref().map(cards::shown_name).unwrap_or_else(|| t!("player.pick").to_string());
     let g = cards::line_galley(ui, &name, FontId::proportional(14.5), pal.text, max_w);
     let sub = now_text(app).or_else(|| app.current.as_ref().map(cards::meta_line)).unwrap_or_default();
     let sg = cards::line_galley(ui, &sub, FontId::proportional(11.5), pal.now, max_w);
@@ -110,7 +110,7 @@ fn contents(ui: &mut Ui, app: &mut BigWaveApp, native: bool) -> MiniAction {
     let current = app.current.clone();
     let x = body.left() + 18.0;
     let stars_w = 86.0;
-    let name = current.as_ref().map(|s| s.name.trim().to_string()).unwrap_or_else(|| "BigWave Radio".to_string());
+    let name = current.as_ref().map(cards::shown_name).unwrap_or_else(|| "BigWave Radio".to_string());
     let ng = player::fit_readout(ui, &name, 30.0, 18.0, body.width() - 36.0 - stars_w, pal.text);
     let mut y = body.top() + 14.0;
     ui.painter().galley(Pos2::new(x, y), ng.clone(), pal.text);

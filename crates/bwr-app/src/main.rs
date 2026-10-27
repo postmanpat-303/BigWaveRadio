@@ -4,6 +4,7 @@
 
 #[macro_use]
 mod i18n;
+mod rtl;
 mod app;
 #[cfg(windows)]
 mod backdrop;
