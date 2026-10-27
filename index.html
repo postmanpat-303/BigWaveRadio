@@ -27,7 +27,7 @@
 <meta name="twitter:description" content="Thousands of stations from radio-browser.info in a tiny native app, with mood chips, your own star ratings, Rhai plugins and a MilkDrop-style visualiser. Free and open source.">
 <meta name="twitter:image" content="https://postmanpat-303.github.io/BigWaveRadio/assets/og.png">
 <meta name="twitter:image:alt" content="BigWave Radio: free internet radio player for Windows, macOS and Linux">
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"BigWave Radio","description":"BigWave Radio is a free internet radio player for Windows, macOS and Linux. Stream thousands of stations from radio-browser.info with mood chips, star ratings, Rhai plugins and a MilkDrop-style visualiser. About 8 MB.","applicationCategory":"MultimediaApplication","applicationSubCategory":"Internet radio player","operatingSystem":"Windows 10, Windows 11, macOS 11+, Linux","softwareVersion":"0.9.9","inLanguage":["en","es","zh-Hans","hi","ar","pt-BR","it"],"url":"https://postmanpat-303.github.io/BigWaveRadio/","downloadUrl":"https://github.com/postmanpat-303/BigWaveRadio/releases/latest","image":"https://postmanpat-303.github.io/BigWaveRadio/assets/og.png","screenshot":["https://postmanpat-303.github.io/BigWaveRadio/assets/station-grid.webp","https://postmanpat-303.github.io/BigWaveRadio/assets/moods.webp","https://postmanpat-303.github.io/BigWaveRadio/assets/your-stars.webp","https://postmanpat-303.github.io/BigWaveRadio/assets/visions-page.webp"],"license":"https://opensource.org/licenses/MIT","isAccessibleForFree":true,"codeRepository":"https://github.com/postmanpat-303/BigWaveRadio","programmingLanguage":"Rust","offers":{"@type":"Offer","price":"0","priceCurrency":"EUR"},"author":{"@type":"Person","name":"Del (postmanpat)","url":"https://github.com/postmanpat-303","sameAs":["https://www.youtube.com/@whatgoesaround1551","https://buymeacoffee.com/postmanpat"]}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"BigWave Radio","description":"BigWave Radio is a free internet radio player for Windows, macOS and Linux. Stream thousands of stations from radio-browser.info with mood chips, star ratings, Rhai plugins and a MilkDrop-style visualiser. About 8 MB.","applicationCategory":"MultimediaApplication","applicationSubCategory":"Internet radio player","operatingSystem":"Windows 10, Windows 11, macOS 11+, Linux","softwareVersion":"0.9.10","inLanguage":["en","es","zh-Hans","hi","ar","pt-BR","it"],"url":"https://postmanpat-303.github.io/BigWaveRadio/","downloadUrl":"https://github.com/postmanpat-303/BigWaveRadio/releases/latest","image":"https://postmanpat-303.github.io/BigWaveRadio/assets/og.png","screenshot":["https://postmanpat-303.github.io/BigWaveRadio/assets/now-playing.webp","https://postmanpat-303.github.io/BigWaveRadio/assets/discover-cards.webp","https://postmanpat-303.github.io/BigWaveRadio/assets/moods.webp","https://postmanpat-303.github.io/BigWaveRadio/assets/your-stars.webp","https://postmanpat-303.github.io/BigWaveRadio/assets/visions-page.webp"],"license":"https://opensource.org/licenses/MIT","isAccessibleForFree":true,"codeRepository":"https://github.com/postmanpat-303/BigWaveRadio","programmingLanguage":"Rust","offers":{"@type":"Offer","price":"0","priceCurrency":"EUR"},"author":{"@type":"Person","name":"Del (postmanpat)","url":"https://github.com/postmanpat-303","sameAs":["https://www.youtube.com/@whatgoesaround1551","https://buymeacoffee.com/postmanpat"]}}</script>
 <style>
   :root { --bg:#040b07; --bg2:#06180d; --card:#0a1a10; --card2:#07120b; --line:#1b3a25; --txt:#ecfff0; --mut:#a8c7b1; --c1:#c8ff00; --c2:#3cd23c; --c3:#1fb5c9; --ink:#03120a; --grad:linear-gradient(90deg,var(--c1),var(--c2),var(--c3)); }
   * { box-sizing:border-box; margin:0; padding:0; }
@@ -212,7 +212,7 @@
       <a class="btn primary" id="hero-dl" href="https://github.com/postmanpat-303/BigWaveRadio/releases/latest">⬇ <span id="hero-dl-label">Download free</span></a>
       <a class="btn" href="https://github.com/postmanpat-303/BigWaveRadio">★ View on GitHub</a>
     </div>
-    <div class="meta"><span id="hero-dl-note">Latest release: <b data-ver>v0.9.9</b></span> · <a href="#download">Other systems and files</a><br>Windows 10/11 · macOS 11+ · Linux (x86_64 and ARM64) · MIT licence · No account, no ads · ~8 MB</div>
+    <div class="meta"><span id="hero-dl-note">Latest release: <b data-ver>v0.9.10</b></span> · <a href="#download">Other systems and files</a><br>Windows 10/11 · macOS 11+ · Linux (x86_64 and ARM64) · MIT licence · No account, no ads · ~8 MB</div>
     <div class="banner">
       <picture>
         <source srcset="assets/hero-static.svg" media="(prefers-reduced-motion: reduce)">
@@ -264,29 +264,31 @@
       <li><b>Ranked for listening</b>: working streams first, then votes, clicks and bitrate.</li>
       <li><b>No duplicates</b>: near-identical stations are merged into one result.</li>
       <li><b>Your Stars override everything</b>: every station you rated, from any category, in one list.</li>
+      <li><b>Card look</b> (new in 0.9.10): a Now Playing card with a mood dial, the station list beside it, mood tiles on Discover and a floating mini player.</li>
       <li><b>Compact station grid</b>: about twice as many stations on screen, with a 32-band spectrum animating in the playing card. Prefer roomier cards? Switch to Comfortable.</li>
       <li><b>Themes</b>: dark, light or system, plus 8 accent colours.</li>
     </ul>
   </div>
-  <div class="frame"><img src="assets/station-grid.webp" alt="The Discover page in BigWave Radio, showing the compact station grid" width="1100" height="720" loading="lazy"></div>
+  <div class="frame"><img src="assets/now-playing.webp" alt="The Now Playing card in BigWave Radio, with the mood dial and the station list" width="1100" height="688" loading="lazy"></div>
 </div></section>
 
 <section id="shots" class="shots"><div class="wrap">
   <h2>See it in action</h2>
   <p class="sub">Real captures of the app, no mock-ups. Select any screenshot to open it full size.</p>
   <figure class="shot">
-    <a href="assets/moods.webp"><img src="assets/moods.webp" alt="Trance mood results in BigWave Radio, with talk stations hidden" width="1100" height="720" loading="lazy" decoding="async"></a>
-    <figcaption><b>Mood chips.</b> One click for Trance: several tags searched at once, working streams first, talk stations hidden.</figcaption>
+    <a href="assets/discover-cards.webp"><img src="assets/discover-cards.webp" alt="Discover page with colourful mood tiles, trending stations and Your Stars" width="1100" height="688" loading="lazy" decoding="async"></a>
+    <figcaption><b>New in 0.9.10: the card look.</b> Mood tiles, a Discover list and Your Stars, with a mini player at the bottom.</figcaption>
   </figure>
   <div class="carousel" role="region" aria-roledescription="carousel" aria-label="More BigWave Radio screenshots">
     <button class="cbtn prev" type="button" aria-label="Previous screenshot">‹</button>
     <div class="track" tabindex="0" aria-label="Screenshots, scroll sideways or use the arrow keys for more">
-      <figure class="shot" role="group" aria-roledescription="slide" aria-label="1 of 6"><a href="assets/your-stars.webp"><img src="assets/your-stars.webp" alt="Your Stars page: every station you rated, grouped by star level" width="1100" height="720" loading="lazy" decoding="async"></a><figcaption><b>Your Stars.</b> Every station you rated, from any category.</figcaption></figure>
-      <figure class="shot" role="group" aria-roledescription="slide" aria-label="2 of 6"><a href="assets/rating-card.webp"><img src="assets/rating-card.webp" alt="Now-playing panel with station art, format, bitrate, tags and your star rating" width="1100" height="720" loading="lazy" decoding="async"></a><figcaption><b>Now playing.</b> Art, format, bitrate, votes, tags and your rating.</figcaption></figure>
-      <figure class="shot" role="group" aria-roledescription="slide" aria-label="3 of 6"><a href="assets/visions-page.webp"><img src="assets/visions-page.webp" alt="Visions page with live previews of each visualiser scene" width="1100" height="720" loading="lazy" decoding="async"></a><figcaption><b>Visions.</b> Live previews of every scene.</figcaption></figure>
-      <figure class="shot" role="group" aria-roledescription="slide" aria-label="4 of 6"><a href="assets/plugins-page.webp"><img src="assets/plugins-page.webp" alt="Plugins page with tinted plugin cards, flash safety, permissions and settings" width="1100" height="720" loading="lazy" decoding="async"></a><figcaption><b>Plugins.</b> Tinted cards, flash safety, permissions and settings.</figcaption></figure>
-      <figure class="shot" role="group" aria-roledescription="slide" aria-label="5 of 6"><a href="assets/strobe-page.webp"><img src="assets/strobe-page.webp" alt="Beat Strobe settings page with the symbol rotation" width="880" height="576" loading="lazy" decoding="async"></a><figcaption><b>Beat Strobe.</b> Settings and the symbol rotation.</figcaption></figure>
-      <figure class="shot" role="group" aria-roledescription="slide" aria-label="6 of 6"><a href="assets/warning-screen.webp"><img src="assets/warning-screen.webp" alt="Photosensitivity warning screen shown before the strobe starts" width="880" height="576" loading="lazy" decoding="async"></a><figcaption><b>Safety first.</b> The warning shown before the strobe starts.</figcaption></figure>
+      <figure class="shot" role="group" aria-roledescription="slide" aria-label="1 of 7"><a href="assets/your-stars.webp"><img src="assets/your-stars.webp" alt="Your Stars page: every station you rated, grouped by star level" width="1100" height="720" loading="lazy" decoding="async"></a><figcaption><b>Your Stars.</b> Every station you rated, from any category.</figcaption></figure>
+      <figure class="shot" role="group" aria-roledescription="slide" aria-label="2 of 7"><a href="assets/mini-player.webp"><img src="assets/mini-player.webp" alt="The mini player floating over the Discover page" width="1100" height="688" loading="lazy" decoding="async"></a><figcaption><b>Mini player.</b> Floats over any page.</figcaption></figure>
+      <figure class="shot" role="group" aria-roledescription="slide" aria-label="3 of 7"><a href="assets/arabic.webp"><img src="assets/arabic.webp" alt="BigWave Radio in Arabic, with joined letters and right-to-left text" width="1100" height="688" loading="lazy" decoding="async"></a><figcaption><b>العربية.</b> Arabic now reads right to left with joined letters.</figcaption></figure>
+      <figure class="shot" role="group" aria-roledescription="slide" aria-label="4 of 7"><a href="assets/visions-page.webp"><img src="assets/visions-page.webp" alt="Visions page with live previews of each visualiser scene" width="1100" height="720" loading="lazy" decoding="async"></a><figcaption><b>Visions.</b> Live previews of every scene.</figcaption></figure>
+      <figure class="shot" role="group" aria-roledescription="slide" aria-label="5 of 7"><a href="assets/plugins-page.webp"><img src="assets/plugins-page.webp" alt="Plugins page with tinted plugin cards, flash safety, permissions and settings" width="1100" height="720" loading="lazy" decoding="async"></a><figcaption><b>Plugins.</b> Tinted cards, flash safety, permissions and settings.</figcaption></figure>
+      <figure class="shot" role="group" aria-roledescription="slide" aria-label="6 of 7"><a href="assets/strobe-page.webp"><img src="assets/strobe-page.webp" alt="Beat Strobe settings page with the symbol rotation" width="880" height="576" loading="lazy" decoding="async"></a><figcaption><b>Beat Strobe.</b> Settings and the symbol rotation.</figcaption></figure>
+      <figure class="shot" role="group" aria-roledescription="slide" aria-label="7 of 7"><a href="assets/warning-screen.webp"><img src="assets/warning-screen.webp" alt="Photosensitivity warning screen shown before the strobe starts" width="880" height="576" loading="lazy" decoding="async"></a><figcaption><b>Safety first.</b> The warning shown before the strobe starts.</figcaption></figure>
     </div>
     <button class="cbtn next" type="button" aria-label="Next screenshot">›</button>
     <div class="dots" role="group" aria-label="Choose a screenshot"></div>
@@ -360,27 +362,27 @@
 
 <section id="download"><div class="wrap">
   <h2>Download BigWave Radio <span class="g">free</span></h2>
-  <p class="sub">Latest release: <b data-ver>v0.9.9</b> · <a href="https://github.com/postmanpat-303/BigWaveRadio/releases/latest">all files and SHA256 checksums</a> · MIT licence. The app can check for updates from its About page.</p>
+  <p class="sub">Latest release: <b data-ver>v0.9.10</b> · <a href="https://github.com/postmanpat-303/BigWaveRadio/releases/latest">all files and SHA256 checksums</a> · MIT licence. The app can check for updates from its About page.</p>
   <div class="os-grid">
     <div class="card os" id="os-windows"><div class="ico" aria-hidden="true">🪟</div><h3>Windows <span class="tag">YOUR SYSTEM</span></h3><p class="req">Windows 10 and 11, 64-bit</p><p>Installer with tray icon, media keys and the Ctrl+Alt+B hotkey, or a portable zip with no install.</p>
       <div class="files">
-        <a class="btn primary" data-asset="-setup-x64\.exe$" href="https://github.com/postmanpat-303/BigWaveRadio/releases/download/v0.9.9/BigWaveRadio-0.9.9-setup-x64.exe">Installer <small>.exe</small></a>
-        <a class="btn" data-asset="-windows-x64\.zip$" href="https://github.com/postmanpat-303/BigWaveRadio/releases/download/v0.9.9/BigWaveRadio-0.9.9-windows-x64.zip">Portable <small>.zip</small></a>
+        <a class="btn primary" data-asset="-setup-x64\.exe$" href="https://github.com/postmanpat-303/BigWaveRadio/releases/download/v0.9.10/BigWaveRadio-0.9.10-setup-x64.exe">Installer <small>.exe</small></a>
+        <a class="btn" data-asset="-windows-x64\.zip$" href="https://github.com/postmanpat-303/BigWaveRadio/releases/download/v0.9.10/BigWaveRadio-0.9.10-windows-x64.zip">Portable <small>.zip</small></a>
       </div></div>
     <div class="card os" id="os-mac"><div class="ico" aria-hidden="true">🍎</div><h3>macOS <span class="tag">YOUR SYSTEM</span></h3><p class="req">macOS 11 or later, universal (Apple silicon and Intel)</p><p>Open the dmg and drag BigWave Radio to Applications.</p>
       <div class="files">
-        <a class="btn primary" data-asset="-macos-universal\.dmg$" href="https://github.com/postmanpat-303/BigWaveRadio/releases/download/v0.9.9/BigWaveRadio-0.9.9-macos-universal.dmg">Disk image <small>.dmg</small></a>
-        <a class="btn" data-asset="-macos-universal\.zip$" href="https://github.com/postmanpat-303/BigWaveRadio/releases/download/v0.9.9/BigWaveRadio-0.9.9-macos-universal.zip">Zipped app <small>.zip</small></a>
+        <a class="btn primary" data-asset="-macos-universal\.dmg$" href="https://github.com/postmanpat-303/BigWaveRadio/releases/download/v0.9.10/BigWaveRadio-0.9.10-macos-universal.dmg">Disk image <small>.dmg</small></a>
+        <a class="btn" data-asset="-macos-universal\.zip$" href="https://github.com/postmanpat-303/BigWaveRadio/releases/download/v0.9.10/BigWaveRadio-0.9.10-macos-universal.zip">Zipped app <small>.zip</small></a>
       </div></div>
     <div class="card os" id="os-linux"><div class="ico" aria-hidden="true">🐧</div><h3>Linux <span class="tag">YOUR SYSTEM</span></h3><p class="req">x86_64 and ARM64 · needs glibc 2.35 or newer</p><p>X11 and Wayland. Every package adds the <code>bigwave-radio</code> command, a menu entry and the wolf icon.</p>
       <div class="files">
-        <a class="btn primary" data-asset="-linux-x86_64\.AppImage$" href="https://github.com/postmanpat-303/BigWaveRadio/releases/download/v0.9.9/BigWaveRadio-0.9.9-linux-x86_64.AppImage">AppImage, any distro <small>x86_64</small></a>
-        <a class="btn" data-asset="-linux-x86_64\.deb$" href="https://github.com/postmanpat-303/BigWaveRadio/releases/download/v0.9.9/BigWaveRadio-0.9.9-linux-x86_64.deb">Ubuntu, Debian, Mint <small>.deb</small></a>
-        <a class="btn" data-asset="-linux-x86_64\.rpm$" href="https://github.com/postmanpat-303/BigWaveRadio/releases/download/v0.9.9/BigWaveRadio-0.9.9-linux-x86_64.rpm">Fedora 36+ <small>.rpm</small></a>
-        <a class="btn" data-asset="-linux-x86_64\.pkg\.tar\.zst$" href="https://github.com/postmanpat-303/BigWaveRadio/releases/download/v0.9.9/BigWaveRadio-0.9.9-linux-x86_64.pkg.tar.zst">Arch, CachyOS, Manjaro <small>.pkg.tar.zst</small></a>
-        <a class="btn" data-asset="-linux-x86_64\.tar\.gz$" href="https://github.com/postmanpat-303/BigWaveRadio/releases/download/v0.9.9/BigWaveRadio-0.9.9-linux-x86_64.tar.gz">Portable <small>.tar.gz</small></a>
+        <a class="btn primary" data-asset="-linux-x86_64\.AppImage$" href="https://github.com/postmanpat-303/BigWaveRadio/releases/download/v0.9.10/BigWaveRadio-0.9.10-linux-x86_64.AppImage">AppImage, any distro <small>x86_64</small></a>
+        <a class="btn" data-asset="-linux-x86_64\.deb$" href="https://github.com/postmanpat-303/BigWaveRadio/releases/download/v0.9.10/BigWaveRadio-0.9.10-linux-x86_64.deb">Ubuntu, Debian, Mint <small>.deb</small></a>
+        <a class="btn" data-asset="-linux-x86_64\.rpm$" href="https://github.com/postmanpat-303/BigWaveRadio/releases/download/v0.9.10/BigWaveRadio-0.9.10-linux-x86_64.rpm">Fedora 36+ <small>.rpm</small></a>
+        <a class="btn" data-asset="-linux-x86_64\.pkg\.tar\.zst$" href="https://github.com/postmanpat-303/BigWaveRadio/releases/download/v0.9.10/BigWaveRadio-0.9.10-linux-x86_64.pkg.tar.zst">Arch, CachyOS, Manjaro <small>.pkg.tar.zst</small></a>
+        <a class="btn" data-asset="-linux-x86_64\.tar\.gz$" href="https://github.com/postmanpat-303/BigWaveRadio/releases/download/v0.9.10/BigWaveRadio-0.9.10-linux-x86_64.tar.gz">Portable <small>.tar.gz</small></a>
       </div>
-      <p class="more">ARM64 (aarch64): <a data-asset="-linux-aarch64\.AppImage$" href="https://github.com/postmanpat-303/BigWaveRadio/releases/download/v0.9.9/BigWaveRadio-0.9.9-linux-aarch64.AppImage">AppImage</a> · <a data-asset="-linux-aarch64\.deb$" href="https://github.com/postmanpat-303/BigWaveRadio/releases/download/v0.9.9/BigWaveRadio-0.9.9-linux-aarch64.deb">.deb</a> · <a data-asset="-linux-aarch64\.rpm$" href="https://github.com/postmanpat-303/BigWaveRadio/releases/download/v0.9.9/BigWaveRadio-0.9.9-linux-aarch64.rpm">.rpm</a> · <a data-asset="-linux-aarch64\.tar\.gz$" href="https://github.com/postmanpat-303/BigWaveRadio/releases/download/v0.9.9/BigWaveRadio-0.9.9-linux-aarch64.tar.gz">.tar.gz</a></p></div>
+      <p class="more">ARM64 (aarch64): <a data-asset="-linux-aarch64\.AppImage$" href="https://github.com/postmanpat-303/BigWaveRadio/releases/download/v0.9.10/BigWaveRadio-0.9.10-linux-aarch64.AppImage">AppImage</a> · <a data-asset="-linux-aarch64\.deb$" href="https://github.com/postmanpat-303/BigWaveRadio/releases/download/v0.9.10/BigWaveRadio-0.9.10-linux-aarch64.deb">.deb</a> · <a data-asset="-linux-aarch64\.rpm$" href="https://github.com/postmanpat-303/BigWaveRadio/releases/download/v0.9.10/BigWaveRadio-0.9.10-linux-aarch64.rpm">.rpm</a> · <a data-asset="-linux-aarch64\.tar\.gz$" href="https://github.com/postmanpat-303/BigWaveRadio/releases/download/v0.9.10/BigWaveRadio-0.9.10-linux-aarch64.tar.gz">.tar.gz</a></p></div>
   </div>
   <div class="tips">
     <div class="tip">🛡 <b>Windows SmartScreen:</b> the installer isn't code-signed yet. If SmartScreen appears, click <b>More info → Run anyway</b>.</div>
@@ -489,14 +491,14 @@
   const syncHero = () => { if (!choice) return; const src = document.querySelector(choice.sel); if (src) heroBtn.href = src.href; };
   if (choice) {
     heroLabel.textContent = choice.label;
-    heroNote.innerHTML = choice.note + " · <b data-ver>v0.9.9</b>";
+    heroNote.innerHTML = choice.note + " · <b data-ver>v0.9.10</b>";
     document.getElementById("os-" + os).classList.add("here");
     syncHero();
   } else if (mobile) {
     heroLabel.textContent = "Desktop downloads"; heroBtn.href = "#download";
   }
 
-  // Keep every download link pointing at the newest release (static v0.9.9 links are the fallback).
+  // Keep every download link pointing at the newest release (static v0.9.10 links are the fallback).
   fetch("https://api.github.com/repos/postmanpat-303/BigWaveRadio/releases/latest", { headers: { Accept: "application/vnd.github+json" } })
     .then(r => r.ok ? r.json() : null).then(j => {
       if (!j || !Array.isArray(j.assets)) return;
