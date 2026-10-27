@@ -2,7 +2,7 @@
 # Prebuilt BigWave Radio from the GitHub release tarball (built on Ubuntu 22.04, glibc 2.35).
 # Build:  makepkg -si      (CachyOS / Arch / Manjaro / EndeavourOS)
 pkgname=bigwave-radio-bin
-pkgver=0.9.9
+pkgver=0.9.10
 pkgrel=1
 pkgdesc="Internet radio player with moods, star ratings, plugins and visualisers (radio-browser.info)"
 arch=('x86_64' 'aarch64')

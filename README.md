@@ -43,13 +43,19 @@
 
 <p align="center">🌐 <b>Website:</b> <a href="https://postmanpat-303.github.io/BigWaveRadio/">postmanpat-303.github.io/BigWaveRadio</a></p>
 
-<p align="center"><img src="docs/media/station-grid.png" alt="Discover page with the station grid" width="880"></p>
+<p align="center"><img src="docs/media/now-playing.png" alt="Now Playing card with the mood dial, next to the station list" width="880"></p>
+
+### 🆕 New in 0.9.10
+
+* **A fresh card look.** A big **Now Playing** card with a **mood dial** (drag or click Dance, Chill, Trance, Easy, 80s or 90s), the station list beside it, a **Discover** page with colourful mood tiles, and a small **mini player** you can pop out.
+* **Arabic displays properly.** Letters join up and text reads right to left, including Arabic station names in any language.
+* New strings are machine-translated for now. Corrections are welcome (see [TRANSLATING.md](docs/TRANSLATING.md)).
 
 <a id="downloads"></a>
 
 ## ⬇️ Downloads
 
-Get them from the [latest release](https://github.com/postmanpat-303/BigWaveRadio/releases/latest) (`<ver>` is the version, e.g. `0.9.9`):
+Get them from the [latest release](https://github.com/postmanpat-303/BigWaveRadio/releases/latest) (`<ver>` is the version, e.g. `0.9.10`):
 
 > [!IMPORTANT]
 > **🗣️ Feedback highly recommended!** The macOS and Linux builds are brand new and haven't been tested on real machines yet (only on build servers). If you try one, please tell me how it went, good or bad: [report a problem](https://github.com/postmanpat-303/BigWaveRadio/issues/new?template=bug_report.yml) or say [it works on my system](https://github.com/postmanpat-303/BigWaveRadio/issues/new?template=works_for_me.yml). Questions and ideas are welcome in [Discussions](https://github.com/postmanpat-303/BigWaveRadio/discussions). Thank you!
@@ -117,10 +123,10 @@ The app checks for updates (About → **Check for updates**) and offers the down
   <tr>
     <td valign="top"><h4>🔎 Music-first search</h4>Live top-bar search with one-click history. Results are ranked with working streams first, then votes, clicks and bitrate, and near-identical stations are merged. Talk, news, sport and religious stations are hidden unless you tick <b>Show talk</b>.</td>
     <td valign="top"><h4>✨ More like this · 🎲 Surprise me</h4>Find stations that share the playing station's tags, weighted by your ratings, or get a well-rated or popular pick within your moods. <b>Recently played</b> sits in My Library.</td>
-    <td valign="top"><h4>🗂️ Compact station grid</h4>Tight cards that fit about twice as many stations on screen, with columns that follow the window width. Prefer roomier cards? Switch to <b>Comfortable</b> in Settings. A 32-band spectrum animates inside the playing card.</td>
+    <td valign="top"><h4>🗂️ Cards and compact grid</h4>Discover opens with mood tiles, a numbered Discover list and Your Stars. Search and Countries use tight cards that fit about twice as many stations on screen, with columns that follow the window width. Prefer roomier cards? Switch to <b>Comfortable</b> in Settings. A 32-band spectrum animates inside the playing card.</td>
   </tr>
   <tr>
-    <td valign="top"><h4>ℹ️ Now-playing panel</h4>Station art, format, bitrate, votes, clicks, tags, website and copy-stream-URL.</td>
+    <td valign="top"><h4>ℹ️ Now Playing card</h4>A big station name, tags, a <b>mood dial</b> to switch moods, and the station list beside it with filter pills (Favourites, 4+ stars, ≥128 kbps). <b>Station info</b> shows art, format, bitrate, votes, clicks, website and copy-stream-URL. A <b>mini player</b> floats over other pages.</td>
     <td valign="top"><h4>🎚️ Transport & Advanced</h4>Previous / play / pause / stop / next and volume. Format and minimum-bitrate filters sit under <b>Advanced</b> in the left rail.</td>
     <td valign="top"><h4>💾 Your data</h4><code>settings.json</code> stays compatible with the original C# app. New state goes in <code>discovery.json</code>, <code>moods.json</code>, <code>update.json</code> and <code>ui.json</code> (language).</td>
   </tr>
@@ -131,7 +137,7 @@ The app checks for updates (About → **Check for updates**) and offers the down
   </tr>
   <tr>
     <td valign="top"><h4>🔄 Update checker</h4><b>Check for updates</b> on the About page shows what's new and links straight to the new installer. A quiet check at startup (at most once a day, switch it off in Settings) shows a small notice when a new version is out. Nothing installs by itself.</td>
-    <td valign="top"><h4>🌐 Languages</h4>English, <b>Español</b>, <b>中文（简体）</b>, <b>हिन्दी</b>, <b>العربية</b>, <b>Português (Brasil)</b> and <b>Italiano</b>. Pick one under Settings → Language (it switches straight away), or leave it on <b>System</b> to follow your computer. Want BigWave Radio in your language? See <a href="docs/TRANSLATING.md">TRANSLATING.md</a>.</td>
+    <td valign="top"><h4>🌐 Languages</h4>English, <b>Español</b>, <b>中文（简体）</b>, <b>हिन्दी</b>, <b>العربية</b>, <b>Português (Brasil)</b> and <b>Italiano</b>. Pick one under Settings → Language (it switches straight away), or leave it on <b>System</b> to follow your computer. Arabic is shown right to left with joined letters. Want BigWave Radio in your language? See <a href="docs/TRANSLATING.md">TRANSLATING.md</a>.</td>
     <td valign="top"></td>
   </tr>
 </table>
@@ -140,8 +146,16 @@ The app checks for updates (About → **Check for updates**) and offers the down
 
 <table>
   <tr>
+    <td><img src="docs/media/discover-cards.png" alt="Discover page with mood tiles"><br><sub>Discover: mood tiles, trending stations and Your Stars</sub></td>
+    <td><img src="docs/media/mini-player.png" alt="Mini player over the Discover page"><br><sub>Mini player, floating over any page</sub></td>
+  </tr>
+  <tr>
+    <td><img src="docs/media/arabic.png" alt="BigWave Radio in Arabic"><br><sub>العربية: right-to-left text with joined letters</sub></td>
     <td><img src="docs/media/moods.png" alt="Trance mood results"><br><sub>Mood chips: Trance, talk stations hidden</sub></td>
+  </tr>
+  <tr>
     <td><img src="docs/media/your-stars.png" alt="Your Stars view"><br><sub>Your Stars: every rated station, by level</sub></td>
+    <td><img src="docs/media/station-grid.png" alt="Station grid"><br><sub>Compact station grid</sub></td>
   </tr>
   <tr>
     <td><img src="docs/media/rating-card.png" alt="Now-playing panel with star rating"><br><sub>Now-playing panel with your star rating</sub></td>

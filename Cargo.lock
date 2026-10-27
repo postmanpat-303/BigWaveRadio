@@ -609,7 +609,7 @@ checksum = "72f5acc6cb2ba439de613abc23857ec3d78374d8ed5ac84e9d11336e87da8649"
 
 [[package]]
 name = "bwr-app"
-version = "0.9.9"
+version = "0.9.10"
 dependencies = [
  "ar-reshaper",
  "bwr-core",
@@ -634,7 +634,7 @@ dependencies = [
 
 [[package]]
 name = "bwr-core"
-version = "0.9.9"
+version = "0.9.10"
 dependencies = [
  "dirs",
  "reqwest",
@@ -647,7 +647,7 @@ dependencies = [
 
 [[package]]
 name = "bwr-player"
-version = "0.9.9"
+version = "0.9.10"
 dependencies = [
  "bwr-core",
  "bwr-spectrum",
@@ -658,7 +658,7 @@ dependencies = [
 
 [[package]]
 name = "bwr-plugins"
-version = "0.9.9"
+version = "0.9.10"
 dependencies = [
  "bwr-spectrum",
  "dirs",
@@ -672,7 +672,7 @@ dependencies = [
 
 [[package]]
 name = "bwr-spectrum"
-version = "0.9.9"
+version = "0.9.10"
 dependencies = [
  "rustfft",
 ]
